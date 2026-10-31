@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dasbor contoh</title>
+    <style>
+      body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: #1e293b; background: #f8fafc; }
+      header { background: #509ee3; color: #fff; padding: 12px 20px; font-weight: 600; }
+      main { padding: 20px; max-width: 960px; margin: 0 auto; }
+      .catatan { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+      .filter { display: inline-block; background: #e0f2fe; color: #075985; padding: 2px 10px; border-radius: 999px; margin-left: 8px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+      .kartu { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+      .kartu h2 { font-size: 14px; margin: 0 0 12px; }
+      .bar { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+      .bar span.n { width: 90px; color: #475569; }
+      .bar div { height: 14px; background: #509ee3; border-radius: 3px; }
+      .angka { font-size: 32px; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <header>Metabase (halaman contoh)</header>
+    <main>
+      <p class="catatan">
+        Ini halaman statis pengganti Metabase untuk mode pengembangan. Pada sistem sungguhan, isi di sini adalah dasbor Metabase
+        yang disematkan lewat URL bertanda tangan dari server.
+      </p>
+      <h1 id="judul"></h1>
+      <p>Filter yang dikunci server: <span class="filter" id="filter"></span></p>
+      <div class="grid">
+        <section class="kartu"><h2>Total aplikasi</h2><div class="angka" id="total"></div></section>
+        <section class="kartu"><h2>Status RAA</h2><div id="raa"></div></section>
+        <section class="kartu"><h2>Pembaruan per bulan</h2><div id="bulan"></div></section>
+      </div>
+    </main>
+    <script>
+      const q = new URLSearchParams(location.search)
+      const jenis = q.get('jenis')
+      const instansi = q.get('instansi')
+      document.getElementById('judul').textContent = jenis === 'instansi' ? 'Dasbor instansi' : 'Dasbor analitik SPBE Kota Bogor'
+      document.getElementById('filter').textContent = instansi ? 'instansi = ' + instansi : 'tidak ada (data teragregasi)'
+      // Angka contoh deterministik dari nama instansi agar terlihat berbeda antarinstansi.
+      let h = 7
+      for (const c of instansi || 'kota') h = (h * 31 + c.charCodeAt(0)) % 1000
+      const total = instansi ? 8 + (h % 20) : 284
+      document.getElementById('total').textContent = total
+      const bar = (nama, nilai, maks) => '<div class="bar"><span class="n">' + nama + '</span><div style="width:' + Math.round((nilai / maks) * 100) + '%"></div><b>' + nilai + '</b></div>'
+      const s = Math.round(total * 0.55), p = Math.round(total * 0.3)
+      document.getElementById('raa').innerHTML = bar('Sesuai', s, total) + bar('Perlu penyesuaian', p, total) + bar('Belum', total - s - p, total)
+      document.getElementById('bulan').innerHTML = ['Agu', 'Sep', 'Okt'].map((m, i) => bar(m, 2 + ((h + i * 5) % 9), 12)).join('')
+    </script>
+  </body>
+</html>
