@@ -1,3 +1,3 @@
 # spbe-diskominfo-bogor
 
-hi mau nyoba sesuatu
+hi mau nyoba sesuatu...
