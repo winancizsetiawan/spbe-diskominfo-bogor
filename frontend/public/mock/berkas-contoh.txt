@@ -1,4 +1,0 @@
-Berkas contoh untuk mode mock Portal SPBE Kota Bogor.
-
-Pada backend sungguhan, URL unduhan berasal dari Object Storage (MinIO) berumur pendek
-dan disajikan sebagai lampiran (Content-Disposition: attachment, X-Content-Type-Options: nosniff).
