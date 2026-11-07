@@ -22,7 +22,7 @@ const (
 // User merepresentasikan akun pengguna sistem SPBE
 type User struct {
 	ID            uint       `gorm:"primaryKey" json:"id"`
-	KeycloakSub   string     `gorm:"size:100;uniqueIndex" json:"-"`
+	KeycloakSub   *string    `gorm:"size:100;uniqueIndex" json:"-"`
 	Nama          string     `gorm:"size:150;not null" json:"nama"`
 	Email         string     `gorm:"size:150;not null;uniqueIndex" json:"email"`
 	Role          Role       `gorm:"size:30;not null" json:"role"`
@@ -37,4 +37,3 @@ type User struct {
 func (User) TableName() string {
 	return "pengguna"
 }
-

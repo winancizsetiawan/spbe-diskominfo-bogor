@@ -30,6 +30,7 @@ func main() {
 
 	// 3. Inisialisasi Gin Engine
 	r := gin.New()
+	_ = r.SetTrustedProxies(nil)
 
 	// 4. Pasang middleware standar
 	r.Use(gin.Logger())
