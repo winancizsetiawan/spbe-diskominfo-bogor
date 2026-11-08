@@ -8,6 +8,7 @@ import (
 	"spbe-backend/internal/handler"
 	"spbe-backend/internal/middleware"
 	"spbe-backend/internal/repository"
+	"spbe-backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,7 +50,22 @@ func main() {
 			instansiRepo := repository.NewInstansiRepository(db)
 			referensiHandler := handler.NewReferensiHandler(instansiRepo)
 
+			raaRepo := repository.NewRaaRepository(db)
+			aplRepo := repository.NewAplikasiRepository(db)
+			aplService := service.NewAplikasiService(aplRepo, raaRepo)
+			katalogHandler := handler.NewKatalogHandler(aplService)
+
+			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
+			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
+
+			// Rute Katalog Aplikasi
+			api.GET("/aplikasi/ringkasan", katalogHandler.GetRingkasan)
+			api.GET("/aplikasi/siap-diajukan", katalogHandler.GetSiapDiajukan)
+			api.GET("/aplikasi", katalogHandler.GetDaftar)
+			api.GET("/aplikasi/:id", katalogHandler.GetDetail)
+			api.POST("/aplikasi", katalogHandler.Create)
+			api.PUT("/aplikasi/:id", katalogHandler.Update)
 		}
 	}
 
