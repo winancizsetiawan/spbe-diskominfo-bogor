@@ -55,6 +55,10 @@ func main() {
 			aplService := service.NewAplikasiService(aplRepo, raaRepo)
 			katalogHandler := handler.NewKatalogHandler(aplService)
 
+			fcRepo := repository.NewFlowchartRepository(db)
+			fcService := service.NewFlowchartService(fcRepo)
+			fcHandler := handler.NewFlowchartHandler(fcService, aplService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -66,6 +70,13 @@ func main() {
 			api.GET("/aplikasi/:id", katalogHandler.GetDetail)
 			api.POST("/aplikasi", katalogHandler.Create)
 			api.PUT("/aplikasi/:id", katalogHandler.Update)
+
+			// Rute Flowchart Proses Bisnis
+			api.GET("/flowchart/opsi", fcHandler.GetOpsi)
+			api.GET("/flowchart", fcHandler.GetDaftar)
+			api.GET("/flowchart/:id", fcHandler.GetDetail)
+			api.POST("/flowchart", fcHandler.Create)
+			api.PUT("/flowchart/:id", fcHandler.Update)
 		}
 	}
 
