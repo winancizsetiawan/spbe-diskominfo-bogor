@@ -21,6 +21,10 @@ func hariLalu(hari int) time.Time {
 	return time.Now().AddDate(0, 0, -hari)
 }
 
+func jamLalu(jam int) time.Time {
+	return time.Now().Add(-time.Duration(jam) * time.Hour)
+}
+
 // SeedData mengisi data master instansi dan akun demo jika tabel masih kosong
 func SeedData(db *gorm.DB) error {
 	// 1. Seeder Data Instansi / OPD
@@ -338,6 +342,90 @@ func SeedData(db *gorm.DB) error {
 		_ = db.Exec("SELECT setval(pg_get_serial_sequence('dokumen', 'id'), COALESCE((SELECT MAX(id) FROM dokumen), 1), true);").Error
 	}
 
-	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dan dokumen siap.")
+	// 7. Seeder Kategori Forum, Thread, Balasan, Nilai, dan Laporan Moderasi
+	var katForumCount int64
+	if err := db.Model(&domain.KategoriForum{}).Count(&katForumCount).Error; err != nil {
+		return err
+	}
+
+	if katForumCount == 0 {
+		log.Println("Mengisi data master kategori forum...")
+		katForumList := []domain.KategoriForum{
+			{ID: 1, Nama: "Diskusi Umum"},
+			{ID: 2, Nama: "Implementasi"},
+			{ID: 3, Nama: "Teknis"},
+			{ID: 4, Nama: "Regulasi"},
+		}
+		for _, kf := range katForumList {
+			if err := db.Where("id = ?", kf.ID).FirstOrCreate(&kf).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	var threadCount int64
+	if err := db.Model(&domain.ForumThread{}).Count(&threadCount).Error; err != nil {
+		return err
+	}
+
+	if threadCount == 0 {
+		log.Println("Mengisi data awal forum diskusi & moderasi...")
+		threadsList := []domain.ForumThread{
+			{ID: 1, IdKategori: 2, Judul: "Strategi implementasi SPBE di tingkat kecamatan", Konten: "Kecamatan kami baru mulai mendata aplikasi layanan. Bagaimana pengalaman OPD lain menyusun prioritas aplikasi yang perlu diintegrasikan lebih dulu?", PenulisID: 1, Dilihat: 345, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(2)},
+			{ID: 2, IdKategori: 3, Judul: "Pengalaman integrasi data antar-OPD lewat SPLP", Konten: "Kami sedang menyiapkan API untuk data kesehatan. Apa saja hal teknis yang perlu disiapkan sebelum mendaftar ke SPLP Kota Bogor?", PenulisID: 3, Dilihat: 120, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(26)},
+			{ID: 3, IdKategori: 3, Judul: "Rekomendasi tools open source untuk arsitektur domain", Konten: "Sesuai arahan Peta Rencana SPBE ke open source, tools apa yang teman-teman pakai untuk memodelkan proses bisnis (BPMN)?", PenulisID: 2, Dilihat: 310, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(30)},
+			{ID: 4, IdKategori: 4, Judul: "Tafsir Permen PANRB 59/2020 untuk klasifikasi RAA", Konten: "Apakah aplikasi internal kepegawaian masuk domain Manajemen atau Pendukung? Mohon pencerahan rekan-rekan yang sudah mengklasifikasi.", PenulisID: 3, Dilihat: 198, Status: domain.StatusThreadTerkunci, DibuatPada: jamLalu(50)},
+			{ID: 5, IdKategori: 1, Judul: "Tantangan literasi digital ASN di kelurahan", Konten: "Banyak rekan di kelurahan yang belum terbiasa memakai aplikasi. Ada ide program pendampingan yang efektif?", PenulisID: 1, Dilihat: 87, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(72)},
+			{ID: 6, IdKategori: 2, Judul: "Checklist sebelum asesmen standardisasi aplikasi", Konten: "Dokumen apa saja yang biasanya diminta Tim Asesmen Diskominfo sebelum aplikasi mendapat subdomain kotabogor.go.id?", PenulisID: 3, Dilihat: 264, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(96)},
+			{ID: 7, IdKategori: 3, Judul: "Konfigurasi backup harian untuk aplikasi OPD", Konten: "Buku panduan meminta backup harian dan menyimpan 7 hari terakhir. Bagaimana praktik yang sudah berjalan, termasuk untuk berkas unggahan?", PenulisID: 4, Dilihat: 143, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(120)},
+		}
+
+		for _, t := range threadsList {
+			if err := db.Where("id = ?", t.ID).FirstOrCreate(&t).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_thread', 'id'), COALESCE((SELECT MAX(id) FROM forum_thread), 1), true);").Error
+
+		balasanList := []domain.ForumBalasan{
+			{ID: 1, ThreadID: 1, Konten: "Kami mulai dari aplikasi yang paling banyak dipakai warga, lalu yang datanya dibutuhkan OPD lain.", PenulisID: 3, Tersembunyi: false, DibuatPada: jamLalu(1)},
+			{ID: 2, ThreadID: 1, Konten: "Setuju. Cek juga status integrasi SPLP-nya, karena yang sudah terhubung lebih cepat dipetakan.", PenulisID: 4, Tersembunyi: false, DibuatPada: jamLalu(1)},
+			{ID: 3, ThreadID: 3, Konten: "Kami memakai bpmn.io untuk menggambar; berkasnya bisa disimpan sebagai BPMN 2.0 XML.", PenulisID: 1, Tersembunyi: false, DibuatPada: jamLalu(28)},
+			{ID: 4, ThreadID: 4, Konten: "Aplikasi kepegawaian umumnya masuk domain Manajemen (SDM aparatur).", PenulisID: 2, Tersembunyi: false, DibuatPada: jamLalu(49)},
+		}
+		for _, b := range balasanList {
+			if err := db.Where("id = ?", b.ID).FirstOrCreate(&b).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_balasan', 'id'), COALESCE((SELECT MAX(id) FROM forum_balasan), 1), true);").Error
+
+		nilaiList := []domain.ForumNilai{
+			{BalasanID: 1, UserID: 2},
+			{BalasanID: 1, UserID: 4},
+			{BalasanID: 3, UserID: 2},
+			{BalasanID: 4, UserID: 1},
+			{BalasanID: 4, UserID: 3},
+		}
+		for _, n := range nilaiList {
+			_ = db.Where("balasan_id = ? AND user_id = ?", n.BalasanID, n.UserID).FirstOrCreate(&n).Error
+		}
+
+		laporanList := []domain.ForumLaporan{
+			{ID: 1, TargetTipe: domain.TargetThread, TargetID: 2, PelaporID: 3, Pelapor: "Ajri Dalae", Alasan: "Berisi nomor telepon pribadi pegawai di kolom isi.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(3)},
+			{ID: 2, TargetTipe: domain.TargetBalasan, TargetID: 2, PelaporID: 2, Pelapor: "Siti Rahma", Alasan: "Bernada menyerang pihak lain dan tidak membantu diskusi.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(5)},
+			{ID: 3, TargetTipe: domain.TargetBalasan, TargetID: 2, PelaporID: 1, Pelapor: "Andi Pratama", Alasan: "Setuju dengan laporan sebelumnya, bahasanya kurang pantas.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(2)},
+			{ID: 4, TargetTipe: domain.TargetThread, TargetID: 5, PelaporID: 3, Pelapor: "Ajri Dalae", Alasan: "Di luar topik forum SPBE.", Status: domain.StatusLaporanDitolak, DibuatPada: jamLalu(40)},
+			{ID: 5, TargetTipe: domain.TargetThread, TargetID: 4, PelaporID: 1, Pelapor: "Andi Pratama", Alasan: "Menyebut merek vendor tertentu sebagai rekomendasi.", Status: domain.StatusLaporanDitindak, DibuatPada: jamLalu(60)},
+		}
+		for _, l := range laporanList {
+			if err := db.Where("id = ?", l.ID).FirstOrCreate(&l).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_laporan', 'id'), COALESCE((SELECT MAX(id) FROM forum_laporan), 1), true);").Error
+	}
+
+	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, dan forum siap.")
 	return nil
 }

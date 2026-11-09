@@ -67,6 +67,10 @@ func main() {
 			dokService := service.NewDokumenService(dokRepo)
 			dokHandler := handler.NewDokumenHandler(dokService)
 
+			forumRepo := repository.NewForumRepository(db)
+			forumService := service.NewForumService(forumRepo)
+			forumHandler := handler.NewForumHandler(forumService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -104,6 +108,17 @@ func main() {
 			api.GET("/dokumen/:id/unduh", dokHandler.Unduh)
 			api.PATCH("/dokumen/:id", dokHandler.UbahStatus)
 			api.GET("/admin/dokumen", dokHandler.ListAdmin)
+
+			// Rute Forum Diskusi & Moderasi Konten
+			api.GET("/forum/kategori", forumHandler.GetKategori)
+			api.GET("/forum/thread", forumHandler.ListThread)
+			api.POST("/forum/thread", forumHandler.BuatThread)
+			api.GET("/forum/thread/:id", forumHandler.GetThreadDetail)
+			api.POST("/forum/thread/:id/balasan", forumHandler.BuatBalasan)
+			api.PUT("/forum/balasan/:id/nilai", forumHandler.ToggleNilaiBalasan)
+			api.POST("/forum/laporan", forumHandler.BuatLaporan)
+			api.GET("/moderasi", forumHandler.ListModerasi)
+			api.POST("/moderasi/tindakan", forumHandler.TindakanModerasi)
 		}
 	}
 
