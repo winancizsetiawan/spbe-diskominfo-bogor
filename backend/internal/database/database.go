@@ -56,6 +56,12 @@ func Connect(dsn string, isDevelopment bool) (*gorm.DB, error) {
 		&domain.RiwayatBackup{},
 		&domain.PeriodePembaruan{},
 		&domain.KritikSaran{},
+		&domain.ProfilPengguna{},
+		&domain.Notifikasi{},
+		&domain.Kursus{},
+		&domain.MateriKursus{},
+		&domain.KursusProgres{},
+		&domain.KursusSertifikat{},
 	); err != nil {
 		return nil, err
 	}

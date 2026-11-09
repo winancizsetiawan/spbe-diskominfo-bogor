@@ -75,6 +75,10 @@ func main() {
 			sistemService := service.NewSistemService(sistemRepo)
 			sistemHandler := handler.NewSistemHandler(sistemService)
 
+			pmRepo := repository.NewPenggunaModulRepository(db)
+			pmService := service.NewPenggunaModulService(pmRepo, sistemService)
+			pmHandler := handler.NewPenggunaModulHandler(pmService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -134,6 +138,29 @@ func main() {
 			api.DELETE("/periode/:id", sistemHandler.HapusPeriode)
 			api.POST("/kritik", sistemHandler.KirimKritik)
 			api.GET("/kritik", sistemHandler.ListKritik)
+
+			// Rute Auth, Profil, Manajemen Pengguna, Notifikasi, & Pembelajaran (LMS)
+			api.GET("/me", pmHandler.GetMe)
+			api.GET("/profil", pmHandler.GetProfil)
+			api.PUT("/profil", pmHandler.UbahProfil)
+			api.GET("/profil/preferensi", pmHandler.GetPreferensi)
+			api.PUT("/profil/preferensi", pmHandler.UbahPreferensi)
+			api.GET("/profil/aktivitas", pmHandler.ListAktivitasSaya)
+
+			api.GET("/pengguna/instansi", pmHandler.GetInstansiPengguna)
+			api.GET("/pengguna", pmHandler.ListPengguna)
+			api.POST("/pengguna", pmHandler.UndangPengguna)
+			api.PATCH("/pengguna/:id", pmHandler.UbahPengguna)
+			api.POST("/pengguna/:id/undang-ulang", pmHandler.UndangUlang)
+
+			api.GET("/notifikasi/ringkas", pmHandler.GetRingkasNotifikasi)
+			api.GET("/notifikasi", pmHandler.ListNotifikasi)
+			api.POST("/notifikasi/dibaca-semua", pmHandler.TandaiDibacaSemua)
+			api.POST("/notifikasi/:id/dibaca", pmHandler.TandaiDibaca)
+
+			api.GET("/kursus", pmHandler.ListKursus)
+			api.GET("/kursus/:id", pmHandler.GetKursusDetail)
+			api.PUT("/kursus/:id/materi/:materi/selesai", pmHandler.TandaiMateriSelesai)
 		}
 	}
 

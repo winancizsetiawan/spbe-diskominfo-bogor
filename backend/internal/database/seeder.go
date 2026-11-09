@@ -536,6 +536,111 @@ func SeedData(db *gorm.DB) error {
 		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kritik_saran', 'id'), COALESCE((SELECT MAX(id) FROM kritik_saran), 1), true);").Error
 	}
 
-	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, forum, dan sistem siap.")
+	// 9. Seeder Profil Pengguna, Notifikasi, dan Kursus Pembelajaran (LMS)
+	var profilCount int64
+	if err := db.Model(&domain.ProfilPengguna{}).Count(&profilCount).Error; err != nil {
+		return err
+	}
+	if profilCount == 0 {
+		log.Println("Mengisi data profil pengguna demo...")
+		profilList := []domain.ProfilPengguna{
+			{UserID: 1, NIP: "198601012015031001", Jabatan: "Pranata Komputer Ahli Muda", Golongan: "III/c (Penata)", SatkerInduk: "Bidang APTIKA, Diskominfo", NoTelepon: strPtr("081234567890"), KanalEmail: true},
+			{UserID: 2, NIP: "197805142005012002", Jabatan: "Dosen, Mitra Literasi SPBE", Golongan: "IV/a (Pembina)", SatkerInduk: "Fakultas Teknologi Informasi", NoTelepon: nil, KanalEmail: false},
+			{UserID: 3, NIP: "199002202014022003", Jabatan: "Administrator Sistem Informasi", Golongan: "III/b (Penata Muda Tk.I)", SatkerInduk: "Sekretariat Dinas Kesehatan", NoTelepon: strPtr("085711223344"), KanalEmail: true},
+			{UserID: 4, NIP: "198204302008011004", Jabatan: "Walidata dan Pengelola SPBE", Golongan: "III/d (Penata Tk.I)", SatkerInduk: "Bidang APTIKA, Diskominfo", NoTelepon: strPtr("081300998877"), KanalEmail: true},
+		}
+		for _, p := range profilList {
+			if err := db.Where("user_id = ?", p.UserID).FirstOrCreate(&p).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	var notifCount int64
+	if err := db.Model(&domain.Notifikasi{}).Count(&notifCount).Error; err != nil {
+		return err
+	}
+	if notifCount == 0 {
+		log.Println("Mengisi data awal notifikasi...")
+		notifList := []domain.Notifikasi{
+			{ID: 1, UserID: 1, Kategori: domain.KategoriNotifDokumen, Judul: "SOP baru telah diterbitkan", Pesan: "SOP Manajemen Aplikasi Pemerintahan versi 2.4", UrlTujuan: "/dokumen/9", SudahDibaca: false, DibuatPada: jamLalu(2)},
+			{ID: 2, UserID: 1, Kategori: domain.KategoriNotifForum, Judul: "Komentar baru di forum", Pesan: "Strategi implementasi SPBE di tingkat kecamatan", UrlTujuan: "/forum/1", SudahDibaca: false, DibuatPada: jamLalu(5)},
+			{ID: 3, UserID: 1, Kategori: domain.KategoriNotifPembelajaran, Judul: "Modul baru tersedia", Pesan: "Pengantar Arsitektur SPBE", UrlTujuan: "/pembelajaran", SudahDibaca: true, DibuatPada: jamLalu(26)},
+			{ID: 4, UserID: 1, Kategori: domain.KategoriNotifForum, Judul: "Balasan untuk thread Anda", Pesan: "Tantangan literasi digital ASN di kelurahan", UrlTujuan: "/forum/5", SudahDibaca: true, DibuatPada: jamLalu(30)},
+			{ID: 5, UserID: 1, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru ditambahkan", Pesan: "Laporan Evaluasi Indeks SPBE Nasional Tahun 2023", UrlTujuan: "/dokumen/4", SudahDibaca: true, DibuatPada: jamLalu(50)},
+			{ID: 6, UserID: 2, Kategori: domain.KategoriNotifForum, Judul: "Balasan untuk thread Anda", Pesan: "Rekomendasi tools open source untuk arsitektur domain", UrlTujuan: "/forum/3", SudahDibaca: false, DibuatPada: jamLalu(3)},
+			{ID: 7, UserID: 2, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru ditambahkan", Pesan: "Paparan Peta Rencana SPBE Kota Bogor 2025–2030", UrlTujuan: "/dokumen/5", SudahDibaca: true, DibuatPada: jamLalu(40)},
+			{ID: 8, UserID: 3, Kategori: domain.KategoriNotifDokumen, Judul: "Pedoman RAA versi baru terbit", Pesan: "Pedoman Penyusunan Arsitektur SPBE Pemerintah Daerah v2.1", UrlTujuan: "/dokumen/2", SudahDibaca: false, DibuatPada: jamLalu(4)},
+			{ID: 9, UserID: 3, Kategori: domain.KategoriNotifSistem, Judul: "Batas waktu pembaruan data", Pesan: "Segera lengkapi data aplikasi instansi Anda sebelum tenggat.", UrlTujuan: "/katalog/aplikasi", SudahDibaca: false, DibuatPada: jamLalu(24)},
+			{ID: 10, UserID: 3, Kategori: domain.KategoriNotifForum, Judul: "Komentar baru di forum", Pesan: "Pengalaman integrasi data antar-OPD lewat SPLP", UrlTujuan: "/forum/2", SudahDibaca: true, DibuatPada: jamLalu(28)},
+			{ID: 11, UserID: 4, Kategori: domain.KategoriNotifForum, Judul: "Laporan konten forum baru", Pesan: "3 laporan menunggu tinjauan moderator.", UrlTujuan: "/admin/moderasi", SudahDibaca: false, DibuatPada: jamLalu(2)},
+			{ID: 12, UserID: 4, Kategori: domain.KategoriNotifSistem, Judul: "Pengajuan validasi baru", Pesan: "SIMRS Rujukan menunggu keputusan.", UrlTujuan: "/admin/validasi", SudahDibaca: false, DibuatPada: jamLalu(6)},
+			{ID: 13, UserID: 4, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru diunggah", Pesan: "Draf Pedoman Klasifikasi RAA", UrlTujuan: "/admin/repositori", SudahDibaca: true, DibuatPada: jamLalu(48)},
+		}
+		for _, n := range notifList {
+			if err := db.Where("id = ?", n.ID).FirstOrCreate(&n).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('notifikasi', 'id'), COALESCE((SELECT MAX(id) FROM notifikasi), 1), true);").Error
+	}
+
+	var kursusCount int64
+	if err := db.Model(&domain.Kursus{}).Count(&kursusCount).Error; err != nil {
+		return err
+	}
+	if kursusCount == 0 {
+		log.Println("Mengisi data awal kursus pembelajaran SPBE...")
+		ytURL := "https://www.youtube.com/"
+		kursusList := []domain.Kursus{
+			{
+				ID: 1, Judul: "Pengantar SPBE", Deskripsi: "Dasar-dasar Sistem Pemerintahan Berbasis Elektronik dan kerangka regulasinya.", Kategori: "Dasar SPBE", Tingkat: domain.TingkatDasar, DurasiJam: 2, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 101, KursusID: 1, Judul: "Apa itu SPBE", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 102, KursusID: 1, Judul: "Regulasi SPBE", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 2},
+					{ID: 103, KursusID: 1, Judul: "Domain dan aspek SPBE", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+				},
+			},
+			{
+				ID: 2, Judul: "Arsitektur SPBE dan RAA", Deskripsi: "Menyusun dan mengklasifikasikan aplikasi sesuai Referensi Arsitektur Aplikasi.", Kategori: "Arsitektur", Tingkat: domain.TingkatMenengah, DurasiJam: 4, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 201, KursusID: 2, Judul: "Konsep arsitektur", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 202, KursusID: 2, Judul: "Klasifikasi RAA", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 2},
+					{ID: 203, KursusID: 2, Judul: "Studi kasus aplikasi OPD", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 3},
+					{ID: 204, KursusID: 2, Judul: "Evaluasi kesesuaian", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 4},
+				},
+			},
+			{
+				ID: 3, Judul: "Keamanan Informasi Pemerintah", Deskripsi: "Praktik keamanan informasi, manajemen akses, dan penanganan insiden.", Kategori: "Keamanan", Tingkat: domain.TingkatMenengah, DurasiJam: 3, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 301, KursusID: 3, Judul: "Prinsip keamanan", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 302, KursusID: 3, Judul: "Penanganan insiden", Tipe: domain.TipeMediaAudio, URL: ytURL, Urutan: 2},
+					{ID: 303, KursusID: 3, Judul: "Backup dan pemulihan", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+				},
+			},
+			{
+				ID: 4, Judul: "Integrasi Data Antar-OPD", Deskripsi: "Pertukaran data lewat SPLP dan tata kelola interoperabilitas.", Kategori: "Data", Tingkat: domain.TingkatLanjutan, DurasiJam: 5, AdaSertifikat: false,
+				Materi: []domain.MateriKursus{
+					{ID: 401, KursusID: 4, Judul: "Interoperabilitas", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 402, KursusID: 4, Judul: "SPLP", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 2},
+					{ID: 403, KursusID: 4, Judul: "Tata kelola data", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+					{ID: 404, KursusID: 4, Judul: "Praktik integrasi", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 4},
+				},
+			},
+		}
+		for _, k := range kursusList {
+			if err := db.Where("id = ?", k.ID).FirstOrCreate(&k).Error; err != nil {
+				return err
+			}
+			for _, m := range k.Materi {
+				_ = db.Where("id = ?", m.ID).FirstOrCreate(&m).Error
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kursus', 'id'), COALESCE((SELECT MAX(id) FROM kursus), 1), true);").Error
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kursus_materi', 'id'), COALESCE((SELECT MAX(id) FROM kursus_materi), 1), true);").Error
+	}
+
+	_ = db.Exec("SELECT setval(pg_get_serial_sequence('pengguna', 'id'), COALESCE((SELECT MAX(id) FROM pengguna), 1), true);").Error
+	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, forum, sistem, dan pembelajaran siap.")
 	return nil
 }
