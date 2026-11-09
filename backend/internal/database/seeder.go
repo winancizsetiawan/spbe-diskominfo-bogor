@@ -664,7 +664,33 @@ func SeedData(db *gorm.DB) error {
 		_ = db.Exec("SELECT setval(pg_get_serial_sequence('artikel', 'id'), COALESCE((SELECT MAX(id) FROM artikel), 1), true);").Error
 	}
 
-	_ = db.Exec("SELECT setval(pg_get_serial_sequence('pengguna', 'id'), COALESCE((SELECT MAX(id) FROM pengguna), 1), true);").Error
-	log.Println("Seeder seluruh modul SPBE siap.")
+	// Sinkronkan seluruh sequence auto-increment PostgreSQL agar insert data baru dari frontend tidak pernah bentrok (SQLSTATE 23505)
+	tabelDenganID := []string{
+		"instansi",
+		"pengguna",
+		"aplikasi",
+		"flowchart",
+		"flowchart_riwayat",
+		"pengajuan_validasi",
+		"kategori_dokumen",
+		"dokumen",
+		"kategori_forum",
+		"forum_thread",
+		"forum_balasan",
+		"forum_laporan",
+		"audit_log",
+		"riwayat_backup",
+		"periode_pembaruan",
+		"kritik_saran",
+		"notifikasi",
+		"kursus",
+		"kursus_materi",
+		"artikel",
+	}
+	for _, tbl := range tabelDenganID {
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('" + tbl + "', 'id'), COALESCE((SELECT MAX(id) FROM " + tbl + "), 1), true);").Error
+	}
+
+	log.Println("Seeder seluruh modul SPBE dan sinkronisasi sequence ID siap.")
 	return nil
 }

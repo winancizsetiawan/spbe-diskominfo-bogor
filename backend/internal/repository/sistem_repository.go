@@ -112,7 +112,7 @@ func (r *SistemRepository) GetInstansiTertinggal() ([]domain.InstansiTertinggalD
 	err := r.db.Table("aplikasi a").
 		Select("i.nama as instansi, COUNT(a.id) as jumlah").
 		Joins("JOIN instansi i ON i.id = a.instansi_id").
-		Where("a.status <> ?", domain.StatusDisetujui).
+		Where("a.status_validasi <> ?", domain.StatusDisetujui).
 		Group("i.id, i.nama").
 		Having("COUNT(a.id) > 0").
 		Order("jumlah DESC, i.nama ASC").
