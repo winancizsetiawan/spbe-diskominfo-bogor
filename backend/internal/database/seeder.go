@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"spbe-backend/internal/domain"
 
@@ -10,6 +11,14 @@ import (
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func uintPtr(u uint) *uint {
+	return &u
+}
+
+func hariLalu(hari int) time.Time {
+	return time.Now().AddDate(0, 0, -hari)
 }
 
 // SeedData mengisi data master instansi dan akun demo jika tabel masih kosong
@@ -273,6 +282,62 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
-	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, dan validasi siap.")
+	// 6. Seeder Kategori SOP & Dokumen Repositori
+	var katCount int64
+	if err := db.Model(&domain.KategoriDokumen{}).Count(&katCount).Error; err != nil {
+		return err
+	}
+
+	if katCount == 0 {
+		log.Println("Mengisi data master kategori SOP...")
+		kategoriList := []domain.KategoriDokumen{
+			{ID: 10, Nama: "Manajemen Aplikasi"},
+			{ID: 11, Nama: "Keamanan Informasi"},
+			{ID: 12, Nama: "Layanan Publik"},
+		}
+		for _, k := range kategoriList {
+			if err := db.Where("id = ?", k.ID).FirstOrCreate(&k).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	var dokCount int64
+	if err := db.Model(&domain.Dokumen{}).Count(&dokCount).Error; err != nil {
+		return err
+	}
+
+	if dokCount == 0 {
+		log.Println("Mengisi data awal repositori dokumen & SOP...")
+		dokumenList := []domain.Dokumen{
+			{ID: 1, Jenis: domain.JenisRegulasi, Judul: "Peraturan Presiden No. 95 Tahun 2018 tentang SPBE", Deskripsi: "Dasar hukum penyelenggaraan Sistem Pemerintahan Berbasis Elektronik di instansi pusat dan pemerintah daerah.", TipeBerkas: domain.TipePDF, UkuranMb: 2.4, Versi: "1.0", Sumber: strPtr("Sekretariat Negara"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 12340, TanggalRilis: hariLalu(140)},
+			{ID: 2, Jenis: domain.JenisPedoman, Judul: "Pedoman Penyusunan Arsitektur SPBE Pemerintah Daerah", Deskripsi: "Panduan menyusun arsitektur proses bisnis, data, aplikasi, infrastruktur, dan keamanan SPBE di tingkat daerah.", TipeBerkas: domain.TipeDOCX, UkuranMb: 1.8, Versi: "2.1", Sumber: strPtr("Kementerian PANRB"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 8920, TanggalRilis: hariLalu(95)},
+			{ID: 3, Jenis: domain.JenisTemplate, Judul: "Template RAA Aplikasi Pemerintah", Deskripsi: "Lembar kerja untuk mendata dan mengklasifikasikan aplikasi ke dalam Referensi Arsitektur Aplikasi Level 1–3.", TipeBerkas: domain.TipeXLSX, UkuranMb: 0.9, Versi: "1.2", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 4210, TanggalRilis: hariLalu(60)},
+			{ID: 4, Jenis: domain.JenisLaporan, Judul: "Laporan Evaluasi Indeks SPBE Nasional Tahun 2023", Deskripsi: "Hasil evaluasi nasional beserta rekomendasi peningkatan domain kebijakan, tata kelola, layanan, dan manajemen pengetahuan.", TipeBerkas: domain.TipePDF, UkuranMb: 3.1, Versi: "1.0", Sumber: strPtr("Kementerian PANRB"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 2980, TanggalRilis: hariLalu(210)},
+			{ID: 5, Jenis: domain.JenisPresentasi, Judul: "Paparan Peta Rencana SPBE Kota Bogor 2025–2030", Deskripsi: "Materi paparan arah kebijakan dan program SPBE Kota Bogor, termasuk program Pengembangan Aplikasi Manajemen Pengetahuan.", TipeBerkas: domain.TipePPTX, UkuranMb: 5.6, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 640, TanggalRilis: hariLalu(35)},
+			{ID: 6, Jenis: domain.JenisRegulasi, Judul: "Peraturan Wali Kota Bogor tentang Tata Naskah Dinas", Deskripsi: "Ketentuan format, penomoran, dan tata cara penyelenggaraan naskah dinas di lingkungan Pemerintah Kota Bogor.", TipeBerkas: domain.TipePDF, UkuranMb: 1.2, Versi: "1.0", Sumber: strPtr("Pemerintah Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 1520, TanggalRilis: hariLalu(300)},
+			{ID: 7, Jenis: domain.JenisPanduan, Judul: "Panduan Teknis Integrasi Aplikasi melalui SPLP", Deskripsi: "Langkah teknis mendaftarkan dan menghubungkan aplikasi OPD ke Sistem Penghubung Layanan Pemerintah Kota Bogor.", TipeBerkas: domain.TipePDF, UkuranMb: 2.9, Versi: "1.1", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 1870, TanggalRilis: hariLalu(48)},
+			{ID: 8, Jenis: domain.JenisLaporan, Judul: "Laporan Standardisasi Aplikasi Triwulan II", Deskripsi: "Rekap hasil asesmen standardisasi aplikasi OPD pada triwulan II.", TipeBerkas: domain.TipePDF, UkuranMb: 1.7, Versi: "0.9", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 310, TanggalRilis: hariLalu(12)},
+			{ID: 9, Jenis: domain.JenisSOP, Judul: "SOP Manajemen Aplikasi Pemerintahan", Deskripsi: "Tata kelola siklus pengembangan, pengujian kelayakan kode, dan pemeliharaan interoperabilitas aplikasi pemerintah.", TipeBerkas: domain.TipePDF, UkuranMb: 2.1, Versi: "2.4", Sumber: strPtr("Revisi Kemenkominfo"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 6450, IdKategori: uintPtr(10), TanggalRilis: hariLalu(16)},
+			{ID: 10, Jenis: domain.JenisSOP, Judul: "SOP Pengelolaan Data SPBE", Deskripsi: "Ketentuan pengelolaan metadata, standardisasi interoperabilitas basis data induk, dan mekanisme pertukaran data antar-instansi.", TipeBerkas: domain.TipePDF, UkuranMb: 1.5, Versi: "1.8", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 4320, IdKategori: uintPtr(10), TanggalRilis: hariLalu(20)},
+			{ID: 11, Jenis: domain.JenisSOP, Judul: "SOP Keamanan Informasi", Deskripsi: "Protokol mitigasi insiden siber, manajemen hak akses, kriptografi, dan audit berkala sesuai ISO/IEC 27001 sektor publik.", TipeBerkas: domain.TipeDOCX, UkuranMb: 2.8, Versi: "3.0", Sumber: strPtr("BSSN Conformance"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 3980, IdKategori: uintPtr(11), TanggalRilis: hariLalu(23)},
+			{ID: 12, Jenis: domain.JenisSOP, Judul: "SOP Layanan Publik Digital", Deskripsi: "Kriteria integrasi layanan ke Mal Pelayanan Publik Digital, kepatuhan SLA respons aduan, dan aksesibilitas.", TipeBerkas: domain.TipeDOCX, UkuranMb: 1.9, Versi: "3.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 2450, IdKategori: uintPtr(12), TanggalRilis: hariLalu(27)},
+			{ID: 13, Jenis: domain.JenisSOP, Judul: "SOP Penanganan Gangguan TI", Deskripsi: "Alur pelaporan, eskalasi, dan pemulihan gangguan layanan teknologi informasi di lingkungan OPD.", TipeBerkas: domain.TipePDF, UkuranMb: 1.1, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 120, IdKategori: uintPtr(11), TanggalRilis: hariLalu(6)},
+			{ID: 14, Jenis: domain.JenisSOP, Judul: "SOP Pendaftaran Domain dan Hosting", Deskripsi: "Prosedur permohonan subdomain kotabogor.go.id dan fasilitas hosting setelah asesmen standardisasi.", TipeBerkas: domain.TipePDF, UkuranMb: 0.8, Versi: "1.3", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 980, IdKategori: uintPtr(10), TanggalRilis: hariLalu(70)},
+			{ID: 15, Jenis: domain.JenisSOP, Judul: "SOP Backup dan Pemulihan Data", Deskripsi: "Backup harian, retensi 7 hari, dan uji pemulihan data aplikasi termasuk berkas unggahan.", TipeBerkas: domain.TipePDF, UkuranMb: 1.0, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 75, IdKategori: uintPtr(11), TanggalRilis: hariLalu(4)},
+			{ID: 16, Jenis: domain.JenisPedoman, Judul: "Draf Pedoman Klasifikasi RAA", Deskripsi: "Konsep pedoman, belum disetujui.", TipeBerkas: domain.TipeDOCX, UkuranMb: 0.6, Versi: "0.1", Sumber: nil, Status: domain.StatusDokDraft, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 0, TanggalRilis: hariLalu(2)},
+			{ID: 17, Jenis: domain.JenisRegulasi, Judul: "Peraturan Lama tentang Aplikasi Daerah (dicabut)", Deskripsi: "Sudah digantikan.", TipeBerkas: domain.TipePDF, UkuranMb: 0.7, Versi: "1.0", Sumber: nil, Status: domain.StatusDokArsip, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 52, TanggalRilis: hariLalu(900)},
+		}
+
+		for _, d := range dokumenList {
+			if err := db.Where("id = ?", d.ID).FirstOrCreate(&d).Error; err != nil {
+				return err
+			}
+		}
+		// Reset sequence ID PostgreSQL agar insert dokumen baru tidak bentrok dengan ID 1..17
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('dokumen', 'id'), COALESCE((SELECT MAX(id) FROM dokumen), 1), true);").Error
+	}
+
+	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dan dokumen siap.")
 	return nil
 }

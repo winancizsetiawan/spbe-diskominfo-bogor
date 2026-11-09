@@ -63,6 +63,10 @@ func main() {
 			valService := service.NewValidasiService(valRepo)
 			valHandler := handler.NewValidasiHandler(valService)
 
+			dokRepo := repository.NewDokumenRepository(db)
+			dokService := service.NewDokumenService(dokRepo)
+			dokHandler := handler.NewDokumenHandler(dokService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -87,6 +91,19 @@ func main() {
 			api.GET("/validasi/:id", valHandler.GetDetail)
 			api.POST("/validasi", valHandler.Ajukan)
 			api.POST("/validasi/:id/keputusan", valHandler.Putuskan)
+
+			// Rute Dokumen SPBE, SOP Pemerintahan, & Admin Repositori
+			api.Static("/dokumen/berkas", "./uploads/dokumen")
+			api.GET("/dokumen/ringkasan", dokHandler.GetRingkasan)
+			api.GET("/dokumen/kategori", dokHandler.GetKategori)
+			api.GET("/dokumen", dokHandler.List)
+			api.POST("/dokumen/unggah/mulai", dokHandler.MulaiUnggah)
+			api.POST("/dokumen/unggah/berkas/:idSesi", dokHandler.UnggahBerkas)
+			api.POST("/dokumen/unggah/selesai", dokHandler.SelesaiUnggah)
+			api.GET("/dokumen/:id", dokHandler.GetByID)
+			api.GET("/dokumen/:id/unduh", dokHandler.Unduh)
+			api.PATCH("/dokumen/:id", dokHandler.UbahStatus)
+			api.GET("/admin/dokumen", dokHandler.ListAdmin)
 		}
 	}
 
