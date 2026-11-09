@@ -79,6 +79,10 @@ func main() {
 			pmService := service.NewPenggunaModulService(pmRepo, sistemService)
 			pmHandler := handler.NewPenggunaModulHandler(pmService)
 
+			portalRepo := repository.NewPortalModulRepository(db)
+			portalService := service.NewPortalModulService(portalRepo)
+			portalHandler := handler.NewPortalModulHandler(portalService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -161,6 +165,19 @@ func main() {
 			api.GET("/kursus", pmHandler.ListKursus)
 			api.GET("/kursus/:id", pmHandler.GetKursusDetail)
 			api.PUT("/kursus/:id/materi/:materi/selesai", pmHandler.TandaiMateriSelesai)
+
+			// Rute Beranda, Artikel/Berita, Bantuan, Dasbor, & Pencarian Global
+			api.GET("/artikel", portalHandler.ListArtikel)
+			api.GET("/artikel/:id", portalHandler.GetArtikelDetail)
+			api.GET("/bantuan", portalHandler.GetBantuan)
+
+			api.GET("/beranda/publik", portalHandler.GetBerandaPublik)
+			api.GET("/beranda", portalHandler.GetBeranda)
+
+			api.GET("/dasbor/instansi", portalHandler.GetDasborInstansi)
+			api.GET("/dasbor/embed", portalHandler.GetDasborEmbed)
+
+			api.GET("/cari", portalHandler.Cari)
 		}
 	}
 

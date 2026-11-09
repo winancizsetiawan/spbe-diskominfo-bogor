@@ -640,7 +640,31 @@ func SeedData(db *gorm.DB) error {
 		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kursus_materi', 'id'), COALESCE((SELECT MAX(id) FROM kursus_materi), 1), true);").Error
 	}
 
+	// 10. Seeder Berita & Artikel SPBE
+	var artikelCount int64
+	if err := db.Model(&domain.Artikel{}).Count(&artikelCount).Error; err != nil {
+		return err
+	}
+	if artikelCount == 0 {
+		log.Println("Mengisi data awal berita dan artikel SPBE...")
+		penulisDefault := "Diskominfo Kota Bogor"
+		artikelList := []domain.Artikel{
+			{ID: 1, Jenis: domain.JenisArtikelBerita, Judul: "Kota Bogor Perkuat Integrasi Layanan Digital Antar-OPD", Ringkasan: "Pemerintah Kota Bogor mempercepat integrasi layanan lewat portal SPBE terpadu.", Penulis: penulisDefault, Tanggal: hariLalu(2), Views: 412, Konten: "Pemerintah Kota Bogor mempercepat integrasi layanan digital antar perangkat daerah melalui portal SPBE terpadu.\n\nLangkah ini diharapkan mengurangi duplikasi aplikasi dan mempermudah pertukaran data antar-OPD."},
+			{ID: 2, Jenis: domain.JenisArtikelBerita, Judul: "Pelatihan Arsitektur SPBE Diikuti 40 Admin OPD", Ringkasan: "Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.", Penulis: penulisDefault, Tanggal: hariLalu(9), Views: 268, Konten: "Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi."},
+			{ID: 3, Jenis: domain.JenisArtikelBerita, Judul: "Batas Waktu Pembaruan Data Aplikasi Triwulan Berjalan", Ringkasan: "Admin OPD diminta melengkapi data sebelum tenggat.", Penulis: penulisDefault, Tanggal: hariLalu(14), Views: 190, Konten: "Admin OPD diingatkan melengkapi dan mengajukan validasi data aplikasi sebelum tenggat periode berjalan.\n\nPengingat otomatis dikirim pada H-7, H-3, dan H-1."},
+			{ID: 4, Jenis: domain.JenisArtikelEdukasi, Judul: "Mengenal Referensi Arsitektur Aplikasi (RAA)", Ringkasan: "Penjelasan singkat RAA dan manfaatnya bagi perencanaan aplikasi pemerintah.", Penulis: "Tim Arsitektur SPBE", Tanggal: hariLalu(20), Views: 530, Konten: "RAA adalah acuan klasifikasi aplikasi pemerintah agar selaras dengan arsitektur SPBE.\n\nAplikasi yang klasifikasinya sesuai dianggap patuh; yang belum perlu disesuaikan."},
+			{ID: 5, Jenis: domain.JenisArtikelEdukasi, Judul: "Praktik Baik Backup Data Aplikasi Pemerintah", Ringkasan: "Backup harian dengan retensi tujuh hari dan uji pemulihan berkala.", Penulis: "Tim Keamanan Informasi", Tanggal: hariLalu(33), Views: 345, Konten: "Backup harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh backup terakhir dan uji pemulihan secara berkala."},
+			{ID: 6, Jenis: domain.JenisArtikelEdukasi, Judul: "Panduan Menulis Thread Forum yang Efektif", Ringkasan: "Cara merumuskan pertanyaan agar cepat dijawab komunitas.", Penulis: "Moderator Forum", Tanggal: hariLalu(41), Views: 121, Konten: "Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial."},
+		}
+		for _, a := range artikelList {
+			if err := db.Where("id = ?", a.ID).FirstOrCreate(&a).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('artikel', 'id'), COALESCE((SELECT MAX(id) FROM artikel), 1), true);").Error
+	}
+
 	_ = db.Exec("SELECT setval(pg_get_serial_sequence('pengguna', 'id'), COALESCE((SELECT MAX(id) FROM pengguna), 1), true);").Error
-	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, forum, sistem, dan pembelajaran siap.")
+	log.Println("Seeder seluruh modul SPBE siap.")
 	return nil
 }
