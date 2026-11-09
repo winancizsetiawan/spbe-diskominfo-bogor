@@ -59,6 +59,10 @@ func main() {
 			fcService := service.NewFlowchartService(fcRepo)
 			fcHandler := handler.NewFlowchartHandler(fcService, aplService)
 
+			valRepo := repository.NewValidasiRepository(db)
+			valService := service.NewValidasiService(valRepo)
+			valHandler := handler.NewValidasiHandler(valService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -77,6 +81,12 @@ func main() {
 			api.GET("/flowchart/:id", fcHandler.GetDetail)
 			api.POST("/flowchart", fcHandler.Create)
 			api.PUT("/flowchart/:id", fcHandler.Update)
+
+			// Rute Validasi & Approval Data (Diskominfo)
+			api.GET("/validasi", valHandler.GetDaftar)
+			api.GET("/validasi/:id", valHandler.GetDetail)
+			api.POST("/validasi", valHandler.Ajukan)
+			api.POST("/validasi/:id/keputusan", valHandler.Putuskan)
 		}
 	}
 

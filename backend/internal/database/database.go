@@ -44,6 +44,7 @@ func Connect(dsn string, isDevelopment bool) (*gorm.DB, error) {
 		&domain.Aplikasi{},
 		&domain.Flowchart{},
 		&domain.FlowchartRiwayat{},
+		&domain.PengajuanValidasi{},
 	); err != nil {
 		return nil, err
 	}

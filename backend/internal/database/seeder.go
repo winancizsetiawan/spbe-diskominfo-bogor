@@ -226,6 +226,53 @@ func SeedData(db *gorm.DB) error {
 		}
 	}
 
-	log.Println("Seeder data master instansi, pengguna, RAA, dan aplikasi siap.")
+	// 5. Seeder Data Pengajuan Validasi Awal
+	var valCount int64
+	if err := db.Model(&domain.PengajuanValidasi{}).Count(&valCount).Error; err != nil {
+		return err
+	}
+
+	if valCount == 0 {
+		log.Println("Mengisi data contoh pengajuan validasi...")
+		targetSIMRS := uint(3)
+		targetEPuskesmas := uint(2)
+		targetSIKDA := uint(1)
+
+		validasiList := []domain.PengajuanValidasi{
+			{
+				ID:         1,
+				JenisData:  domain.JenisDataAplikasi,
+				Status:     domain.StatusMenunggu,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetSIMRS,
+				Pengaju:    "Ajri Dalae",
+			},
+			{
+				ID:         2,
+				JenisData:  domain.JenisDataRaa,
+				Status:     domain.StatusPerluRevisi,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetEPuskesmas,
+				Pengaju:    "Ajri Dalae",
+				Catatan:    strPtr("Lengkapi RAA Level 3 sesuai pedoman."),
+			},
+			{
+				ID:         3,
+				JenisData:  domain.JenisDataAplikasi,
+				Status:     domain.StatusDisetujui,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetSIKDA,
+				Pengaju:    "Ajri Dalae",
+			},
+		}
+
+		for _, v := range validasiList {
+			if err := db.Where("id = ?", v.ID).FirstOrCreate(&v).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, dan validasi siap.")
 	return nil
 }
