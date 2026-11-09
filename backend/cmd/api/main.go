@@ -71,6 +71,10 @@ func main() {
 			forumService := service.NewForumService(forumRepo)
 			forumHandler := handler.NewForumHandler(forumService)
 
+			sistemRepo := repository.NewSistemRepository(db)
+			sistemService := service.NewSistemService(sistemRepo)
+			sistemHandler := handler.NewSistemHandler(sistemService)
+
 			// Rute Referensi Master
 			api.GET("/referensi/instansi", referensiHandler.GetInstansi)
 			api.GET("/referensi/raa", katalogHandler.GetReferensiRaa)
@@ -119,6 +123,17 @@ func main() {
 			api.POST("/forum/laporan", forumHandler.BuatLaporan)
 			api.GET("/moderasi", forumHandler.ListModerasi)
 			api.POST("/moderasi/tindakan", forumHandler.TindakanModerasi)
+
+			// Rute Sistem (Audit Trail, Backup, Periode Pembaruan Data) & Kritik Saran
+			api.GET("/audit", sistemHandler.ListAudit)
+			api.GET("/backup", sistemHandler.GetBackup)
+			api.POST("/backup", sistemHandler.MulaiBackup)
+			api.GET("/periode", sistemHandler.GetPeriode)
+			api.POST("/periode", sistemHandler.BuatPeriode)
+			api.PUT("/periode/:id", sistemHandler.UbahPeriode)
+			api.DELETE("/periode/:id", sistemHandler.HapusPeriode)
+			api.POST("/kritik", sistemHandler.KirimKritik)
+			api.GET("/kritik", sistemHandler.ListKritik)
 		}
 	}
 

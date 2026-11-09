@@ -25,6 +25,19 @@ func jamLalu(jam int) time.Time {
 	return time.Now().Add(-time.Duration(jam) * time.Hour)
 }
 
+func floatPtr(f float64) *float64 {
+	return &f
+}
+
+func tglGeser(hari int) string {
+	return time.Now().AddDate(0, 0, hari).Format("2006-01-02")
+}
+
+func pukulDuaHariLalu(hari int) time.Time {
+	t := time.Now().AddDate(0, 0, -hari)
+	return time.Date(t.Year(), t.Month(), t.Day(), 2, 0, 0, 0, t.Location())
+}
+
 // SeedData mengisi data master instansi dan akun demo jika tabel masih kosong
 func SeedData(db *gorm.DB) error {
 	// 1. Seeder Data Instansi / OPD
@@ -426,6 +439,103 @@ func SeedData(db *gorm.DB) error {
 		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_laporan', 'id'), COALESCE((SELECT MAX(id) FROM forum_laporan), 1), true);").Error
 	}
 
-	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, dan forum siap.")
+	// 8. Seeder Audit Log, Riwayat Backup, Periode Pembaruan, dan Kritik Saran
+	var auditCount int64
+	if err := db.Model(&domain.AuditLog{}).Count(&auditCount).Error; err != nil {
+		return err
+	}
+	if auditCount == 0 {
+		log.Println("Mengisi data awal audit trail...")
+		ipDefault := "180.244.132.84"
+		auditList := []domain.AuditLog{
+			{ID: 1, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(1), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 2, UserID: uintPtr(1), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh Peraturan Presiden No. 95 Tahun 2018 tentang SPBE", Waktu: jamLalu(20), Hasil: domain.HasilBerhasil},
+			{ID: 3, UserID: uintPtr(1), Aksi: domain.AksiBalasan, Deskripsi: "Membalas thread: Rekomendasi tools open source untuk arsitektur domain", Waktu: jamLalu(29), Hasil: domain.HasilBerhasil},
+			{ID: 4, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(30), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 5, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: kata sandi salah", Waktu: jamLalu(78), IpAddress: strPtr("36.72.14.201"), Hasil: domain.HasilGagal},
+			{ID: 6, UserID: uintPtr(1), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh SOP Keamanan Informasi", Waktu: jamLalu(80), Hasil: domain.HasilBerhasil},
+			{ID: 7, UserID: uintPtr(2), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(4), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 8, UserID: uintPtr(3), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(2), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 9, UserID: uintPtr(3), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh Template RAA Aplikasi Pemerintah", Waktu: jamLalu(23), Hasil: domain.HasilBerhasil},
+			{ID: 10, UserID: uintPtr(4), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(1), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 11, UserID: nil, Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: akun tidak terdaftar", Waktu: jamLalu(10), IpAddress: strPtr("103.28.12.77"), Hasil: domain.HasilGagal},
+			{ID: 12, UserID: nil, Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: akun tidak terdaftar", Waktu: jamLalu(10), IpAddress: strPtr("103.28.12.77"), Hasil: domain.HasilGagal},
+			{ID: 13, UserID: uintPtr(2), Aksi: domain.AksiAksesDitolak, Deskripsi: "Membuka Validasi Data tanpa hak akses", Waktu: jamLalu(15), IpAddress: strPtr(ipDefault), Hasil: domain.HasilGagal},
+			{ID: 14, UserID: uintPtr(3), Aksi: domain.AksiAplikasi, Deskripsi: "Mengubah data aplikasi SIMRS Rujukan", Waktu: jamLalu(26), Hasil: domain.HasilBerhasil},
+			{ID: 15, UserID: uintPtr(3), Aksi: domain.AksiValidasi, Deskripsi: "Mengajukan validasi: SIMRS Rujukan", Waktu: jamLalu(27), Hasil: domain.HasilBerhasil},
+			{ID: 16, UserID: uintPtr(4), Aksi: domain.AksiDokumen, Deskripsi: "Mengunggah dokumen: Draf Pedoman Klasifikasi RAA", Waktu: jamLalu(48), Hasil: domain.HasilBerhasil},
+			{ID: 17, UserID: uintPtr(4), Aksi: domain.AksiModerasi, Deskripsi: "Menyembunyikan balasan yang dilaporkan", Waktu: jamLalu(52), Hasil: domain.HasilBerhasil},
+			{ID: 18, UserID: uintPtr(4), Aksi: domain.AksiBackup, Deskripsi: "Backup otomatis harian selesai", Waktu: jamLalu(20), Hasil: domain.HasilBerhasil},
+		}
+		for _, a := range auditList {
+			if err := db.Where("id = ?", a.ID).FirstOrCreate(&a).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('audit_log', 'id'), COALESCE((SELECT MAX(id) FROM audit_log), 1), true);").Error
+	}
+
+	var backupCount int64
+	if err := db.Model(&domain.RiwayatBackup{}).Count(&backupCount).Error; err != nil {
+		return err
+	}
+	if backupCount == 0 {
+		log.Println("Mengisi data awal riwayat backup...")
+		backupList := []domain.RiwayatBackup{
+			{ID: 1, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(812.4), Waktu: pukulDuaHariLalu(7)},
+			{ID: 2, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(815.1), Waktu: pukulDuaHariLalu(6)},
+			{ID: 3, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupGagal, Waktu: pukulDuaHariLalu(5), PesanGagal: strPtr("Ruang penyimpanan tidak mencukupi.")},
+			{ID: 4, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(821.9), Waktu: pukulDuaHariLalu(4)},
+			{ID: 5, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(824.0), Waktu: pukulDuaHariLalu(3)},
+			{ID: 6, Tipe: domain.BackupManual, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(826.3), Oleh: strPtr("Derto"), Waktu: jamLalu(60)},
+			{ID: 7, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(829.8), Waktu: jamLalu(8)},
+		}
+		for _, b := range backupList {
+			if err := db.Where("id = ?", b.ID).FirstOrCreate(&b).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('riwayat_backup', 'id'), COALESCE((SELECT MAX(id) FROM riwayat_backup), 1), true);").Error
+	}
+
+	var periodeCount int64
+	if err := db.Model(&domain.PeriodePembaruan{}).Count(&periodeCount).Error; err != nil {
+		return err
+	}
+	if periodeCount == 0 {
+		log.Println("Mengisi data awal periode pembaruan data...")
+		periodeList := []domain.PeriodePembaruan{
+			{ID: 1, Nama: "Triwulan II 2026", TanggalMulai: tglGeser(-120), Tenggat: tglGeser(-30), DibuatOleh: "Derto"},
+			{ID: 2, Nama: "Triwulan III 2026", TanggalMulai: tglGeser(-27), Tenggat: tglGeser(5), DibuatOleh: "Derto"},
+			{ID: 3, Nama: "Triwulan IV 2026", TanggalMulai: tglGeser(20), Tenggat: tglGeser(80), DibuatOleh: "Derto"},
+		}
+		for _, p := range periodeList {
+			if err := db.Where("id = ?", p.ID).FirstOrCreate(&p).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('periode_pembaruan', 'id'), COALESCE((SELECT MAX(id) FROM periode_pembaruan), 1), true);").Error
+	}
+
+	var kritikCount int64
+	if err := db.Model(&domain.KritikSaran{}).Count(&kritikCount).Error; err != nil {
+		return err
+	}
+	if kritikCount == 0 {
+		log.Println("Mengisi data awal kritik dan saran...")
+		kritikAwal := domain.KritikSaran{
+			ID:         1,
+			Nama:       "Warga Bogor",
+			Email:      "warga@example.com",
+			Pesan:      "Mohon tambahkan lebih banyak panduan video untuk pengguna baru.",
+			DibuatPada: hariLalu(3),
+		}
+		if err := db.Where("id = ?", kritikAwal.ID).FirstOrCreate(&kritikAwal).Error; err != nil {
+			return err
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kritik_saran', 'id'), COALESCE((SELECT MAX(id) FROM kritik_saran), 1), true);").Error
+	}
+
+	log.Println("Seeder data master instansi, pengguna, RAA, aplikasi, validasi, dokumen, forum, dan sistem siap.")
 	return nil
 }
