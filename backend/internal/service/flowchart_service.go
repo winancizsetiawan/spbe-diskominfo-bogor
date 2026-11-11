@@ -128,7 +128,7 @@ func (s *flowchartService) Create(input domain.FlowchartInput, instansiID uint, 
 	}
 
 	// Simpan via repository
-	if err := s.repo.Create(fc, input.IDAplikasi); err != nil {
+	if err := s.repo.Create(fc, input.IDAplikasi, input.IDSop); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +179,7 @@ func (s *flowchartService) Update(id uint, input domain.FlowchartInput, oleh str
 	fc.Riwayat = append(fc.Riwayat, riwayatBaru)
 
 	// Simpan pembaruan via repository
-	if err := s.repo.Update(fc, input.IDAplikasi); err != nil {
+	if err := s.repo.Update(fc, input.IDAplikasi, input.IDSop); err != nil {
 		return nil, err
 	}
 

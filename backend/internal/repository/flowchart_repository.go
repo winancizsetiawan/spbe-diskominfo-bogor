@@ -8,8 +8,8 @@ import (
 type FlowchartRepository interface {
 	FindAll(filter domain.FlowchartFilter, pageSize int) ([]domain.Flowchart, int64, error)
 	FindByID(id uint) (*domain.Flowchart, error)
-	Create(fc *domain.Flowchart, idAplikasi []uint) error
-	Update(fc *domain.Flowchart, idAplikasi []uint) error
+	Create(fc *domain.Flowchart, idAplikasi []uint, idSop []uint) error
+	Update(fc *domain.Flowchart, idAplikasi []uint, idSop []uint) error
 	GetHitungan(instansiID *uint) (*domain.HitunganFlowchart, error)
 	GetNextSequence() (int64, error)
 }
@@ -67,10 +67,15 @@ func (r *flowchartRepository) FindAll(filter domain.FlowchartFilter, pageSize in
 	// Eksekusi Query dengan Preload, Order, Limit, dan Offset
 	err := query.Preload("Instansi").
 		Preload("Aplikasi").
+		Preload("SopDokumen").
 		Order("diperbarui_pada DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&flowcharts).Error
+
+	for i := range flowcharts {
+		flowcharts[i].SiapkanRelasiJSON()
+	}
 
 	return flowcharts, total, err
 }
@@ -81,6 +86,7 @@ func (r *flowchartRepository) FindByID(id uint) (*domain.Flowchart, error) {
 
 	err := r.db.Preload("Instansi").
 		Preload("Aplikasi").
+		Preload("SopDokumen").
 		Preload("Riwayat", func(db *gorm.DB) *gorm.DB {
 			return db.Order("tanggal DESC") // Mengurutkan riwayat dari yang terbaru
 		}).
@@ -90,11 +96,12 @@ func (r *flowchartRepository) FindByID(id uint) (*domain.Flowchart, error) {
 		return nil, err
 	}
 
+	fc.SiapkanRelasiJSON()
 	return &fc, nil
 }
 
 // 3. Create
-func (r *flowchartRepository) Create(fc *domain.Flowchart, idAplikasi []uint) error {
+func (r *flowchartRepository) Create(fc *domain.Flowchart, idAplikasi []uint, idSop []uint) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Simpan flowchart ke tabel utama
 		if err := tx.Create(fc).Error; err != nil {
@@ -112,12 +119,23 @@ func (r *flowchartRepository) Create(fc *domain.Flowchart, idAplikasi []uint) er
 			}
 		}
 
+		// Jika ada relasi SOP, simpan ke tabel pivot (many-to-many)
+		if len(idSop) > 0 {
+			var sops []domain.Dokumen
+			if err := tx.Where("id IN ?", idSop).Find(&sops).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(fc).Association("SopDokumen").Replace(sops); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 }
 
 // 4. Update
-func (r *flowchartRepository) Update(fc *domain.Flowchart, idAplikasi []uint) error {
+func (r *flowchartRepository) Update(fc *domain.Flowchart, idAplikasi []uint, idSop []uint) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Perbarui data flowchart
 		if err := tx.Save(fc).Error; err != nil {
@@ -131,9 +149,18 @@ func (r *flowchartRepository) Update(fc *domain.Flowchart, idAplikasi []uint) er
 				return err
 			}
 		}
-		
-		// Replace akan otomatis sinkronisasi: menambah yang baru dan menghapus yang tidak ada di list
 		if err := tx.Model(fc).Association("Aplikasi").Replace(apps); err != nil {
+			return err
+		}
+
+		// Perbarui relasi SOP
+		var sops []domain.Dokumen
+		if len(idSop) > 0 {
+			if err := tx.Where("id IN ?", idSop).Find(&sops).Error; err != nil {
+				return err
+			}
+		}
+		if err := tx.Model(fc).Association("SopDokumen").Replace(sops); err != nil {
 			return err
 		}
 

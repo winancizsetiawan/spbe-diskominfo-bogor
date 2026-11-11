@@ -18,6 +18,11 @@ const (
 	JenisToBe JenisProses = "to_be"
 )
 
+type FlowchartSopDTO struct {
+	ID    uint   `json:"id"`
+	Judul string `json:"judul"`
+}
+
 type Flowchart struct {
 	ID              uint               `gorm:"primaryKey" json:"id"`
 	Kode            string             `gorm:"size:30;not null;uniqueIndex" json:"kode"`
@@ -34,7 +39,25 @@ type Flowchart struct {
 	BpmnXml         string             `gorm:"type:text" json:"bpmnXml,omitempty"`
 	DiperbaruiPada  time.Time          `gorm:"autoUpdateTime" json:"diperbaruiPada"`
 	Aplikasi        []Aplikasi         `gorm:"many2many:flowchart_aplikasi;" json:"aplikasi"`
-	Riwayat         []FlowchartRiwayat `gorm:"foreignKey:FlowchartID" json:"riwayat,omitempty"`
+	SopDokumen      []Dokumen          `gorm:"many2many:flowchart_dokumen;" json:"-"`
+	Sop             []FlowchartSopDTO  `gorm:"-" json:"sop"`
+	Riwayat         []FlowchartRiwayat `gorm:"foreignKey:FlowchartID" json:"riwayat"`
+}
+
+func (f *Flowchart) SiapkanRelasiJSON() {
+	if f.Aplikasi == nil {
+		f.Aplikasi = []Aplikasi{}
+	}
+	if f.Riwayat == nil {
+		f.Riwayat = []FlowchartRiwayat{}
+	}
+	f.Sop = make([]FlowchartSopDTO, 0, len(f.SopDokumen))
+	for _, d := range f.SopDokumen {
+		f.Sop = append(f.Sop, FlowchartSopDTO{
+			ID:    d.ID,
+			Judul: d.Judul,
+		})
+	}
 }
 
 func (Flowchart) TableName() string {

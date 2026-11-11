@@ -55,17 +55,17 @@ func main() {
 			aplService := service.NewAplikasiService(aplRepo, raaRepo)
 			katalogHandler := handler.NewKatalogHandler(aplService)
 
+			dokRepo := repository.NewDokumenRepository(db)
+			dokService := service.NewDokumenService(dokRepo)
+			dokHandler := handler.NewDokumenHandler(dokService)
+
 			fcRepo := repository.NewFlowchartRepository(db)
 			fcService := service.NewFlowchartService(fcRepo)
-			fcHandler := handler.NewFlowchartHandler(fcService, aplService)
+			fcHandler := handler.NewFlowchartHandler(fcService, aplService, dokService)
 
 			valRepo := repository.NewValidasiRepository(db)
 			valService := service.NewValidasiService(valRepo)
 			valHandler := handler.NewValidasiHandler(valService)
-
-			dokRepo := repository.NewDokumenRepository(db)
-			dokService := service.NewDokumenService(dokRepo)
-			dokHandler := handler.NewDokumenHandler(dokService)
 
 			forumRepo := repository.NewForumRepository(db)
 			forumService := service.NewForumService(forumRepo)

@@ -15,13 +15,15 @@ import (
 type FlowchartHandler struct {
 	flowchartService service.FlowchartService
 	aplikasiService  service.AplikasiService
+	dokumenService   *service.DokumenService
 }
 
 // Constructor
-func NewFlowchartHandler(fcService service.FlowchartService, aplService service.AplikasiService) *FlowchartHandler {
+func NewFlowchartHandler(fcService service.FlowchartService, aplService service.AplikasiService, dokService *service.DokumenService) *FlowchartHandler {
 	return &FlowchartHandler{
 		flowchartService: fcService,
 		aplikasiService:  aplService,
+		dokumenService:   dokService,
 	}
 }
 
@@ -30,20 +32,39 @@ func NewFlowchartHandler(fcService service.FlowchartService, aplService service.
 // GetOpsi mengembalikan pilihan aplikasi (dan SOP) untuk keperluan dropdown di form frontend
 func (h *FlowchartHandler) GetOpsi(c *gin.Context) {
 	daftarApl, err := h.aplikasiService.GetDaftar(domain.AplikasiFilter{Page: 1})
-	type OpsiItem struct {
+	type OpsiAplikasi struct {
 		ID   uint   `json:"id"`
 		Nama string `json:"nama"`
 	}
-	opsiAplikasi := []OpsiItem{}
+	opsiAplikasi := []OpsiAplikasi{}
 	if err == nil && daftarApl != nil {
 		for _, a := range daftarApl.Items {
-			opsiAplikasi = append(opsiAplikasi, OpsiItem{ID: a.ID, Nama: a.Nama})
+			opsiAplikasi = append(opsiAplikasi, OpsiAplikasi{ID: a.ID, Nama: a.Nama})
+		}
+	}
+
+	type OpsiSop struct {
+		ID    uint   `json:"id"`
+		Judul string `json:"judul"`
+	}
+	opsiSop := []OpsiSop{}
+	if h.dokumenService != nil {
+		daftarSop, errSop := h.dokumenService.List(domain.DokumenFilter{
+			Page:       1,
+			PerPage:    100,
+			Kelompok:   domain.KelompokSOP,
+			SudahLogin: true,
+		})
+		if errSop == nil {
+			for _, d := range daftarSop.Items {
+				opsiSop = append(opsiSop, OpsiSop{ID: d.ID, Judul: d.Judul})
+			}
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"aplikasi": opsiAplikasi,
-		"sop":      []interface{}{},
+		"sop":      opsiSop,
 	})
 }
 
