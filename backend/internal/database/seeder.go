@@ -2,85 +2,695 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"spbe-backend/internal/domain"
 
 	"gorm.io/gorm"
 )
 
+func strPtr(s string) *string {
+	return &s
+}
+
+func uintPtr(u uint) *uint {
+	return &u
+}
+
+func hariLalu(hari int) time.Time {
+	return time.Now().AddDate(0, 0, -hari)
+}
+
+func jamLalu(jam int) time.Time {
+	return time.Now().Add(-time.Duration(jam) * time.Hour)
+}
+
+func floatPtr(f float64) *float64 {
+	return &f
+}
+
+func tglGeser(hari int) string {
+	return time.Now().AddDate(0, 0, hari).Format("2006-01-02")
+}
+
+func pukulDuaHariLalu(hari int) time.Time {
+	t := time.Now().AddDate(0, 0, -hari)
+	return time.Date(t.Year(), t.Month(), t.Day(), 2, 0, 0, 0, t.Location())
+}
+
 // SeedData mengisi data master instansi dan akun demo jika tabel masih kosong
 func SeedData(db *gorm.DB) error {
-	var count int64
-	if err := db.Model(&domain.Instansi{}).Count(&count).Error; err != nil {
+	// 1. Seeder Data Instansi / OPD
+	var instansiCount int64
+	if err := db.Model(&domain.Instansi{}).Count(&instansiCount).Error; err != nil {
 		return err
 	}
 
-	if count > 0 {
-		return nil // Data sudah ada
-	}
+	if instansiCount == 0 {
+		log.Println("Mengisi data master instansi awal...")
+		instansiList := []domain.Instansi{
+			{ID: 1, Nama: "Diskominfo Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 2, Nama: "Dinas Kesehatan Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 3, Nama: "Bapenda Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 4, Nama: "Bappeda Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 5, Nama: "BKPSDM Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 6, Nama: "DPMPTSP Kota Bogor", Jenis: domain.JenisOPD},
+			{ID: 10, Nama: "Perguruan Tinggi Mitra", Jenis: domain.JenisPerguruanTinggi},
+		}
 
-	log.Println("Menjalankan seeder data awal master instansi dan pengguna demo...")
-
-	// 1. Data Instansi / OPD
-	instansiList := []domain.Instansi{
-		{ID: 1, Nama: "Diskominfo Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 2, Nama: "Dinas Kesehatan Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 3, Nama: "Bapenda Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 4, Nama: "Bappeda Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 5, Nama: "BKPSDM Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 6, Nama: "DPMPTSP Kota Bogor", Jenis: domain.JenisOPD},
-		{ID: 10, Nama: "Perguruan Tinggi Mitra", Jenis: domain.JenisPerguruanTinggi},
-	}
-
-	for _, inst := range instansiList {
-		if err := db.FirstOrCreate(&inst, domain.Instansi{ID: inst.ID}).Error; err != nil {
-			return err
+		for _, inst := range instansiList {
+			if err := db.Where("id = ?", inst.ID).FirstOrCreate(&inst).Error; err != nil {
+				return err
+			}
 		}
 	}
 
-	// 2. Data Pengguna Demo (sesuai yang dipakai di frontend mock)
-	users := []domain.User{
-		{
+	// 2. Seeder Data Pengguna Demo (sesuai yang dipakai di frontend mock)
+	var userCount int64
+	if err := db.Model(&domain.User{}).Count(&userCount).Error; err != nil {
+		return err
+	}
+
+	if userCount < 4 {
+		log.Println("Mengisi data pengguna demo awal...")
+		users := []domain.User{
+			{
+				ID:          1,
+				KeycloakSub: strPtr("mock-sub-1"),
+				Nama:        "Andi Pratama",
+				Email:       "andi.pratama@example.go.id",
+				Role:        domain.RoleASN,
+				StatusAkun:  domain.StatusAktif,
+				InstansiID:  1,
+			},
+			{
+				ID:          2,
+				KeycloakSub: strPtr("mock-sub-2"),
+				Nama:        "Siti Rahma",
+				Email:       "siti.rahma@example.ac.id",
+				Role:        domain.RoleAkademisi,
+				StatusAkun:  domain.StatusAktif,
+				InstansiID:  10,
+			},
+			{
+				ID:          3,
+				KeycloakSub: strPtr("mock-sub-3"),
+				Nama:        "Ajri Dalae",
+				Email:       "ajri.dalae@example.go.id",
+				Role:        domain.RoleAdminOPD,
+				StatusAkun:  domain.StatusAktif,
+				InstansiID:  2,
+			},
+			{
+				ID:          4,
+				KeycloakSub: strPtr("mock-sub-4"),
+				Nama:        "Derto",
+				Email:       "derto@example.go.id",
+				Role:        domain.RoleSuperAdmin,
+				StatusAkun:  domain.StatusAktif,
+				InstansiID:  1,
+			},
+		}
+
+		for _, u := range users {
+			var existing domain.User
+			if err := db.Where("email = ?", u.Email).First(&existing).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					if err := db.Create(&u).Error; err != nil {
+						return err
+					}
+				}
+			} else {
+				// Pastikan keycloak_sub terisi dengan unik
+				if existing.KeycloakSub == nil || *existing.KeycloakSub == "" {
+					db.Model(&existing).Update("keycloak_sub", u.KeycloakSub)
+				}
+			}
+		}
+	}
+
+	// 3. Seeder Pohon Referensi Arsitektur Aplikasi (RAA)
+	var raaCount int64
+	if err := db.Model(&domain.NodeRaa{}).Count(&raaCount).Error; err != nil {
+		return err
+	}
+
+	if raaCount == 0 {
+		log.Println("Mengisi data master pohon RAA...")
+		nodes := []domain.NodeRaa{
+			// Level 1
+			{Kode: "1", Nama: "Layanan Publik", Level: 1, ParentKode: nil},
+			{Kode: "2", Nama: "Administrasi Pemerintahan", Level: 1, ParentKode: nil},
+
+			// Level 2
+			{Kode: "1.1", Nama: "Kesehatan", Level: 2, ParentKode: strPtr("1")},
+			{Kode: "1.2", Nama: "Perizinan dan Pengaduan", Level: 2, ParentKode: strPtr("1")},
+			{Kode: "2.1", Nama: "Kepegawaian", Level: 2, ParentKode: strPtr("2")},
+			{Kode: "2.2", Nama: "Keuangan dan Pendapatan", Level: 2, ParentKode: strPtr("2")},
+			{Kode: "2.3", Nama: "Persuratan dan Data", Level: 2, ParentKode: strPtr("2")},
+
+			// Level 3
+			{Kode: "1.1.1", Nama: "Pelayanan Kesehatan Dasar", Level: 3, ParentKode: strPtr("1.1")},
+			{Kode: "1.1.2", Nama: "Rujukan dan Rumah Sakit", Level: 3, ParentKode: strPtr("1.1")},
+			{Kode: "1.1.3", Nama: "Surveilans dan Imunisasi", Level: 3, ParentKode: strPtr("1.1")},
+			{Kode: "1.2.1", Nama: "Perizinan Berusaha", Level: 3, ParentKode: strPtr("1.2")},
+			{Kode: "1.2.2", Nama: "Pengaduan Masyarakat", Level: 3, ParentKode: strPtr("1.2")},
+			{Kode: "2.1.1", Nama: "Manajemen ASN", Level: 3, ParentKode: strPtr("2.1")},
+			{Kode: "2.1.2", Nama: "Kinerja ASN", Level: 3, ParentKode: strPtr("2.1")},
+			{Kode: "2.2.1", Nama: "Pengelolaan Pajak Daerah", Level: 3, ParentKode: strPtr("2.2")},
+			{Kode: "2.2.2", Nama: "Penganggaran", Level: 3, ParentKode: strPtr("2.2")},
+			{Kode: "2.3.1", Nama: "Tata Naskah Dinas", Level: 3, ParentKode: strPtr("2.3")},
+			{Kode: "2.3.2", Nama: "Data dan Statistik", Level: 3, ParentKode: strPtr("2.3")},
+		}
+
+		for _, n := range nodes {
+			if err := db.Where("kode = ?", n.Kode).FirstOrCreate(&n).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	// 4. Seeder Contoh Aplikasi
+	var aplCount int64
+	if err := db.Model(&domain.Aplikasi{}).Count(&aplCount).Error; err != nil {
+		return err
+	}
+
+	if aplCount == 0 {
+		log.Println("Mengisi data contoh katalog aplikasi...")
+		aplikasiList := []domain.Aplikasi{
+			{
+				ID:             1,
+				InstansiID:     2, // Dinas Kesehatan
+				Nama:           "SIKDA",
+				Deskripsi:      "Sistem informasi kesehatan daerah untuk puskesmas.",
+				Kategori:       strPtr("Pelayanan Publik"),
+				RaaLevel1:      strPtr("1"),
+				RaaLevel2:      strPtr("1.1"),
+				RaaLevel3:      strPtr("1.1.1"),
+				StatusValidasi: domain.StatusDisetujui,
+			},
+			{
+				ID:              2,
+				InstansiID:      2, // Dinas Kesehatan
+				Nama:            "e-Puskesmas",
+				Deskripsi:       "Rekam medis elektronik puskesmas.",
+				Kategori:        strPtr("Pelayanan Publik"),
+				RaaLevel1:       strPtr("1"),
+				RaaLevel2:       strPtr("1.1"),
+				StatusValidasi:  domain.StatusPerluRevisi,
+				CatatanValidasi: strPtr("Lengkapi RAA Level 3 sesuai pedoman."),
+			},
+			{
+				ID:             3,
+				InstansiID:     2, // Dinas Kesehatan
+				Nama:           "SIMRS Rujukan",
+				Deskripsi:      "Pengelolaan rujukan pasien antar-fasilitas kesehatan.",
+				Kategori:       strPtr("Pelayanan Publik"),
+				RaaLevel1:      strPtr("1"),
+				RaaLevel2:      strPtr("1.1"),
+				RaaLevel3:      strPtr("1.1.2"),
+				StatusValidasi: domain.StatusMenunggu,
+			},
+			{
+				ID:             4,
+				InstansiID:     2, // Dinas Kesehatan
+				Nama:           "Sehat Bogor Mobile",
+				Deskripsi:      "Aplikasi informasi layanan kesehatan untuk warga.",
+				Kategori:       strPtr("Pelayanan Publik"),
+				StatusValidasi: domain.StatusDraft,
+			},
+			{
+				ID:             5,
+				InstansiID:     1, // Diskominfo
+				Nama:           "Portal Satu Data",
+				Deskripsi:      "Portal data sektoral Kota Bogor.",
+				Kategori:       strPtr("Manajemen"),
+				RaaLevel1:      strPtr("2"),
+				RaaLevel2:      strPtr("2.3"),
+				RaaLevel3:      strPtr("2.3.2"),
+				StatusValidasi: domain.StatusDisetujui,
+			},
+			{
+				ID:             6,
+				InstansiID:     3, // Bapenda
+				Nama:           "e-SPPT PBB",
+				Deskripsi:      "Penyampaian SPPT PBB secara elektronik kepada wajib pajak.",
+				Kategori:       strPtr("Pelayanan Publik"),
+				RaaLevel1:      strPtr("2"),
+				RaaLevel2:      strPtr("2.2"),
+				RaaLevel3:      strPtr("2.2.1"),
+				StatusValidasi: domain.StatusDisetujui,
+			},
+		}
+
+		for _, apl := range aplikasiList {
+			apl.HitungKesesuaian()
+			if err := db.Where("id = ?", apl.ID).FirstOrCreate(&apl).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	// 5. Seeder Data Pengajuan Validasi Awal
+	var valCount int64
+	if err := db.Model(&domain.PengajuanValidasi{}).Count(&valCount).Error; err != nil {
+		return err
+	}
+
+	if valCount == 0 {
+		log.Println("Mengisi data contoh pengajuan validasi...")
+		targetSIMRS := uint(3)
+		targetEPuskesmas := uint(2)
+		targetSIKDA := uint(1)
+
+		validasiList := []domain.PengajuanValidasi{
+			{
+				ID:         1,
+				JenisData:  domain.JenisDataAplikasi,
+				Status:     domain.StatusMenunggu,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetSIMRS,
+				Pengaju:    "Ajri Dalae",
+			},
+			{
+				ID:         2,
+				JenisData:  domain.JenisDataRaa,
+				Status:     domain.StatusPerluRevisi,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetEPuskesmas,
+				Pengaju:    "Ajri Dalae",
+				Catatan:    strPtr("Lengkapi RAA Level 3 sesuai pedoman."),
+			},
+			{
+				ID:         3,
+				JenisData:  domain.JenisDataAplikasi,
+				Status:     domain.StatusDisetujui,
+				InstansiID: 2, // Dinas Kesehatan
+				AplikasiID: &targetSIKDA,
+				Pengaju:    "Ajri Dalae",
+			},
+		}
+
+		for _, v := range validasiList {
+			if err := db.Where("id = ?", v.ID).FirstOrCreate(&v).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	// 6. Seeder Kategori SOP & Dokumen Repositori
+	var katCount int64
+	if err := db.Model(&domain.KategoriDokumen{}).Count(&katCount).Error; err != nil {
+		return err
+	}
+
+	if katCount == 0 {
+		log.Println("Mengisi data master kategori SOP...")
+		kategoriList := []domain.KategoriDokumen{
+			{ID: 10, Nama: "Manajemen Aplikasi"},
+			{ID: 11, Nama: "Keamanan Informasi"},
+			{ID: 12, Nama: "Layanan Publik"},
+		}
+		for _, k := range kategoriList {
+			if err := db.Where("id = ?", k.ID).FirstOrCreate(&k).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	var dokCount int64
+	if err := db.Model(&domain.Dokumen{}).Count(&dokCount).Error; err != nil {
+		return err
+	}
+
+	if dokCount == 0 {
+		log.Println("Mengisi data awal repositori dokumen & SOP...")
+		dokumenList := []domain.Dokumen{
+			{ID: 1, Jenis: domain.JenisRegulasi, Judul: "Peraturan Presiden No. 95 Tahun 2018 tentang SPBE", Deskripsi: "Dasar hukum penyelenggaraan Sistem Pemerintahan Berbasis Elektronik di instansi pusat dan pemerintah daerah.", TipeBerkas: domain.TipePDF, UkuranMb: 2.4, Versi: "1.0", Sumber: strPtr("Sekretariat Negara"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 12340, TanggalRilis: hariLalu(140)},
+			{ID: 2, Jenis: domain.JenisPedoman, Judul: "Pedoman Penyusunan Arsitektur SPBE Pemerintah Daerah", Deskripsi: "Panduan menyusun arsitektur proses bisnis, data, aplikasi, infrastruktur, dan keamanan SPBE di tingkat daerah.", TipeBerkas: domain.TipeDOCX, UkuranMb: 1.8, Versi: "2.1", Sumber: strPtr("Kementerian PANRB"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 8920, TanggalRilis: hariLalu(95)},
+			{ID: 3, Jenis: domain.JenisTemplate, Judul: "Template RAA Aplikasi Pemerintah", Deskripsi: "Lembar kerja untuk mendata dan mengklasifikasikan aplikasi ke dalam Referensi Arsitektur Aplikasi Level 1–3.", TipeBerkas: domain.TipeXLSX, UkuranMb: 0.9, Versi: "1.2", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 4210, TanggalRilis: hariLalu(60)},
+			{ID: 4, Jenis: domain.JenisLaporan, Judul: "Laporan Evaluasi Indeks SPBE Nasional Tahun 2023", Deskripsi: "Hasil evaluasi nasional beserta rekomendasi peningkatan domain kebijakan, tata kelola, layanan, dan manajemen pengetahuan.", TipeBerkas: domain.TipePDF, UkuranMb: 3.1, Versi: "1.0", Sumber: strPtr("Kementerian PANRB"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 2980, TanggalRilis: hariLalu(210)},
+			{ID: 5, Jenis: domain.JenisPresentasi, Judul: "Paparan Peta Rencana SPBE Kota Bogor 2025–2030", Deskripsi: "Materi paparan arah kebijakan dan program SPBE Kota Bogor, termasuk program Pengembangan Aplikasi Manajemen Pengetahuan.", TipeBerkas: domain.TipePPTX, UkuranMb: 5.6, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 640, TanggalRilis: hariLalu(35)},
+			{ID: 6, Jenis: domain.JenisRegulasi, Judul: "Peraturan Wali Kota Bogor tentang Tata Naskah Dinas", Deskripsi: "Ketentuan format, penomoran, dan tata cara penyelenggaraan naskah dinas di lingkungan Pemerintah Kota Bogor.", TipeBerkas: domain.TipePDF, UkuranMb: 1.2, Versi: "1.0", Sumber: strPtr("Pemerintah Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 1520, TanggalRilis: hariLalu(300)},
+			{ID: 7, Jenis: domain.JenisPanduan, Judul: "Panduan Teknis Integrasi Aplikasi melalui SPLP", Deskripsi: "Langkah teknis mendaftarkan dan menghubungkan aplikasi OPD ke Sistem Penghubung Layanan Pemerintah Kota Bogor.", TipeBerkas: domain.TipePDF, UkuranMb: 2.9, Versi: "1.1", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 1870, TanggalRilis: hariLalu(48)},
+			{ID: 8, Jenis: domain.JenisLaporan, Judul: "Laporan Standardisasi Aplikasi Triwulan II", Deskripsi: "Rekap hasil asesmen standardisasi aplikasi OPD pada triwulan II.", TipeBerkas: domain.TipePDF, UkuranMb: 1.7, Versi: "0.9", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 310, TanggalRilis: hariLalu(12)},
+			{ID: 9, Jenis: domain.JenisSOP, Judul: "SOP Manajemen Aplikasi Pemerintahan", Deskripsi: "Tata kelola siklus pengembangan, pengujian kelayakan kode, dan pemeliharaan interoperabilitas aplikasi pemerintah.", TipeBerkas: domain.TipePDF, UkuranMb: 2.1, Versi: "2.4", Sumber: strPtr("Revisi Kemenkominfo"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 6450, IdKategori: uintPtr(10), TanggalRilis: hariLalu(16)},
+			{ID: 10, Jenis: domain.JenisSOP, Judul: "SOP Pengelolaan Data SPBE", Deskripsi: "Ketentuan pengelolaan metadata, standardisasi interoperabilitas basis data induk, dan mekanisme pertukaran data antar-instansi.", TipeBerkas: domain.TipePDF, UkuranMb: 1.5, Versi: "1.8", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 4320, IdKategori: uintPtr(10), TanggalRilis: hariLalu(20)},
+			{ID: 11, Jenis: domain.JenisSOP, Judul: "SOP Keamanan Informasi", Deskripsi: "Protokol mitigasi insiden siber, manajemen hak akses, kriptografi, dan audit berkala sesuai ISO/IEC 27001 sektor publik.", TipeBerkas: domain.TipeDOCX, UkuranMb: 2.8, Versi: "3.0", Sumber: strPtr("BSSN Conformance"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 3980, IdKategori: uintPtr(11), TanggalRilis: hariLalu(23)},
+			{ID: 12, Jenis: domain.JenisSOP, Judul: "SOP Layanan Publik Digital", Deskripsi: "Kriteria integrasi layanan ke Mal Pelayanan Publik Digital, kepatuhan SLA respons aduan, dan aksesibilitas.", TipeBerkas: domain.TipeDOCX, UkuranMb: 1.9, Versi: "3.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 2450, IdKategori: uintPtr(12), TanggalRilis: hariLalu(27)},
+			{ID: 13, Jenis: domain.JenisSOP, Judul: "SOP Penanganan Gangguan TI", Deskripsi: "Alur pelaporan, eskalasi, dan pemulihan gangguan layanan teknologi informasi di lingkungan OPD.", TipeBerkas: domain.TipePDF, UkuranMb: 1.1, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 120, IdKategori: uintPtr(11), TanggalRilis: hariLalu(6)},
+			{ID: 14, Jenis: domain.JenisSOP, Judul: "SOP Pendaftaran Domain dan Hosting", Deskripsi: "Prosedur permohonan subdomain kotabogor.go.id dan fasilitas hosting setelah asesmen standardisasi.", TipeBerkas: domain.TipePDF, UkuranMb: 0.8, Versi: "1.3", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokBerlaku, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 980, IdKategori: uintPtr(10), TanggalRilis: hariLalu(70)},
+			{ID: 15, Jenis: domain.JenisSOP, Judul: "SOP Backup dan Pemulihan Data", Deskripsi: "Backup harian, retensi 7 hari, dan uji pemulihan data aplikasi termasuk berkas unggahan.", TipeBerkas: domain.TipePDF, UkuranMb: 1.0, Versi: "1.0", Sumber: strPtr("Diskominfo Kota Bogor"), Status: domain.StatusDokReview, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 75, IdKategori: uintPtr(11), TanggalRilis: hariLalu(4)},
+			{ID: 16, Jenis: domain.JenisPedoman, Judul: "Draf Pedoman Klasifikasi RAA", Deskripsi: "Konsep pedoman, belum disetujui.", TipeBerkas: domain.TipeDOCX, UkuranMb: 0.6, Versi: "0.1", Sumber: nil, Status: domain.StatusDokDraft, Visibilitas: domain.VisibilitasInternal, JumlahUnduhan: 0, TanggalRilis: hariLalu(2)},
+			{ID: 17, Jenis: domain.JenisRegulasi, Judul: "Peraturan Lama tentang Aplikasi Daerah (dicabut)", Deskripsi: "Sudah digantikan.", TipeBerkas: domain.TipePDF, UkuranMb: 0.7, Versi: "1.0", Sumber: nil, Status: domain.StatusDokArsip, Visibilitas: domain.VisibilitasPublik, JumlahUnduhan: 52, TanggalRilis: hariLalu(900)},
+		}
+
+		for _, d := range dokumenList {
+			if err := db.Where("id = ?", d.ID).FirstOrCreate(&d).Error; err != nil {
+				return err
+			}
+		}
+		// Reset sequence ID PostgreSQL agar insert dokumen baru tidak bentrok dengan ID 1..17
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('dokumen', 'id'), COALESCE((SELECT MAX(id) FROM dokumen), 1), true);").Error
+	}
+
+	// 7. Seeder Kategori Forum, Thread, Balasan, Nilai, dan Laporan Moderasi
+	var katForumCount int64
+	if err := db.Model(&domain.KategoriForum{}).Count(&katForumCount).Error; err != nil {
+		return err
+	}
+
+	if katForumCount == 0 {
+		log.Println("Mengisi data master kategori forum...")
+		katForumList := []domain.KategoriForum{
+			{ID: 1, Nama: "Diskusi Umum"},
+			{ID: 2, Nama: "Implementasi"},
+			{ID: 3, Nama: "Teknis"},
+			{ID: 4, Nama: "Regulasi"},
+		}
+		for _, kf := range katForumList {
+			if err := db.Where("id = ?", kf.ID).FirstOrCreate(&kf).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	var threadCount int64
+	if err := db.Model(&domain.ForumThread{}).Count(&threadCount).Error; err != nil {
+		return err
+	}
+
+	if threadCount == 0 {
+		log.Println("Mengisi data awal forum diskusi & moderasi...")
+		threadsList := []domain.ForumThread{
+			{ID: 1, IdKategori: 2, Judul: "Strategi implementasi SPBE di tingkat kecamatan", Konten: "Kecamatan kami baru mulai mendata aplikasi layanan. Bagaimana pengalaman OPD lain menyusun prioritas aplikasi yang perlu diintegrasikan lebih dulu?", PenulisID: 1, Dilihat: 345, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(2)},
+			{ID: 2, IdKategori: 3, Judul: "Pengalaman integrasi data antar-OPD lewat SPLP", Konten: "Kami sedang menyiapkan API untuk data kesehatan. Apa saja hal teknis yang perlu disiapkan sebelum mendaftar ke SPLP Kota Bogor?", PenulisID: 3, Dilihat: 120, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(26)},
+			{ID: 3, IdKategori: 3, Judul: "Rekomendasi tools open source untuk arsitektur domain", Konten: "Sesuai arahan Peta Rencana SPBE ke open source, tools apa yang teman-teman pakai untuk memodelkan proses bisnis (BPMN)?", PenulisID: 2, Dilihat: 310, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(30)},
+			{ID: 4, IdKategori: 4, Judul: "Tafsir Permen PANRB 59/2020 untuk klasifikasi RAA", Konten: "Apakah aplikasi internal kepegawaian masuk domain Manajemen atau Pendukung? Mohon pencerahan rekan-rekan yang sudah mengklasifikasi.", PenulisID: 3, Dilihat: 198, Status: domain.StatusThreadTerkunci, DibuatPada: jamLalu(50)},
+			{ID: 5, IdKategori: 1, Judul: "Tantangan literasi digital ASN di kelurahan", Konten: "Banyak rekan di kelurahan yang belum terbiasa memakai aplikasi. Ada ide program pendampingan yang efektif?", PenulisID: 1, Dilihat: 87, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(72)},
+			{ID: 6, IdKategori: 2, Judul: "Checklist sebelum asesmen standardisasi aplikasi", Konten: "Dokumen apa saja yang biasanya diminta Tim Asesmen Diskominfo sebelum aplikasi mendapat subdomain kotabogor.go.id?", PenulisID: 3, Dilihat: 264, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(96)},
+			{ID: 7, IdKategori: 3, Judul: "Konfigurasi backup harian untuk aplikasi OPD", Konten: "Buku panduan meminta backup harian dan menyimpan 7 hari terakhir. Bagaimana praktik yang sudah berjalan, termasuk untuk berkas unggahan?", PenulisID: 4, Dilihat: 143, Status: domain.StatusThreadAktif, DibuatPada: jamLalu(120)},
+		}
+
+		for _, t := range threadsList {
+			if err := db.Where("id = ?", t.ID).FirstOrCreate(&t).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_thread', 'id'), COALESCE((SELECT MAX(id) FROM forum_thread), 1), true);").Error
+
+		balasanList := []domain.ForumBalasan{
+			{ID: 1, ThreadID: 1, Konten: "Kami mulai dari aplikasi yang paling banyak dipakai warga, lalu yang datanya dibutuhkan OPD lain.", PenulisID: 3, Tersembunyi: false, DibuatPada: jamLalu(1)},
+			{ID: 2, ThreadID: 1, Konten: "Setuju. Cek juga status integrasi SPLP-nya, karena yang sudah terhubung lebih cepat dipetakan.", PenulisID: 4, Tersembunyi: false, DibuatPada: jamLalu(1)},
+			{ID: 3, ThreadID: 3, Konten: "Kami memakai bpmn.io untuk menggambar; berkasnya bisa disimpan sebagai BPMN 2.0 XML.", PenulisID: 1, Tersembunyi: false, DibuatPada: jamLalu(28)},
+			{ID: 4, ThreadID: 4, Konten: "Aplikasi kepegawaian umumnya masuk domain Manajemen (SDM aparatur).", PenulisID: 2, Tersembunyi: false, DibuatPada: jamLalu(49)},
+		}
+		for _, b := range balasanList {
+			if err := db.Where("id = ?", b.ID).FirstOrCreate(&b).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_balasan', 'id'), COALESCE((SELECT MAX(id) FROM forum_balasan), 1), true);").Error
+
+		nilaiList := []domain.ForumNilai{
+			{BalasanID: 1, UserID: 2},
+			{BalasanID: 1, UserID: 4},
+			{BalasanID: 3, UserID: 2},
+			{BalasanID: 4, UserID: 1},
+			{BalasanID: 4, UserID: 3},
+		}
+		for _, n := range nilaiList {
+			_ = db.Where("balasan_id = ? AND user_id = ?", n.BalasanID, n.UserID).FirstOrCreate(&n).Error
+		}
+
+		laporanList := []domain.ForumLaporan{
+			{ID: 1, TargetTipe: domain.TargetThread, TargetID: 2, PelaporID: 3, Pelapor: "Ajri Dalae", Alasan: "Berisi nomor telepon pribadi pegawai di kolom isi.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(3)},
+			{ID: 2, TargetTipe: domain.TargetBalasan, TargetID: 2, PelaporID: 2, Pelapor: "Siti Rahma", Alasan: "Bernada menyerang pihak lain dan tidak membantu diskusi.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(5)},
+			{ID: 3, TargetTipe: domain.TargetBalasan, TargetID: 2, PelaporID: 1, Pelapor: "Andi Pratama", Alasan: "Setuju dengan laporan sebelumnya, bahasanya kurang pantas.", Status: domain.StatusLaporanBaru, DibuatPada: jamLalu(2)},
+			{ID: 4, TargetTipe: domain.TargetThread, TargetID: 5, PelaporID: 3, Pelapor: "Ajri Dalae", Alasan: "Di luar topik forum SPBE.", Status: domain.StatusLaporanDitolak, DibuatPada: jamLalu(40)},
+			{ID: 5, TargetTipe: domain.TargetThread, TargetID: 4, PelaporID: 1, Pelapor: "Andi Pratama", Alasan: "Menyebut merek vendor tertentu sebagai rekomendasi.", Status: domain.StatusLaporanDitindak, DibuatPada: jamLalu(60)},
+		}
+		for _, l := range laporanList {
+			if err := db.Where("id = ?", l.ID).FirstOrCreate(&l).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('forum_laporan', 'id'), COALESCE((SELECT MAX(id) FROM forum_laporan), 1), true);").Error
+	}
+
+	// 8. Seeder Audit Log, Riwayat Backup, Periode Pembaruan, dan Kritik Saran
+	var auditCount int64
+	if err := db.Model(&domain.AuditLog{}).Count(&auditCount).Error; err != nil {
+		return err
+	}
+	if auditCount == 0 {
+		log.Println("Mengisi data awal audit trail...")
+		ipDefault := "180.244.132.84"
+		auditList := []domain.AuditLog{
+			{ID: 1, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(1), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 2, UserID: uintPtr(1), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh Peraturan Presiden No. 95 Tahun 2018 tentang SPBE", Waktu: jamLalu(20), Hasil: domain.HasilBerhasil},
+			{ID: 3, UserID: uintPtr(1), Aksi: domain.AksiBalasan, Deskripsi: "Membalas thread: Rekomendasi tools open source untuk arsitektur domain", Waktu: jamLalu(29), Hasil: domain.HasilBerhasil},
+			{ID: 4, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(30), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 5, UserID: uintPtr(1), Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: kata sandi salah", Waktu: jamLalu(78), IpAddress: strPtr("36.72.14.201"), Hasil: domain.HasilGagal},
+			{ID: 6, UserID: uintPtr(1), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh SOP Keamanan Informasi", Waktu: jamLalu(80), Hasil: domain.HasilBerhasil},
+			{ID: 7, UserID: uintPtr(2), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(4), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 8, UserID: uintPtr(3), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(2), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 9, UserID: uintPtr(3), Aksi: domain.AksiUnduh, Deskripsi: "Mengunduh Template RAA Aplikasi Pemerintah", Waktu: jamLalu(23), Hasil: domain.HasilBerhasil},
+			{ID: 10, UserID: uintPtr(4), Aksi: domain.AksiLogin, Deskripsi: "Login SSO terpusat", Waktu: jamLalu(1), IpAddress: strPtr(ipDefault), Hasil: domain.HasilBerhasil},
+			{ID: 11, UserID: nil, Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: akun tidak terdaftar", Waktu: jamLalu(10), IpAddress: strPtr("103.28.12.77"), Hasil: domain.HasilGagal},
+			{ID: 12, UserID: nil, Aksi: domain.AksiLogin, Deskripsi: "Percobaan masuk gagal: akun tidak terdaftar", Waktu: jamLalu(10), IpAddress: strPtr("103.28.12.77"), Hasil: domain.HasilGagal},
+			{ID: 13, UserID: uintPtr(2), Aksi: domain.AksiAksesDitolak, Deskripsi: "Membuka Validasi Data tanpa hak akses", Waktu: jamLalu(15), IpAddress: strPtr(ipDefault), Hasil: domain.HasilGagal},
+			{ID: 14, UserID: uintPtr(3), Aksi: domain.AksiAplikasi, Deskripsi: "Mengubah data aplikasi SIMRS Rujukan", Waktu: jamLalu(26), Hasil: domain.HasilBerhasil},
+			{ID: 15, UserID: uintPtr(3), Aksi: domain.AksiValidasi, Deskripsi: "Mengajukan validasi: SIMRS Rujukan", Waktu: jamLalu(27), Hasil: domain.HasilBerhasil},
+			{ID: 16, UserID: uintPtr(4), Aksi: domain.AksiDokumen, Deskripsi: "Mengunggah dokumen: Draf Pedoman Klasifikasi RAA", Waktu: jamLalu(48), Hasil: domain.HasilBerhasil},
+			{ID: 17, UserID: uintPtr(4), Aksi: domain.AksiModerasi, Deskripsi: "Menyembunyikan balasan yang dilaporkan", Waktu: jamLalu(52), Hasil: domain.HasilBerhasil},
+			{ID: 18, UserID: uintPtr(4), Aksi: domain.AksiBackup, Deskripsi: "Backup otomatis harian selesai", Waktu: jamLalu(20), Hasil: domain.HasilBerhasil},
+		}
+		for _, a := range auditList {
+			if err := db.Where("id = ?", a.ID).FirstOrCreate(&a).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('audit_log', 'id'), COALESCE((SELECT MAX(id) FROM audit_log), 1), true);").Error
+	}
+
+	var backupCount int64
+	if err := db.Model(&domain.RiwayatBackup{}).Count(&backupCount).Error; err != nil {
+		return err
+	}
+	if backupCount == 0 {
+		log.Println("Mengisi data awal riwayat backup...")
+		backupList := []domain.RiwayatBackup{
+			{ID: 1, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(812.4), Waktu: pukulDuaHariLalu(7)},
+			{ID: 2, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(815.1), Waktu: pukulDuaHariLalu(6)},
+			{ID: 3, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupGagal, Waktu: pukulDuaHariLalu(5), PesanGagal: strPtr("Ruang penyimpanan tidak mencukupi.")},
+			{ID: 4, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(821.9), Waktu: pukulDuaHariLalu(4)},
+			{ID: 5, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(824.0), Waktu: pukulDuaHariLalu(3)},
+			{ID: 6, Tipe: domain.BackupManual, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(826.3), Oleh: strPtr("Derto"), Waktu: jamLalu(60)},
+			{ID: 7, Tipe: domain.BackupOtomatis, Status: domain.StatusBackupBerhasil, UkuranMb: floatPtr(829.8), Waktu: jamLalu(8)},
+		}
+		for _, b := range backupList {
+			if err := db.Where("id = ?", b.ID).FirstOrCreate(&b).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('riwayat_backup', 'id'), COALESCE((SELECT MAX(id) FROM riwayat_backup), 1), true);").Error
+	}
+
+	var periodeCount int64
+	if err := db.Model(&domain.PeriodePembaruan{}).Count(&periodeCount).Error; err != nil {
+		return err
+	}
+	if periodeCount == 0 {
+		log.Println("Mengisi data awal periode pembaruan data...")
+		periodeList := []domain.PeriodePembaruan{
+			{ID: 1, Nama: "Triwulan II 2026", TanggalMulai: tglGeser(-120), Tenggat: tglGeser(-30), DibuatOleh: "Derto"},
+			{ID: 2, Nama: "Triwulan III 2026", TanggalMulai: tglGeser(-27), Tenggat: tglGeser(5), DibuatOleh: "Derto"},
+			{ID: 3, Nama: "Triwulan IV 2026", TanggalMulai: tglGeser(20), Tenggat: tglGeser(80), DibuatOleh: "Derto"},
+		}
+		for _, p := range periodeList {
+			if err := db.Where("id = ?", p.ID).FirstOrCreate(&p).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('periode_pembaruan', 'id'), COALESCE((SELECT MAX(id) FROM periode_pembaruan), 1), true);").Error
+	}
+
+	var kritikCount int64
+	if err := db.Model(&domain.KritikSaran{}).Count(&kritikCount).Error; err != nil {
+		return err
+	}
+	if kritikCount == 0 {
+		log.Println("Mengisi data awal kritik dan saran...")
+		kritikAwal := domain.KritikSaran{
 			ID:         1,
-			Nama:       "Andi Pratama",
-			Email:      "andi.pratama@example.go.id",
-			Role:       domain.RoleASN,
-			StatusAkun: domain.StatusAktif,
-			InstansiID: 1,
-		},
-		{
-			ID:         2,
-			Nama:       "Siti Rahma",
-			Email:      "siti.rahma@example.ac.id",
-			Role:       domain.RoleAkademisi,
-			StatusAkun: domain.StatusAktif,
-			InstansiID: 10,
-		},
-		{
-			ID:         3,
-			Nama:       "Ajri Dalae",
-			Email:      "ajri.dalae@example.go.id",
-			Role:       domain.RoleAdminOPD,
-			StatusAkun: domain.StatusAktif,
-			InstansiID: 2,
-		},
-		{
-			ID:         4,
-			Nama:       "Derto",
-			Email:      "derto@example.go.id",
-			Role:       domain.RoleSuperAdmin,
-			StatusAkun: domain.StatusAktif,
-			InstansiID: 1,
-		},
+			Nama:       "Warga Bogor",
+			Email:      "warga@example.com",
+			Pesan:      "Mohon tambahkan lebih banyak panduan video untuk pengguna baru.",
+			DibuatPada: hariLalu(3),
+		}
+		if err := db.Where("id = ?", kritikAwal.ID).FirstOrCreate(&kritikAwal).Error; err != nil {
+			return err
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kritik_saran', 'id'), COALESCE((SELECT MAX(id) FROM kritik_saran), 1), true);").Error
 	}
 
-	for _, u := range users {
-		if err := db.FirstOrCreate(&u, domain.User{Email: u.Email}).Error; err != nil {
-			return err
+	// 9. Seeder Profil Pengguna, Notifikasi, dan Kursus Pembelajaran (LMS)
+	var profilCount int64
+	if err := db.Model(&domain.ProfilPengguna{}).Count(&profilCount).Error; err != nil {
+		return err
+	}
+	if profilCount == 0 {
+		log.Println("Mengisi data profil pengguna demo...")
+		profilList := []domain.ProfilPengguna{
+			{UserID: 1, NIP: "198601012015031001", Jabatan: "Pranata Komputer Ahli Muda", Golongan: "III/c (Penata)", SatkerInduk: "Bidang APTIKA, Diskominfo", NoTelepon: strPtr("081234567890"), KanalEmail: true},
+			{UserID: 2, NIP: "197805142005012002", Jabatan: "Dosen, Mitra Literasi SPBE", Golongan: "IV/a (Pembina)", SatkerInduk: "Fakultas Teknologi Informasi", NoTelepon: nil, KanalEmail: false},
+			{UserID: 3, NIP: "199002202014022003", Jabatan: "Administrator Sistem Informasi", Golongan: "III/b (Penata Muda Tk.I)", SatkerInduk: "Sekretariat Dinas Kesehatan", NoTelepon: strPtr("085711223344"), KanalEmail: true},
+			{UserID: 4, NIP: "198204302008011004", Jabatan: "Walidata dan Pengelola SPBE", Golongan: "III/d (Penata Tk.I)", SatkerInduk: "Bidang APTIKA, Diskominfo", NoTelepon: strPtr("081300998877"), KanalEmail: true},
+		}
+		for _, p := range profilList {
+			if err := db.Where("user_id = ?", p.UserID).FirstOrCreate(&p).Error; err != nil {
+				return err
+			}
 		}
 	}
 
-	log.Println("Seeder data awal berhasil dimasukkan.")
+	var notifCount int64
+	if err := db.Model(&domain.Notifikasi{}).Count(&notifCount).Error; err != nil {
+		return err
+	}
+	if notifCount == 0 {
+		log.Println("Mengisi data awal notifikasi...")
+		notifList := []domain.Notifikasi{
+			{ID: 1, UserID: 1, Kategori: domain.KategoriNotifDokumen, Judul: "SOP baru telah diterbitkan", Pesan: "SOP Manajemen Aplikasi Pemerintahan versi 2.4", UrlTujuan: "/dokumen/9", SudahDibaca: false, DibuatPada: jamLalu(2)},
+			{ID: 2, UserID: 1, Kategori: domain.KategoriNotifForum, Judul: "Komentar baru di forum", Pesan: "Strategi implementasi SPBE di tingkat kecamatan", UrlTujuan: "/forum/1", SudahDibaca: false, DibuatPada: jamLalu(5)},
+			{ID: 3, UserID: 1, Kategori: domain.KategoriNotifPembelajaran, Judul: "Modul baru tersedia", Pesan: "Pengantar Arsitektur SPBE", UrlTujuan: "/pembelajaran", SudahDibaca: true, DibuatPada: jamLalu(26)},
+			{ID: 4, UserID: 1, Kategori: domain.KategoriNotifForum, Judul: "Balasan untuk thread Anda", Pesan: "Tantangan literasi digital ASN di kelurahan", UrlTujuan: "/forum/5", SudahDibaca: true, DibuatPada: jamLalu(30)},
+			{ID: 5, UserID: 1, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru ditambahkan", Pesan: "Laporan Evaluasi Indeks SPBE Nasional Tahun 2023", UrlTujuan: "/dokumen/4", SudahDibaca: true, DibuatPada: jamLalu(50)},
+			{ID: 6, UserID: 2, Kategori: domain.KategoriNotifForum, Judul: "Balasan untuk thread Anda", Pesan: "Rekomendasi tools open source untuk arsitektur domain", UrlTujuan: "/forum/3", SudahDibaca: false, DibuatPada: jamLalu(3)},
+			{ID: 7, UserID: 2, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru ditambahkan", Pesan: "Paparan Peta Rencana SPBE Kota Bogor 2025–2030", UrlTujuan: "/dokumen/5", SudahDibaca: true, DibuatPada: jamLalu(40)},
+			{ID: 8, UserID: 3, Kategori: domain.KategoriNotifDokumen, Judul: "Pedoman RAA versi baru terbit", Pesan: "Pedoman Penyusunan Arsitektur SPBE Pemerintah Daerah v2.1", UrlTujuan: "/dokumen/2", SudahDibaca: false, DibuatPada: jamLalu(4)},
+			{ID: 9, UserID: 3, Kategori: domain.KategoriNotifSistem, Judul: "Batas waktu pembaruan data", Pesan: "Segera lengkapi data aplikasi instansi Anda sebelum tenggat.", UrlTujuan: "/katalog/aplikasi", SudahDibaca: false, DibuatPada: jamLalu(24)},
+			{ID: 10, UserID: 3, Kategori: domain.KategoriNotifForum, Judul: "Komentar baru di forum", Pesan: "Pengalaman integrasi data antar-OPD lewat SPLP", UrlTujuan: "/forum/2", SudahDibaca: true, DibuatPada: jamLalu(28)},
+			{ID: 11, UserID: 4, Kategori: domain.KategoriNotifForum, Judul: "Laporan konten forum baru", Pesan: "3 laporan menunggu tinjauan moderator.", UrlTujuan: "/admin/moderasi", SudahDibaca: false, DibuatPada: jamLalu(2)},
+			{ID: 12, UserID: 4, Kategori: domain.KategoriNotifSistem, Judul: "Pengajuan validasi baru", Pesan: "SIMRS Rujukan menunggu keputusan.", UrlTujuan: "/admin/validasi", SudahDibaca: false, DibuatPada: jamLalu(6)},
+			{ID: 13, UserID: 4, Kategori: domain.KategoriNotifDokumen, Judul: "Dokumen baru diunggah", Pesan: "Draf Pedoman Klasifikasi RAA", UrlTujuan: "/admin/repositori", SudahDibaca: true, DibuatPada: jamLalu(48)},
+		}
+		for _, n := range notifList {
+			if err := db.Where("id = ?", n.ID).FirstOrCreate(&n).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('notifikasi', 'id'), COALESCE((SELECT MAX(id) FROM notifikasi), 1), true);").Error
+	}
+
+	var kursusCount int64
+	if err := db.Model(&domain.Kursus{}).Count(&kursusCount).Error; err != nil {
+		return err
+	}
+	if kursusCount == 0 {
+		log.Println("Mengisi data awal kursus pembelajaran SPBE...")
+		ytURL := "https://www.youtube.com/"
+		kursusList := []domain.Kursus{
+			{
+				ID: 1, Judul: "Pengantar SPBE", Deskripsi: "Dasar-dasar Sistem Pemerintahan Berbasis Elektronik dan kerangka regulasinya.", Kategori: "Dasar SPBE", Tingkat: domain.TingkatDasar, DurasiJam: 2, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 101, KursusID: 1, Judul: "Apa itu SPBE", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 102, KursusID: 1, Judul: "Regulasi SPBE", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 2},
+					{ID: 103, KursusID: 1, Judul: "Domain dan aspek SPBE", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+				},
+			},
+			{
+				ID: 2, Judul: "Arsitektur SPBE dan RAA", Deskripsi: "Menyusun dan mengklasifikasikan aplikasi sesuai Referensi Arsitektur Aplikasi.", Kategori: "Arsitektur", Tingkat: domain.TingkatMenengah, DurasiJam: 4, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 201, KursusID: 2, Judul: "Konsep arsitektur", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 202, KursusID: 2, Judul: "Klasifikasi RAA", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 2},
+					{ID: 203, KursusID: 2, Judul: "Studi kasus aplikasi OPD", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 3},
+					{ID: 204, KursusID: 2, Judul: "Evaluasi kesesuaian", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 4},
+				},
+			},
+			{
+				ID: 3, Judul: "Keamanan Informasi Pemerintah", Deskripsi: "Praktik keamanan informasi, manajemen akses, dan penanganan insiden.", Kategori: "Keamanan", Tingkat: domain.TingkatMenengah, DurasiJam: 3, AdaSertifikat: true,
+				Materi: []domain.MateriKursus{
+					{ID: 301, KursusID: 3, Judul: "Prinsip keamanan", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 302, KursusID: 3, Judul: "Penanganan insiden", Tipe: domain.TipeMediaAudio, URL: ytURL, Urutan: 2},
+					{ID: 303, KursusID: 3, Judul: "Backup dan pemulihan", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+				},
+			},
+			{
+				ID: 4, Judul: "Integrasi Data Antar-OPD", Deskripsi: "Pertukaran data lewat SPLP dan tata kelola interoperabilitas.", Kategori: "Data", Tingkat: domain.TingkatLanjutan, DurasiJam: 5, AdaSertifikat: false,
+				Materi: []domain.MateriKursus{
+					{ID: 401, KursusID: 4, Judul: "Interoperabilitas", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 1},
+					{ID: 402, KursusID: 4, Judul: "SPLP", Tipe: domain.TipeMediaTautan, URL: ytURL, Urutan: 2},
+					{ID: 403, KursusID: 4, Judul: "Tata kelola data", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 3},
+					{ID: 404, KursusID: 4, Judul: "Praktik integrasi", Tipe: domain.TipeMediaVideo, URL: ytURL, Urutan: 4},
+				},
+			},
+		}
+		for _, k := range kursusList {
+			if err := db.Where("id = ?", k.ID).FirstOrCreate(&k).Error; err != nil {
+				return err
+			}
+			for _, m := range k.Materi {
+				_ = db.Where("id = ?", m.ID).FirstOrCreate(&m).Error
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kursus', 'id'), COALESCE((SELECT MAX(id) FROM kursus), 1), true);").Error
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('kursus_materi', 'id'), COALESCE((SELECT MAX(id) FROM kursus_materi), 1), true);").Error
+	}
+
+	// 10. Seeder Berita & Artikel SPBE
+	var artikelCount int64
+	if err := db.Model(&domain.Artikel{}).Count(&artikelCount).Error; err != nil {
+		return err
+	}
+	if artikelCount == 0 {
+		log.Println("Mengisi data awal berita dan artikel SPBE...")
+		penulisDefault := "Diskominfo Kota Bogor"
+		artikelList := []domain.Artikel{
+			{ID: 1, Jenis: domain.JenisArtikelBerita, Judul: "Kota Bogor Perkuat Integrasi Layanan Digital Antar-OPD", Ringkasan: "Pemerintah Kota Bogor mempercepat integrasi layanan lewat portal SPBE terpadu.", Penulis: penulisDefault, Tanggal: hariLalu(2), Views: 412, Konten: "Pemerintah Kota Bogor mempercepat integrasi layanan digital antar perangkat daerah melalui portal SPBE terpadu.\n\nLangkah ini diharapkan mengurangi duplikasi aplikasi dan mempermudah pertukaran data antar-OPD."},
+			{ID: 2, Jenis: domain.JenisArtikelBerita, Judul: "Pelatihan Arsitektur SPBE Diikuti 40 Admin OPD", Ringkasan: "Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.", Penulis: penulisDefault, Tanggal: hariLalu(9), Views: 268, Konten: "Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi."},
+			{ID: 3, Jenis: domain.JenisArtikelBerita, Judul: "Batas Waktu Pembaruan Data Aplikasi Triwulan Berjalan", Ringkasan: "Admin OPD diminta melengkapi data sebelum tenggat.", Penulis: penulisDefault, Tanggal: hariLalu(14), Views: 190, Konten: "Admin OPD diingatkan melengkapi dan mengajukan validasi data aplikasi sebelum tenggat periode berjalan.\n\nPengingat otomatis dikirim pada H-7, H-3, dan H-1."},
+			{ID: 4, Jenis: domain.JenisArtikelEdukasi, Judul: "Mengenal Referensi Arsitektur Aplikasi (RAA)", Ringkasan: "Penjelasan singkat RAA dan manfaatnya bagi perencanaan aplikasi pemerintah.", Penulis: "Tim Arsitektur SPBE", Tanggal: hariLalu(20), Views: 530, Konten: "RAA adalah acuan klasifikasi aplikasi pemerintah agar selaras dengan arsitektur SPBE.\n\nAplikasi yang klasifikasinya sesuai dianggap patuh; yang belum perlu disesuaikan."},
+			{ID: 5, Jenis: domain.JenisArtikelEdukasi, Judul: "Praktik Baik Backup Data Aplikasi Pemerintah", Ringkasan: "Backup harian dengan retensi tujuh hari dan uji pemulihan berkala.", Penulis: "Tim Keamanan Informasi", Tanggal: hariLalu(33), Views: 345, Konten: "Backup harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh backup terakhir dan uji pemulihan secara berkala."},
+			{ID: 6, Jenis: domain.JenisArtikelEdukasi, Judul: "Panduan Menulis Thread Forum yang Efektif", Ringkasan: "Cara merumuskan pertanyaan agar cepat dijawab komunitas.", Penulis: "Moderator Forum", Tanggal: hariLalu(41), Views: 121, Konten: "Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial."},
+		}
+		for _, a := range artikelList {
+			if err := db.Where("id = ?", a.ID).FirstOrCreate(&a).Error; err != nil {
+				return err
+			}
+		}
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('artikel', 'id'), COALESCE((SELECT MAX(id) FROM artikel), 1), true);").Error
+	}
+
+	// Sinkronkan seluruh sequence auto-increment PostgreSQL agar insert data baru dari frontend tidak pernah bentrok (SQLSTATE 23505)
+	tabelDenganID := []string{
+		"instansi",
+		"pengguna",
+		"aplikasi",
+		"flowchart",
+		"flowchart_riwayat",
+		"pengajuan_validasi",
+		"kategori_dokumen",
+		"dokumen",
+		"kategori_forum",
+		"forum_thread",
+		"forum_balasan",
+		"forum_laporan",
+		"audit_log",
+		"riwayat_backup",
+		"periode_pembaruan",
+		"kritik_saran",
+		"notifikasi",
+		"kursus",
+		"kursus_materi",
+		"artikel",
+	}
+	for _, tbl := range tabelDenganID {
+		_ = db.Exec("SELECT setval(pg_get_serial_sequence('" + tbl + "', 'id'), COALESCE((SELECT MAX(id) FROM " + tbl + "), 1), true);").Error
+	}
+
+	log.Println("Seeder seluruh modul SPBE dan sinkronisasi sequence ID siap.")
 	return nil
 }
-

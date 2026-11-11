@@ -36,10 +36,33 @@ func Connect(dsn string, isDevelopment bool) (*gorm.DB, error) {
 
 	log.Println("Berhasil terhubung ke database PostgreSQL.")
 
-	// Auto-Migrasi tabel master awal
+	// Auto-Migrasi tabel master dan katalog
 	if err := db.AutoMigrate(
 		&domain.Instansi{},
 		&domain.User{},
+		&domain.NodeRaa{},
+		&domain.Aplikasi{},
+		&domain.Flowchart{},
+		&domain.FlowchartRiwayat{},
+		&domain.PengajuanValidasi{},
+		&domain.KategoriDokumen{},
+		&domain.Dokumen{},
+		&domain.KategoriForum{},
+		&domain.ForumThread{},
+		&domain.ForumBalasan{},
+		&domain.ForumNilai{},
+		&domain.ForumLaporan{},
+		&domain.AuditLog{},
+		&domain.RiwayatBackup{},
+		&domain.PeriodePembaruan{},
+		&domain.KritikSaran{},
+		&domain.ProfilPengguna{},
+		&domain.Notifikasi{},
+		&domain.Kursus{},
+		&domain.MateriKursus{},
+		&domain.KursusProgres{},
+		&domain.KursusSertifikat{},
+		&domain.Artikel{},
 	); err != nil {
 		return nil, err
 	}
