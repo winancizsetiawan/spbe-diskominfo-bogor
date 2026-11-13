@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -170,6 +171,14 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				continue
 			}
 
+			s.repo.KirimNotifikasiValidasi(
+				domain.RoleSuperAdmin,
+				nil,
+				fmt.Sprintf("Pengajuan flowchart baru: %s", fc.Nama),
+				fmt.Sprintf("Diajukan oleh %s menunggu keputusan verifikasi.", user.Nama),
+				fmt.Sprintf("/admin/validasi/%d", pengajuan.ID),
+			)
+
 			hasil.Berhasil = append(hasil.Berhasil, fc.ID)
 		} else {
 			// Pengajuan Aplikasi atau Klasifikasi RAA
@@ -214,6 +223,14 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				continue
 			}
 
+			s.repo.KirimNotifikasiValidasi(
+				domain.RoleSuperAdmin,
+				nil,
+				fmt.Sprintf("Pengajuan aplikasi baru: %s", apl.Nama),
+				fmt.Sprintf("Diajukan oleh %s menunggu keputusan verifikasi.", user.Nama),
+				fmt.Sprintf("/admin/validasi/%d", pengajuan.ID),
+			)
+
 			hasil.Berhasil = append(hasil.Berhasil, apl.ID)
 		}
 	}
@@ -254,11 +271,40 @@ func (s *validasiService) Putuskan(id uint, input domain.KeputusanInput, validat
 		return nil, err
 	}
 
-	// Sinkronkan status ke data asli (Aplikasi atau Flowchart)
+	// Sinkronkan status ke data asli (Aplikasi atau Flowchart) dan tentukan tautan tujuan
+	target := targetRingkas(*p)
+	labelJenis := "Aplikasi"
+	urlTujuan := "/katalog/aplikasi"
+	if p.JenisData == domain.JenisDataRaa {
+		labelJenis = "Klasifikasi RAA"
+		urlTujuan = "/katalog/raa"
+	}
 	if p.FlowchartID != nil {
 		_ = s.repo.UpdateStatusFlowchart(*p.FlowchartID, statusBaru, catatanPtr)
+		labelJenis = "Flowchart"
+		urlTujuan = fmt.Sprintf("/katalog/flowchart/%d", *p.FlowchartID)
 	} else if p.AplikasiID != nil {
 		_ = s.repo.UpdateStatusAplikasi(*p.AplikasiID, statusBaru, catatanPtr)
+	}
+
+	// Kirim notifikasi lonceng otomatis ke Admin OPD instansi terkait
+	var judulNotif, pesanNotif string
+	switch input.Keputusan {
+	case domain.KeputusanDisetujui:
+		judulNotif = fmt.Sprintf("%s disetujui: %s", labelJenis, target.Nama)
+		pesanNotif = "Pengajuan Anda telah disetujui dan dipublikasikan oleh Diskominfo."
+		if catatanBersih != "" {
+			pesanNotif = fmt.Sprintf("Disetujui dengan catatan: %s", catatanBersih)
+		}
+	case domain.KeputusanPerluRevisi:
+		judulNotif = fmt.Sprintf("Perlu revisi %s: %s", strings.ToLower(labelJenis), target.Nama)
+		pesanNotif = fmt.Sprintf("Catatan verifikator: %s", catatanBersih)
+	case domain.KeputusanDitolak:
+		judulNotif = fmt.Sprintf("Pengajuan %s ditolak: %s", strings.ToLower(labelJenis), target.Nama)
+		pesanNotif = fmt.Sprintf("Alasan penolakan: %s", catatanBersih)
+	}
+	if judulNotif != "" {
+		s.repo.KirimNotifikasiValidasi(domain.RoleAdminOPD, &p.InstansiID, judulNotif, pesanNotif, urlTujuan)
 	}
 
 	return s.GetDetail(p.ID)

@@ -19,6 +19,7 @@ type ValidasiRepository interface {
 	FindFlowchartByID(id uint) (*domain.Flowchart, error)
 	UpdateStatusAplikasi(id uint, status domain.StatusValidasi, catatan *string) error
 	UpdateStatusFlowchart(id uint, status domain.StatusValidasi, catatan *string) error
+	KirimNotifikasiValidasi(role domain.Role, instansiID *uint, judul, pesan, urlTujuan string)
 }
 
 // 2. Struct & Constructor (Petugas Gudang & Kuncinya)
@@ -156,4 +157,28 @@ func (r *validasiRepository) UpdateStatusFlowchart(id uint, status domain.Status
 		"status":           status,
 		"catatan_validasi": catatan,
 	}).Error
+}
+
+// KirimNotifikasiValidasi membuat notifikasi lonceng untuk akun pengguna sesuai role (dan instansi jika ada).
+func (r *validasiRepository) KirimNotifikasiValidasi(role domain.Role, instansiID *uint, judul, pesan, urlTujuan string) {
+	var users []domain.User
+	if instansiID != nil {
+		r.db.Where("role = ? AND instansi_id = ? AND status_akun = ?", role, *instansiID, domain.StatusAktif).Find(&users)
+	}
+	// Fallback jika di mode demo belum ada user spesifik untuk instansi tersebut
+	if len(users) == 0 {
+		r.db.Where("role = ? AND status_akun = ?", role, domain.StatusAktif).Find(&users)
+	}
+
+	for _, u := range users {
+		notif := domain.Notifikasi{
+			UserID:      u.ID,
+			Kategori:    domain.KategoriNotifSistem,
+			Judul:       judul,
+			Pesan:       pesan,
+			UrlTujuan:   urlTujuan,
+			SudahDibaca: false,
+		}
+		_ = r.db.Create(&notif).Error
+	}
 }
