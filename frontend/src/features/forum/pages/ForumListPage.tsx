@@ -92,7 +92,7 @@ export function ForumListPage() {
         </EmptyState>
       ) : (
         <>
-          <p className="mb-3 text-sm text-slate-500" aria-live="polite">
+          <p className="mb-3 text-sm text-slate-600" aria-live="polite">
             {daftar.data.total} thread diskusi
           </p>
           <ul className={`space-y-3 transition-opacity ${daftar.isPlaceholderData ? 'opacity-60' : ''}`}>

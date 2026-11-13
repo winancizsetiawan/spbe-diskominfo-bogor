@@ -1,22 +1,13 @@
 import { delay, http, HttpResponse } from 'msw'
-import type { DasborInstansi, EmbedDasbor, IndikatorPerbandingan } from '@/features/dasbor/types'
+import type { DasborInstansi, IndikatorPerbandingan } from '@/features/dasbor/types'
 import { hitungKesesuaian, statusRaaDari } from '@/features/katalog/types'
 import { flowchart } from '../dbFlowchart'
 import { aplikasi, cakupanNyata, INSTANSI } from '../dbKatalog'
-import { conflict, currentUser, notFound, unauthorized } from '../http'
+import { currentUser, notFound, unauthorized } from '../http'
 
 const forbidden = () => HttpResponse.json({ message: 'Peran Anda tidak memiliki akses ke dasbor ini.' }, { status: 403 })
 
 const persen = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0)
-
-/** Saklar uji dev: memungkinkan menguji penanganan Metabase mati dan URL embed yang cepat kedaluwarsa. */
-function saklar(kunci: string): string | null {
-  try {
-    return sessionStorage.getItem(kunci)
-  } catch {
-    return null
-  }
-}
 
 function indikator(idInstansi: number): IndikatorPerbandingan[] {
   const milik = aplikasi.filter((a) => a.idInstansi === idInstansi)
@@ -66,37 +57,6 @@ export const dasborHandlers = [
         layanan: nyata?.layanan ?? null,
         data: nyata?.data ?? null,
       },
-    }
-    return HttpResponse.json(hasil)
-  }),
-
-  // URL embed Metabase bertanda tangan. Di sini disimulasikan dengan halaman statis di /mock.
-  http.get('/api/dasbor/embed', async ({ request }) => {
-    const user = currentUser(request)
-    if (!user) return unauthorized()
-    const url = new URL(request.url)
-    const jenis = url.searchParams.get('jenis')
-    if (jenis !== 'instansi' && jenis !== 'analitik') return notFound('Jenis dasbor tidak dikenal.')
-    if (jenis === 'instansi' && user.role !== 'admin_opd' && user.role !== 'super_admin') return forbidden()
-    await delay(300)
-    if (saklar('spbe.mock.metabaseDown') === '1') return HttpResponse.json({ message: 'Metabase tidak tersedia.' }, { status: 503 })
-
-    let filter: string | null = null
-    if (jenis === 'instansi') {
-      const param = Number(url.searchParams.get('idInstansi')) || null
-      const id = user.role === 'admin_opd' ? user.instansi.id : (param ?? INSTANSI[0].id)
-      const instansi = INSTANSI.find((i) => i.id === id)
-      if (!instansi) return conflict('Instansi tidak valid.')
-      filter = instansi.nama
-    }
-
-    const ttl = Number(saklar('spbe.mock.embedTtlDetik')) || 600
-    const query = new URLSearchParams({ jenis, token: crypto.randomUUID() })
-    if (filter) query.set('instansi', filter)
-    const hasil: EmbedDasbor = {
-      url: `/mock/metabase-contoh.html?${query}`,
-      kedaluwarsa: new Date(Date.now() + ttl * 1000).toISOString(),
-      filterTerkunci: filter ? `instansi = ${filter}` : null,
     }
     return HttpResponse.json(hasil)
   }),

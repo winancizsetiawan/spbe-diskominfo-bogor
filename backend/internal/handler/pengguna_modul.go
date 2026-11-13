@@ -207,6 +207,33 @@ func (h *PenggunaModulHandler) UndangPengguna(c *gin.Context) {
 }
 
 // UbahPengguna menangani PATCH /api/pengguna/:id
+// HapusPengguna menangani DELETE /api/pengguna/:id (Super Admin).
+func (h *PenggunaModulHandler) HapusPengguna(c *gin.Context) {
+	role, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat mengelola pengguna.")
+	if !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id < 1 {
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Pengguna tidak ditemukan."})
+		return
+	}
+	if err := h.svc.HapusPengguna(role, uint(id)); err != nil {
+		if errors.Is(err, service.ErrPenggunaTidakDitemukan) {
+			c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+			return
+		}
+		var konflikErr *service.PenggunaKonflikError
+		if errors.As(err, &konflikErr) {
+			c.JSON(http.StatusConflict, domain.ErrorResponse{Message: konflikErr.Pesan})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menghapus pengguna."})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (h *PenggunaModulHandler) UbahPengguna(c *gin.Context) {
 	role, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat mengelola pengguna.")
 	if !ok {

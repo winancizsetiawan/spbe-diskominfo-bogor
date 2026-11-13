@@ -9,6 +9,9 @@
   --color-brand-700: #263386;
   --color-brand-800: #1e2869;
   --color-brand-900: #161d4f;
+  /* Latar seluruh aplikasi (publik, internal, login). Tab aktif menu samping memakai warna yang sama agar menyatu.
+     Teks abu langsung di atas latar ini minimal slate-600; slate-500 hanya kontras 4,05 (di bawah WCAG AA 4,5). */
+  --color-latar: #e9edf3;
 }
 
 /* Hormati preferensi pengguna yang meminta gerak dikurangi. */
@@ -32,5 +35,5 @@
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  @apply bg-latar text-slate-800 antialiased;
 }

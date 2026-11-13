@@ -23,7 +23,7 @@ export function BeritaDetailPage() {
       </Link>
       <Badge tone={a.jenis === 'berita' ? 'brand' : 'neutral'}>{JENIS_LABEL[a.jenis]}</Badge>
       <h1 className="mt-2 text-2xl font-bold text-slate-900">{a.judul}</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-600">
         {formatTanggalSingkat(a.tanggal)} · {a.penulis} · {formatAngka(a.views)} kali dibaca
       </p>
       <div className="mt-6 space-y-4 text-slate-700">

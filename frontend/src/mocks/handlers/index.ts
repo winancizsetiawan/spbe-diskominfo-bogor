@@ -2,6 +2,7 @@ import { authHandlers } from './auth'
 import { berandaHandlers } from './beranda'
 import { cariHandlers } from './cari'
 import { dasborHandlers } from './dasbor'
+import { dasborPublikHandlers } from './dasborPublik'
 import { dokumenHandlers } from './dokumen'
 import { flowchartHandlers } from './flowchart'
 import { forumHandlers } from './forum'
@@ -31,6 +32,7 @@ export const handlers = [
   ...flowchartHandlers,
   ...berandaHandlers,
   ...dasborHandlers,
+  ...dasborPublikHandlers,
   ...sistemHandlers,
   ...cariHandlers,
   ...kontenHandlers,

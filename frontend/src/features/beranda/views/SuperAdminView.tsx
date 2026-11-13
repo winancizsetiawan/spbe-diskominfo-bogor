@@ -1,13 +1,32 @@
 import { ClipboardCheck, FileUp, ShieldAlert, Users } from 'lucide-react'
 import { DonutChart } from '@/components/charts/DonutChart'
-import { LineChart } from '@/components/charts/LineChart'
+import { BarChart } from '@/components/charts/BarChart'
 import { WARNA } from '@/components/charts/warna'
 import { StatCard } from '@/components/ui/StatCard'
 import { formatAngka, formatHariBulan } from '@/lib/format'
 import { AksesCepat } from '../components/AksesCepat'
 import { NotifikasiRingkas } from '../components/NotifikasiRingkas'
 import { Panel } from '../components/Panel'
-import type { BerandaSuperAdmin } from '../types'
+import type { AktivitasHarian, BerandaSuperAdmin } from '../types'
+
+/**
+ * Data harian dijumlah per 7 hari (28 hari terakhir) agar menjadi beberapa kelompok batang yang lebar;
+ * 30 hari x 4 jenis aktivitas sebagai batang harian terlalu rapat untuk dibaca.
+ */
+function perMinggu(harian: AktivitasHarian[]) {
+  const akhir = harian.slice(-28)
+  return Array.from({ length: Math.ceil(akhir.length / 7) }, (_, i) => {
+    const minggu = akhir.slice(i * 7, i * 7 + 7)
+    const jumlah = (k: 'login' | 'validasi' | 'unggahan' | 'forum') => minggu.reduce((n, h) => n + h[k], 0)
+    return {
+      label: `${formatHariBulan(minggu[0].tanggal)}–${formatHariBulan(minggu[minggu.length - 1].tanggal)}`,
+      login: jumlah('login'),
+      validasi: jumlah('validasi'),
+      unggahan: jumlah('unggahan'),
+      forum: jumlah('forum'),
+    }
+  })
+}
 
 export function SuperAdminView({ data }: { data: BerandaSuperAdmin }) {
   const { ringkasan: r, statusValidasi: s } = data
@@ -23,15 +42,15 @@ export function SuperAdminView({ data }: { data: BerandaSuperAdmin }) {
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Panel judul="Aktivitas sistem 30 hari terakhir" className="lg:col-span-2">
-          <LineChart
-            label="Jumlah login, validasi, unggahan dokumen, dan aktivitas forum per hari"
-            data={data.aktivitas.map((a) => ({ label: formatHariBulan(a.tanggal), login: a.login, validasi: a.validasi, unggahan: a.unggahan, forum: a.forum }))}
+        <Panel judul="Aktivitas sistem 4 minggu terakhir" className="lg:col-span-2">
+          <BarChart
+            label="Jumlah login, validasi, unggahan dokumen, dan aktivitas forum per minggu"
+            data={perMinggu(data.aktivitas)}
             series={[
-              { kunci: 'login', label: 'Login', warna: WARNA.brand },
-              { kunci: 'validasi', label: 'Validasi data', warna: WARNA.hijau, pola: '5 3' },
-              { kunci: 'unggahan', label: 'Unggahan dokumen', warna: WARNA.kuning, pola: '2 3' },
-              { kunci: 'forum', label: 'Aktivitas forum', warna: WARNA.ungu, pola: '8 3 2 3' },
+              { kunci: 'login', label: 'Login', warna: '#1e2869' },
+              { kunci: 'validasi', label: 'Validasi data', warna: '#3b4fc4' },
+              { kunci: 'unggahan', label: 'Unggahan dokumen', warna: '#8b9be6' },
+              { kunci: 'forum', label: 'Aktivitas forum', warna: '#c7cff3' },
             ]}
           />
         </Panel>

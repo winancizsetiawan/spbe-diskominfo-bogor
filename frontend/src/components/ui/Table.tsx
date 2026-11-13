@@ -3,7 +3,9 @@ import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react'
 /** Tabel data dengan scroll horizontal di layar sempit. `caption` dibacakan pembaca layar. */
 export function Table({ caption, children }: { caption: string; children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    // relative: elemen sr-only (position: absolute) di dalam tabel ikut terpotong area scroll ini,
+    // bukan melebarkan seluruh halaman di layar sempit.
+    <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full min-w-[720px] text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         {children}

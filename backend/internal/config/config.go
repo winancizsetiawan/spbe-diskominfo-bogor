@@ -22,6 +22,9 @@ type Config struct {
 	DBName     string
 	DBSSLMode  string
 	DBTimeZone string
+
+	// Folder berisi dasborPublik.json dan dasborInternal.json (dibuat frontend/scripts/excel_dasbor_publik.py).
+	DasborDataDir string
 }
 
 func (c *Config) DSN() string {
@@ -55,6 +58,8 @@ func LoadConfig() *Config {
 		DBName:     getEnv("DB_NAME", "spbe_bogor"),
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
 		DBTimeZone: getEnv("DB_TIMEZONE", "Asia/Jakarta"),
+
+		DasborDataDir: getEnv("DASBOR_DATA_DIR", "./data/dasbor"),
 	}
 }
 

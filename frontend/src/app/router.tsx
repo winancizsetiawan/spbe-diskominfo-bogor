@@ -29,7 +29,6 @@ const NotifikasiPage = halaman(() => import('@/features/notifikasi/pages/Notifik
 const ProfilPage = halaman(() => import('@/features/profil/pages/ProfilPage'), 'ProfilPage')
 const PenggunaPage = halaman(() => import('@/features/pengguna/pages/PenggunaPage'), 'PenggunaPage')
 const DasborInstansiPage = halaman(() => import('@/features/dasbor/pages/DasborInstansiPage'), 'DasborInstansiPage')
-const DasborAnalitikPage = halaman(() => import('@/features/dasbor/pages/DasborAnalitikPage'), 'DasborAnalitikPage')
 const BeritaListPage = halaman(() => import('@/features/konten/pages/BeritaListPage'), 'BeritaListPage')
 const BeritaDetailPage = halaman(() => import('@/features/konten/pages/BeritaDetailPage'), 'BeritaDetailPage')
 const BantuanPage = halaman(() => import('@/features/konten/pages/BantuanPage'), 'BantuanPage')
@@ -38,6 +37,8 @@ const KursusDetailPage = halaman(() => import('@/features/pembelajaran/pages/Kur
 const KritikPage = halaman(() => import('@/features/kritik/KritikPage'), 'KritikPage')
 const KritikAdminPage = halaman(() => import('@/features/kritik/KritikAdminPage'), 'KritikAdminPage')
 const CariPage = halaman(() => import('@/features/cari/pages/CariPage'), 'CariPage')
+const DasborPublikPage = halaman(() => import('@/features/dasbor-publik/DasborPublikPage'), 'DasborPublikPage')
+const DasborArsitekturPage = halaman(() => import('@/features/dasbor-publik/DasborPublikPage'), 'DasborArsitekturPage')
 const AuditPage = halaman(() => import('@/features/sistem/pages/AuditPage'), 'AuditPage')
 const BackupPage = halaman(() => import('@/features/sistem/pages/BackupPage'), 'BackupPage')
 const PeriodePage = halaman(() => import('@/features/sistem/pages/PeriodePage'), 'PeriodePage')
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
       { path: 'dokumen/:id', element: <DokumenDetailPage /> },
       { path: 'bantuan', element: <BantuanPage /> },
       { path: 'cari', element: <CariPage /> },
+      { path: 'dasbor-publik', element: <DasborPublikPage /> },
 
       // Semua pengguna internal yang aktif (ASN, Akademisi, Admin OPD, Super Admin)
       {
@@ -77,7 +79,7 @@ export const router = createBrowserRouter([
           { path: 'sop', element: <DokumenListPage kelompok="sop" /> },
           { path: 'pembelajaran', element: <KursusListPage /> },
           { path: 'pembelajaran/:id', element: <KursusDetailPage /> },
-          { path: 'dasbor/analitik', element: <DasborAnalitikPage /> },
+          { path: 'dasbor/analitik', element: <DasborArsitekturPage /> },
           { path: 'forum', element: <ForumListPage /> },
           { path: 'forum/baru', element: <CreateThreadPage /> },
           { path: 'forum/:id', element: <ThreadDetailPage /> },

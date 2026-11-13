@@ -57,19 +57,9 @@ function berandaAdminOpd(user: User): BerandaAdminOpd {
   const apps = aplikasi.filter((a) => a.idInstansi === idInstansi)
   const alur = flowchart.filter((f) => f.idInstansi === idInstansi)
   const status = apps.map((a) => statusRaaDari(hitungKesesuaian(a)))
-  const sekarang = Date.now()
 
   // Delapan minggu terakhir; setiap data dihitung pada minggu pembaruan terakhirnya.
-  const tren: PembaruanMingguan[] = Array.from({ length: 8 }, (_, k) => {
-    const mulai = sekarang - (8 - k) * 7 * HARI
-    const akhir = mulai + 7 * HARI
-    const dalam = (waktu: string) => new Date(waktu).getTime() >= mulai && new Date(waktu).getTime() < akhir
-    return {
-      minggu: new Date(mulai).toISOString(),
-      aplikasiDiperbarui: apps.filter((a) => dalam(a.diperbaruiPada)).length,
-      flowchartDiperbarui: alur.filter((f) => dalam(f.diperbaruiPada)).length,
-    }
-  })
+  const tren = trenMingguan(apps, alur)
 
   const kategori: KategoriProses[] = ['utama', 'sub', 'pendukung', 'manajemen']
   return {
@@ -143,6 +133,21 @@ function berandaSuperAdmin(user: User): BerandaSuperAdmin {
     aktivitas: hari,
     ...notifikasiTerbaru(user),
   }
+}
+
+/** Tren pembaruan per minggu untuk sekumpulan aplikasi dan flowchart (delapan minggu terakhir). */
+function trenMingguan(apps: { diperbaruiPada: string }[], alur: { diperbaruiPada: string }[]): PembaruanMingguan[] {
+  const sekarang = Date.now()
+  return Array.from({ length: 8 }, (_, k) => {
+    const mulai = sekarang - (8 - k) * 7 * HARI
+    const akhir = mulai + 7 * HARI
+    const dalam = (waktu: string) => new Date(waktu).getTime() >= mulai && new Date(waktu).getTime() < akhir
+    return {
+      minggu: new Date(mulai).toISOString(),
+      aplikasiDiperbarui: apps.filter((a) => dalam(a.diperbaruiPada)).length,
+      flowchartDiperbarui: alur.filter((f) => dalam(f.diperbaruiPada)).length,
+    }
+  })
 }
 
 export const berandaHandlers = [

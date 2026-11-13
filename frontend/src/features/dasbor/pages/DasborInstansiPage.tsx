@@ -9,10 +9,9 @@ import { errorMessage } from '@/lib/errors'
 import { useUrlFilter } from '@/lib/useUrlFilter'
 import { formatAngka } from '@/lib/format'
 import { useDasborInstansi } from '../api'
-import { EmbedFrame } from '../components/EmbedFrame'
 import { PerbandinganInstansi } from '../components/PerbandinganInstansi'
 
-/** Dasbor instansi: perbandingan native dengan agregat kota, lalu dasbor Metabase interaktif. */
+/** Dasbor instansi: cakupan arsitektur dan perbandingan dengan agregat kota. */
 export function DasborInstansiPage() {
   const { user } = useAuth()
   const superAdmin = user?.role === 'super_admin'
@@ -64,7 +63,7 @@ export function DasborInstansiPage() {
         </section>
       )}
 
-      <section aria-labelledby="judul-perbandingan" className="mb-10">
+      <section aria-labelledby="judul-perbandingan">
         <h2 id="judul-perbandingan" className="mb-3 text-lg font-semibold text-slate-900">
           Perbandingan dengan rata-rata kota
         </h2>
@@ -75,14 +74,6 @@ export function DasborInstansiPage() {
         ) : (
           <PerbandinganInstansi data={dasbor.data} />
         )}
-      </section>
-
-      <section aria-labelledby="judul-interaktif">
-        <h2 id="judul-interaktif" className="mb-3 text-lg font-semibold text-slate-900">
-          Dasbor interaktif
-        </h2>
-        {/* Instansi diteruskan hanya sebagai permintaan; filter yang berlaku dikunci server pada URL embed. */}
-        <EmbedFrame jenis="instansi" judul="Dasbor interaktif instansi (Metabase)" idInstansi={idInstansi} />
       </section>
     </>
   )

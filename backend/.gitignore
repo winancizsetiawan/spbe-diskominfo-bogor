@@ -13,3 +13,7 @@ bin/
 *.out
 *.test
 
+
+# Data dasbor arsitektur (internal, dibuat dari matriks Excel) dan berkas unggahan runtime
+data/
+uploads/

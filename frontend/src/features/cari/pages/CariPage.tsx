@@ -140,7 +140,7 @@ export function CariPage() {
             <EmptyState title={`Tidak ada hasil untuk “${q}”.`}>Coba kata kunci lain atau pilih jenis “Semua”.</EmptyState>
           ) : (
             <>
-              <p className="mb-3 text-sm text-slate-500" aria-live="polite">
+              <p className="mb-3 text-sm text-slate-600" aria-live="polite">
                 {cari.data.total} hasil untuk “{q}”
               </p>
               <ul className="space-y-3">

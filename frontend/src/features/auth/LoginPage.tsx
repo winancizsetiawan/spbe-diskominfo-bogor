@@ -204,27 +204,6 @@ export function LoginPage() {
             <br />
             Hubungi Admin
           </p>
-          <details className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-            <summary className="cursor-pointer font-medium">Akun contoh (mode demo)</summary>
-            <ul className="mt-2 space-y-1">
-              {AKUN_DEMO.map((a) => (
-                <li key={a.username}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRole(a.tab)
-                      setUsername(a.username)
-                      setSandi(a.sandi)
-                    }}
-                    className="min-h-6 cursor-pointer text-left hover:underline"
-                  >
-                    <span className="font-mono">{a.username}</span> / <span className="font-mono">{a.sandi}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2">Klik akun untuk mengisi formulir otomatis.</p>
-          </details>
         </form>
       </section>
     </div>

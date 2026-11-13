@@ -485,6 +485,34 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 	return &dto, nil
 }
 
+// HapusPengguna menghapus akun secara permanen (Super Admin). Aturan:
+//   - tidak boleh menghapus akun sendiri (selalu ada Super Admin yang bisa masuk);
+//   - pengguna yang punya thread/balasan forum tidak bisa dihapus agar diskusi tidak rusak: nonaktifkan saja.
+func (s *PenggunaModulService) HapusPengguna(adminRole string, targetID uint) error {
+	target, err := s.repo.FindUserByID(targetID)
+	if err != nil {
+		return ErrPenggunaTidakDitemukan
+	}
+	adminUser, _ := s.AmbilUserDariRole(adminRole)
+	if adminUser != nil && target.ID == adminUser.ID {
+		return &PenggunaKonflikError{Pesan: "Anda tidak dapat menghapus akun Anda sendiri."}
+	}
+	if s.repo.HitungKontenForum(target.ID) > 0 {
+		return &PenggunaKonflikError{Pesan: fmt.Sprintf("%s memiliki thread atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.", target.Nama)}
+	}
+	if err := s.repo.HapusUser(target.ID); err != nil {
+		return err
+	}
+
+	var adminIDPtr *uint
+	if adminUser != nil {
+		uid := adminUser.ID
+		adminIDPtr = &uid
+	}
+	s.sistemSvc.CatatAktivitas(adminIDPtr, domain.AksiKelolaPengguna, fmt.Sprintf("Menghapus akun %s (%s)", target.Nama, target.Email), domain.HasilBerhasil)
+	return nil
+}
+
 func (s *PenggunaModulService) UndangUlang(adminRole string, targetID uint) error {
 	target, err := s.repo.FindUserByID(targetID)
 	if err != nil {

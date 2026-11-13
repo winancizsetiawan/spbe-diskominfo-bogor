@@ -53,6 +53,15 @@ export function useUbahPengguna() {
   })
 }
 
+/** Hapus permanen; 409 bila akun sendiri atau pengguna punya konten forum (cukup dinonaktifkan). */
+export function useHapusPengguna() {
+  const muatUlang = useMuatUlang()
+  return useMutation({
+    mutationFn: (id: number) => api<void>(`/pengguna/${id}`, { method: 'DELETE' }),
+    onSettled: muatUlang,
+  })
+}
+
 export function useUndangUlang() {
   return useMutation({
     mutationFn: (id: number) => api<void>(`/pengguna/${id}/undang-ulang`, { method: 'POST' }),

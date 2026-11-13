@@ -3,14 +3,18 @@ import { Link, NavLink } from 'react-router'
 import { INTERNAL_NAV, KELOLA_NAV, PUBLIC_NAV } from '@/app/navigation'
 import { ROLE_LABEL } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
-import { buttonClass } from '@/components/ui/Button'
 import { Dropdown, menuItemClass } from '@/components/ui/Dropdown'
 import { Logo } from './Logo'
 import { NotificationBell } from './NotificationBell'
 
+// Header berlatar biru tua (brand-900, sama dengan footer dan menu samping): teks terang.
+// Menu aktif = garis bawah putih yang melebar dari tengah saat berpindah halaman; hover = garis tipis transparan.
+// Outline fokus di dalam tautan karena area menu bisa digeser (overflow) dan outline di luar akan terpotong.
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex min-h-11 items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium ${
-    isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-brand-700'
+  `relative flex min-h-11 items-center gap-1 whitespace-nowrap rounded-lg px-3.5 text-[15px] font-medium transition-colors focus-visible:outline-offset-[-3px] after:absolute after:inset-x-3.5 after:bottom-1 after:h-0.5 after:rounded-full after:transition-transform after:duration-200 ${
+    isActive
+      ? 'text-white after:scale-x-100 after:bg-white'
+      : 'text-brand-100 after:scale-x-0 after:bg-white/50 hover:text-white hover:after:scale-x-100'
   }`
 
 export function Navbar() {
@@ -19,14 +23,15 @@ export function Navbar() {
   const kelola = KELOLA_NAV.filter((item) => item.perm && can(item.perm))
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-        <Link to={user ? '/beranda' : '/'} aria-label="Ke beranda" className="md:flex-1">
-          <Logo />
+    // Outline fokus putih: warna fokus bawaan (biru) tidak terlihat di atas latar biru tua.
+    <header className="sticky top-0 z-30 bg-brand-900 shadow-sm [&_:focus-visible]:outline-white">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
+        <Link to={user ? '/beranda' : '/'} aria-label="Ke beranda" className="rounded-md lg:flex-1">
+          <Logo terang />
         </Link>
 
-        {/* Di layar sempit menu pindah ke baris sendiri agar tidak terpotong di samping logo dan akun. */}
-        <div className="order-last flex min-w-0 basis-full items-center gap-1 md:order-none md:basis-auto md:flex-none md:justify-center">
+        {/* Di bawah 1024px menu pindah ke baris sendiri: satu baris penuh baru muat di layar lebar. */}
+        <div className="order-last -ml-3.5 flex min-w-0 basis-full items-center gap-1 lg:order-none lg:ml-0 lg:basis-auto lg:flex-none lg:justify-center">
           {/* Menu bisa digeser di layar sempit; dropdown Kelola di luar agar tidak terpotong. */}
           <nav aria-label="Menu utama" className="relative flex min-w-0 items-center gap-1 overflow-x-auto">
             {items.map((item) => (
@@ -47,9 +52,9 @@ export function Navbar() {
         </div>
 
         {/* Logo dan kelompok kanan sama-sama melebar agar menu tepat di tengah halaman. */}
-        <div className="ml-auto flex items-center gap-1 md:flex-1 md:justify-end">
-          <Link to="/cari" aria-label="Pencarian" className="inline-flex size-11 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-brand-700">
-            <Search className="size-5" aria-hidden />
+        <div className="ml-auto flex items-center gap-1 lg:flex-1 lg:justify-end">
+          <Link to="/cari" aria-label="Pencarian" className="inline-flex size-11 items-center justify-center rounded-lg text-brand-100 hover:bg-white/10 hover:text-white">
+            <Search className="size-[22px]" aria-hidden />
           </Link>
 
           {user ? (
@@ -78,7 +83,8 @@ export function Navbar() {
               </Dropdown>
             </div>
           ) : (
-            <Link to="/masuk" className={buttonClass('primary')}>
+            // Tombol putih: tombol biru (primary) akan tenggelam di atas header biru.
+            <Link to="/masuk" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-[15px] font-semibold sm:px-6 text-brand-900 transition-colors hover:bg-brand-50">
               Masuk
             </Link>
           )}

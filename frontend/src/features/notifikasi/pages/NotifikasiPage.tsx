@@ -78,7 +78,7 @@ export function NotifikasiPage() {
         </EmptyState>
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <p className="mb-3 text-sm text-slate-500" aria-live="polite">
+          <p className="mb-3 text-sm text-slate-600" aria-live="polite">
             {totalBaru > 0 ? `${totalBaru} belum dibaca` : 'Semua sudah dibaca'} · {daftar.data.total} notifikasi
           </p>
           <ul className="space-y-3">

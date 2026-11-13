@@ -118,6 +118,33 @@ func (r *PenggunaModulRepository) CreateUser(u *domain.User) error {
 	return r.db.Preload("Instansi").First(u, u.ID).Error
 }
 
+// HitungKontenForum menghitung thread dan balasan forum milik pengguna (FK ke pengguna, tidak boleh yatim).
+func (r *PenggunaModulRepository) HitungKontenForum(userID uint) int64 {
+	var thread, balasan int64
+	r.db.Model(&domain.ForumThread{}).Where("penulis_id = ?", userID).Count(&thread)
+	r.db.Model(&domain.ForumBalasan{}).Where("penulis_id = ?", userID).Count(&balasan)
+	return thread + balasan
+}
+
+// HapusUser menghapus pengguna beserta data pribadinya dalam satu transaksi.
+// Jejak audit dipertahankan tetapi dilepas dari akunnya (user_id NULL) agar riwayat sistem tidak hilang.
+func (r *PenggunaModulRepository) HapusUser(userID uint) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&domain.AuditLog{}).Where("user_id = ?", userID).Update("user_id", nil).Error; err != nil {
+			return err
+		}
+		for _, model := range []any{
+			&domain.ProfilPengguna{}, &domain.Notifikasi{}, &domain.KursusProgres{},
+			&domain.KursusSertifikat{}, &domain.ForumNilai{},
+		} {
+			if err := tx.Where("user_id = ?", userID).Delete(model).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Delete(&domain.User{}, userID).Error
+	})
+}
+
 func (r *PenggunaModulRepository) UpdateUser(u *domain.User) error {
 	if err := r.db.Save(u).Error; err != nil {
 		return err

@@ -13,7 +13,8 @@ import {
 } from '@/features/pengguna/types'
 import { catatAktivitas } from '../dbAktivitas'
 import { kirimNotifikasi } from '../dbNotifikasi'
-import { INSTANSI_SEMUA, nextPenggunaId, pengguna, sinkronkanAkunDemo, type PenggunaRow } from '../dbPengguna'
+import { balasan, threads } from '../db'
+import { akunDemo, INSTANSI_SEMUA, nextPenggunaId, pengguna, sinkronkanAkunDemo, type PenggunaRow } from '../dbPengguna'
 import { conflict, currentUser, invalid, notFound, unauthorized } from '../http'
 
 const PER_PAGE = 8
@@ -149,6 +150,26 @@ export const penggunaHandlers = [
       catatAktivitas(user.id, 'kelola_pengguna', `${body.statusAkun === 'nonaktif' ? 'Menonaktifkan' : 'Mengaktifkan kembali'} akun ${row.nama}`)
     }
     return HttpResponse.json(kePengguna(row))
+  }),
+
+  // Hapus permanen. Aturan sama dengan BE (PenggunaModulService.HapusPengguna): bukan akun sendiri,
+  // dan pengguna yang punya thread/balasan forum hanya boleh dinonaktifkan.
+  http.delete('/api/pengguna/:id', async ({ request, params }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    if (user.role !== 'super_admin') return forbidden()
+    await delay(400)
+    const idx = pengguna.findIndex((p) => p.id === Number(params.id))
+    if (idx < 0) return notFound('Pengguna tidak ditemukan.')
+    const row = pengguna[idx]
+    if (row.id === user.id) return conflict('Anda tidak dapat menghapus akun Anda sendiri.')
+    const punyaForum = threads.some((t) => t.penulis.nama === row.nama) || balasan.some((b) => b.penulis.nama === row.nama)
+    if (punyaForum) return conflict(`${row.nama} memiliki thread atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.`)
+    // Khusus mode demo: akun login demo tidak dihapus agar tetap bisa dipakai masuk.
+    if (akunDemo.some((a) => a.id === row.id)) return conflict('Akun demo tidak dapat dihapus di mode demo. Nonaktifkan akunnya saja.')
+    pengguna.splice(idx, 1)
+    catatAktivitas(user.id, 'kelola_pengguna', `Menghapus akun ${row.nama} (${row.email})`)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.post('/api/pengguna/:id/undang-ulang', async ({ request, params }) => {

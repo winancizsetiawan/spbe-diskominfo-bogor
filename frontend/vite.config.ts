@@ -36,12 +36,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    host: true, // host: true agar dapat dibuka dari HP di jaringan yang sama
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
+    host: true, // agar dapat dibuka dari HP di jaringan yang sama
+    // Dipakai saat VITE_API_MOCK=false; saat mock aktif, MSW mencegat /api lebih dulu.
+    proxy: { '/api': 'http://localhost:8080' },
   },
 })

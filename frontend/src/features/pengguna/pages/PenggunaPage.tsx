@@ -1,4 +1,4 @@
-import { Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { ROLE_LABEL } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
@@ -15,6 +15,7 @@ import { errorMessage } from '@/lib/errors'
 import { waktuRelatif } from '@/lib/format'
 import { useUrlFilter } from '@/lib/useUrlFilter'
 import { useDaftarPengguna, useUndangUlang } from '../api'
+import { HapusDialog } from '../components/HapusDialog'
 import { StatusAkunDialog, type TargetStatus } from '../components/StatusAkunDialog'
 import { UbahDialog } from '../components/UbahDialog'
 import { UndangDialog } from '../components/UndangDialog'
@@ -25,7 +26,17 @@ const TAB: FilterRole[] = ['semua', ...URUTAN_ROLE]
 const chipClass = (aktif: boolean) =>
   `rounded-full px-3.5 py-1.5 text-sm font-medium ${aktif ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`
 
-const kecil = 'px-3 py-1.5 text-xs'
+// Tombol Ubah di tiap baris: ringkas, ikon + teks.
+const aksi = buttonClass('secondary', 'h-8 gap-1.5 px-2.5 py-0 text-xs')
+
+/** "Siti Rahma" -> "SR" untuk avatar. */
+const inisial = (nama: string) =>
+  nama
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((k) => k[0].toUpperCase())
+    .join('')
 
 export function PenggunaPage() {
   const { user } = useAuth()
@@ -43,6 +54,7 @@ export function PenggunaPage() {
   const [undang, setUndang] = useState(false)
   const [diubah, setDiubah] = useState<Pengguna | null>(null)
   const [status, setStatus] = useState<TargetStatus | null>(null)
+  const [dihapus, setDihapus] = useState<Pengguna | null>(null)
 
   const cari = (e: FormEvent) => {
     e.preventDefault()
@@ -59,7 +71,7 @@ export function PenggunaPage() {
     <>
       <PageHeader
         title="Manajemen Pengguna"
-        description="Undang pengguna, atur peran dan instansi, serta nonaktifkan akses. Akun dan kata sandi dikelola di SSO."
+        description="Undang pengguna, atur peran dan instansi, nonaktifkan atau hapus akun. Kata sandi dikelola di SSO."
         actions={
           <Button onClick={() => setUndang(true)}>
             <Plus className="size-4" aria-hidden /> Tambah Pengguna
@@ -126,8 +138,15 @@ export function PenggunaPage() {
                 return (
                   <tr key={p.id}>
                     <Td>
-                      <p className="font-semibold text-slate-900">{p.nama}</p>
-                      <p className="text-xs text-slate-500">{p.email}</p>
+                      <div className="flex items-center gap-3">
+                        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800">
+                          {inisial(p.nama)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900">{p.nama}</p>
+                          <p className="truncate text-xs text-slate-500">{p.email}</p>
+                        </div>
+                      </div>
                     </Td>
                     <Td className="text-slate-600">{p.instansi.nama}</Td>
                     <Td>
@@ -141,27 +160,16 @@ export function PenggunaPage() {
                     </Td>
                     <Td>
                       {sendiri ? (
-                        // Mengubah akun sendiri diblokir agar Super Admin tidak mengunci dirinya.
-                        <p className="text-right text-xs text-slate-500">Akun Anda</p>
+                        // Mengubah atau menghapus akun sendiri diblokir agar Super Admin tidak mengunci dirinya.
+                        <div className="flex justify-end">
+                          <Badge tone="neutral">Akun Anda</Badge>
+                        </div>
                       ) : (
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <button type="button" className={buttonClass('secondary', kecil)} onClick={() => setDiubah(p)} aria-label={`Ubah peran ${p.nama}`}>
-                            Ubah
+                        // Satu tombol per baris; peran, akses akun, dan hapus diatur di dialog Ubah.
+                        <div className="flex justify-end">
+                          <button type="button" className={aksi} onClick={() => setDiubah(p)} aria-label={`Ubah ${p.nama}`}>
+                            <Pencil className="size-3.5" aria-hidden /> Ubah
                           </button>
-                          {p.statusAkun === 'diundang' && (
-                            <button type="button" className={buttonClass('secondary', kecil)} onClick={() => kirimUlang(p)} disabled={undangUlang.isPending} aria-label={`Kirim ulang undangan ${p.nama}`}>
-                              Kirim ulang
-                            </button>
-                          )}
-                          {p.statusAkun === 'nonaktif' ? (
-                            <button type="button" className={buttonClass('secondary', kecil)} onClick={() => setStatus({ pengguna: p, aksi: 'aktifkan' })} aria-label={`Aktifkan ${p.nama}`}>
-                              Aktifkan
-                            </button>
-                          ) : (
-                            <button type="button" className={buttonClass('ghost', `${kecil} text-red-600 hover:bg-red-50`)} onClick={() => setStatus({ pengguna: p, aksi: p.statusAkun === 'diundang' ? 'batalkan' : 'nonaktifkan' })} aria-label={`${p.statusAkun === 'diundang' ? 'Batalkan undangan' : 'Nonaktifkan'} ${p.nama}`}>
-                              {p.statusAkun === 'diundang' ? 'Batalkan' : 'Nonaktifkan'}
-                            </button>
-                          )}
                         </div>
                       )}
                     </Td>
@@ -175,8 +183,25 @@ export function PenggunaPage() {
       )}
 
       <UndangDialog open={undang} onClose={() => setUndang(false)} />
-      <UbahDialog pengguna={diubah} onClose={() => setDiubah(null)} />
+      <UbahDialog
+        pengguna={diubah}
+        onClose={() => setDiubah(null)}
+        onStatus={(t) => {
+          setDiubah(null)
+          setStatus(t)
+        }}
+        onHapus={(p) => {
+          setDiubah(null)
+          setDihapus(p)
+        }}
+        onKirimUlang={(p) => {
+          setDiubah(null)
+          kirimUlang(p)
+        }}
+        kirimUlangBerjalan={undangUlang.isPending}
+      />
       <StatusAkunDialog target={status} onClose={() => setStatus(null)} />
+      <HapusDialog pengguna={dihapus} onClose={() => setDihapus(null)} />
     </>
   )
 }

@@ -1,5 +1,6 @@
-import { ExternalLink } from 'lucide-react'
+import { Building2, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router'
+import { KONTAK } from '@/components/layout/Hakcipta'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/Spinner'
@@ -60,6 +61,21 @@ export function BantuanPage() {
             </ul>
           </section>
 
+        </div>
+      )}
+
+      {/* Di luar status muat agar kontak tetap terlihat walau data bantuan gagal dimuat. */}
+      <section aria-labelledby="kontak" className="mt-8">
+        <h2 id="kontak" className={judul}>Kontak kami</h2>
+        <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Building2 className="mt-0.5 size-5 shrink-0 text-brand-700" aria-hidden />
+            <div>
+              <p className="font-semibold text-slate-900">{KONTAK.instansi}</p>
+              <p className="text-sm text-slate-700">{KONTAK.bidang}</p>
+              <p className="mt-1 text-sm text-slate-500">Pengelola Portal SPBE Pemerintah Kota Bogor</p>
+            </div>
+          </div>
           <p className="text-sm text-slate-600">
             Belum menemukan jawaban?{' '}
             <Link to="/kritik-saran" className="font-medium text-brand-700 hover:underline">
@@ -67,8 +83,8 @@ export function BantuanPage() {
             </Link>
             .
           </p>
-        </div>
-      )}
+        </Card>
+      </section>
     </>
   )
 }

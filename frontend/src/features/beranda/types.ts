@@ -72,7 +72,7 @@ export interface BerandaSuperAdmin {
 
 export type Beranda = BerandaInternal | BerandaAdminOpd | BerandaSuperAdmin
 
-/** Ringkasan di landing untuk pengunjung tanpa login. */
+/** Ringkasan di landing untuk pengunjung tanpa login. Statistik arsitektur diambil dari Dasbor Publik. */
 export interface BerandaPublik {
   dokumenPublik: number
   sopBerlaku: number

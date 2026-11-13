@@ -1,14 +1,14 @@
-import { BookOpen, FileText, MessagesSquare, Search, Sparkles } from 'lucide-react'
+import { BookOpen, FileText, MessagesSquare, Search } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { useAuth } from '@/auth/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { inputClass } from '@/components/ui/Field'
 import { PENCARIAN_POPULER } from '@/features/cari/types'
 import { useBerandaPublik } from '@/features/beranda/api'
 import { DokumenRow } from '@/features/dokumen/components/DokumenRow'
 import { formatAngka } from '@/lib/format'
+import { StatistikPublikSection } from './StatistikPublik'
 
 const FITUR = [
   { icon: FileText, judul: 'Dokumen & SOP', isi: 'Regulasi, pedoman, dan SOP TIK dalam satu repositori.', to: '/dokumen' },
@@ -41,24 +41,27 @@ export function LandingPage() {
           <p className="mt-3 text-slate-700">
             Satu portal untuk mengakses informasi, dokumen, pembelajaran, dan kolaborasi dalam mendukung transformasi digital pemerintahan.
           </p>
-          <form onSubmit={cari} role="search" className="mt-8 flex gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+          {/* Satu bilah: bingkai dan cincin fokus ada di form, input di dalamnya polos. */}
+          <form
+            onSubmit={cari}
+            role="search"
+            className="mt-8 flex items-center gap-2 rounded-xl border border-slate-300 bg-white p-1.5 pl-3 transition-colors sm:pl-4 focus-within:border-brand-500 focus-within:ring-3 focus-within:ring-brand-100"
+          >
             <label htmlFor="cari-publik" className="sr-only">
-              Cari dokumen, berita, atau topik
+              Cari dokumen, SOP, atau berita
             </label>
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
-              <input
-                id="cari-publik"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Cari atau bertanya…"
-                className={`${inputClass} border-0 pl-9 focus:ring-0`}
-              />
-            </div>
-            <Button type="submit" className="min-h-11">
-              <Sparkles className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Cari dengan AI</span>
-              <span className="sm:hidden">Cari</span>
+            {/* Di HP ikon disembunyikan agar placeholder muat utuh; tombol "Cari" sudah menjelaskan fungsinya. */}
+            <Search className="hidden size-5 shrink-0 text-slate-500 sm:block" aria-hidden />
+            <input
+              id="cari-publik"
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Cari dokumen, SOP, berita"
+              className="min-h-11 min-w-0 flex-1 bg-transparent text-base text-slate-900 placeholder:text-slate-500 focus-visible:outline-none"
+            />
+            <Button type="submit" className="min-h-11 sm:px-5">
+              Cari
             </Button>
           </form>
           <div className="mt-4">
@@ -94,6 +97,9 @@ export function LandingPage() {
           ))}
         </section>
       )}
+
+      {/* Cuplikan Dasbor Publik; tampil hanya bila data dasbor tersedia. */}
+      <StatistikPublikSection />
 
       <section aria-label="Layanan portal" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {FITUR.map(({ icon: Icon, judul, isi, to }) => (

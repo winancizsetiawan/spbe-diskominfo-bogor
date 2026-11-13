@@ -149,7 +149,7 @@ export function DokumenListPage({ kelompok }: { kelompok: Kelompok }) {
         </EmptyState>
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <p className="mb-3 text-sm text-slate-500" aria-live="polite">
+          <p className="mb-3 text-sm text-slate-600" aria-live="polite">
             {formatAngka(daftar.data.total)} dokumen
           </p>
           <ul className="space-y-3">

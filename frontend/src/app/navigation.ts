@@ -11,6 +11,7 @@ export const PUBLIC_NAV: NavItem[] = [
   { label: 'Beranda', to: '/' },
   { label: 'Berita', to: '/berita' },
   { label: 'Dokumen', to: '/dokumen' },
+  { label: 'Dasbor', to: '/dasbor-publik' },
   { label: 'Kritik & Saran', to: '/kritik-saran' },
   { label: 'Bantuan', to: '/bantuan' },
 ]
@@ -22,6 +23,55 @@ export const INTERNAL_NAV: NavItem[] = [
   { label: 'Pembelajaran', to: '/pembelajaran' },
   { label: 'Forum', to: '/forum' },
   { label: 'Dasbor', to: '/dasbor/analitik' },
+]
+
+/** Kelompok menu samping untuk pengguna yang sudah masuk (DESIGN.md bagian 5). */
+export interface NavGroup {
+  judul: string
+  items: NavItem[]
+}
+
+export const SIDEBAR_NAV: NavGroup[] = [
+  {
+    judul: 'Umum',
+    items: [
+      { label: 'Beranda', to: '/beranda' },
+      { label: 'Dokumen', to: '/dokumen' },
+      { label: 'SOP', to: '/sop' },
+      { label: 'Pembelajaran', to: '/pembelajaran' },
+      { label: 'Forum', to: '/forum' },
+      { label: 'Dasbor Analitik', to: '/dasbor/analitik' },
+    ],
+  },
+  {
+    judul: 'Kelola',
+    items: [
+      { label: 'Data Aplikasi', to: '/katalog/aplikasi', perm: 'aplikasi:kelola' },
+      { label: 'Klasifikasi RAA', to: '/katalog/raa', perm: 'aplikasi:kelola' },
+      { label: 'Flowchart', to: '/katalog/flowchart', perm: 'aplikasi:kelola' },
+      { label: 'Dasbor Instansi', to: '/katalog/dasbor', perm: 'dasbor:instansi' },
+    ],
+  },
+  {
+    judul: 'Sistem',
+    items: [
+      { label: 'Pengguna', to: '/admin/pengguna', perm: 'pengguna:kelola' },
+      { label: 'Validasi', to: '/admin/validasi', perm: 'validasi:putuskan' },
+      { label: 'Repositori', to: '/admin/repositori', perm: 'repositori:kelola' },
+      { label: 'Moderasi', to: '/admin/moderasi', perm: 'moderasi' },
+      { label: 'Periode', to: '/admin/periode', perm: 'periode:kelola' },
+      { label: 'Audit Trail', to: '/admin/audit', perm: 'audit:lihat' },
+      { label: 'Backup', to: '/admin/backup', perm: 'backup:kelola' },
+      { label: 'Kritik & Saran', to: '/admin/kritik', perm: 'kritik:lihat' },
+    ],
+  },
+  {
+    judul: 'Informasi',
+    items: [
+      { label: 'Berita', to: '/berita' },
+      { label: 'FAQ & Panduan', to: '/bantuan' },
+    ],
+  },
 ]
 
 // Admin OPD melihat item katalog untuk instansinya; Super Admin melihat semuanya.

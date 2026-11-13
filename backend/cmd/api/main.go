@@ -46,6 +46,11 @@ func main() {
 	{
 		api.GET("/health", healthHandler.Check)
 
+		// Dasbor arsitektur SPBE: data dari berkas JSON (bukan database), jadi tetap tersedia walau DB mati.
+		dasborArsitektur := handler.NewDasborArsitekturHandler(cfg.DasborDataDir)
+		api.GET("/dasbor/publik", dasborArsitektur.GetPublik)
+		api.GET("/dasbor/analitik", dasborArsitektur.GetAnalitik)
+
 		if db != nil {
 			instansiRepo := repository.NewInstansiRepository(db)
 			referensiHandler := handler.NewReferensiHandler(instansiRepo)
@@ -155,6 +160,7 @@ func main() {
 			api.GET("/pengguna", pmHandler.ListPengguna)
 			api.POST("/pengguna", pmHandler.UndangPengguna)
 			api.PATCH("/pengguna/:id", pmHandler.UbahPengguna)
+			api.DELETE("/pengguna/:id", pmHandler.HapusPengguna)
 			api.POST("/pengguna/:id/undang-ulang", pmHandler.UndangUlang)
 
 			api.GET("/notifikasi/ringkas", pmHandler.GetRingkasNotifikasi)

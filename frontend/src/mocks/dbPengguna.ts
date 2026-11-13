@@ -33,7 +33,7 @@ const jamLalu = (jam: number) => new Date(Date.now() - jam * 3_600_000).toISOStr
 
 // Empat akun demo diambil dari USERS agar perubahan di sini tercermin di sesi login demo.
 const LOGIN_DEMO: Record<number, number> = { 1: 1, 2: 4, 3: 2, 4: 1 }
-const akunDemo: PenggunaRow[] = Object.values(USERS).map((u) => ({
+export const akunDemo: PenggunaRow[] = Object.values(USERS).map((u) => ({
   id: u.id,
   nama: u.nama,
   email: u.email,

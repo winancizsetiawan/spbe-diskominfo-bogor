@@ -112,7 +112,7 @@ export function BackupPage() {
                 </tbody>
               </Table>
             )}
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-slate-600">
               Berkas backup disimpan di lokasi aman pada server dan tidak dapat diunduh dari portal. Pemulihan data dilakukan oleh administrator infrastruktur.
             </p>
           </section>

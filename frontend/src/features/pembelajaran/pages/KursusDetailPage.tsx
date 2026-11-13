@@ -37,7 +37,7 @@ export function KursusDetailPage() {
       </div>
       <h1 className="text-2xl font-bold text-slate-900">{k.judul}</h1>
       <p className="mt-1 text-slate-600">{k.deskripsi}</p>
-      <p className="mt-2 text-sm text-slate-500" aria-live="polite">
+      <p className="mt-2 text-sm text-slate-600" aria-live="polite">
         {k.materiSelesai} dari {k.jumlahMateri} materi selesai ({k.persen}%)
       </p>
 
