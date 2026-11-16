@@ -6,11 +6,13 @@ interface Props {
   /** Label untuk pembaca layar bila `label` hanya ikon/gambar. */
   ariaLabel?: string
   align?: 'left' | 'right'
+  /** Ganti gaya tombol bawaan (gaya navigasi), mis. `buttonClass('primary')`. */
+  tombolClass?: string
   children: ReactNode
 }
 
 /** Menu tarik-turun yang tertutup saat klik di luar, Escape, atau pindah halaman. */
-export function Dropdown({ label, ariaLabel, align = 'left', children }: Props) {
+export function Dropdown({ label, ariaLabel, align = 'left', tombolClass, children }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const location = useLocation()
@@ -39,7 +41,7 @@ export function Dropdown({ label, ariaLabel, align = 'left', children }: Props) 
         aria-haspopup="menu"
         aria-label={ariaLabel}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 hover:text-brand-700"
+        className={tombolClass ?? 'flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap text-slate-600 hover:text-brand-700'}
       >
         {label}
       </button>

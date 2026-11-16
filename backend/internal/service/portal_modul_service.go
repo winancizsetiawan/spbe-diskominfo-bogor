@@ -19,6 +19,7 @@ import (
 
 var (
 	ErrArtikelTidakDitemukan  = errors.New("Artikel tidak ditemukan.")
+	ErrArtikelTidakValid      = errors.New("Data artikel tidak valid.")
 	ErrInstansiTidakDitemukan = errors.New("Instansi tidak ditemukan.")
 	ErrJenisDasborTidakValid  = errors.New("Jenis dasbor tidak dikenal.")
 
@@ -1060,4 +1061,58 @@ func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tip
 		Hitungan:   hitungan,
 		Fallback:   false,
 	}, nil
+}
+
+// ArtikelInput adalah isian Super Admin untuk menerbitkan berita atau artikel.
+type ArtikelInput struct {
+	Jenis     string `json:"jenis"`
+	Judul     string `json:"judul"`
+	Ringkasan string `json:"ringkasan"`
+	Penulis   string `json:"penulis"`
+	Konten    string `json:"konten"`
+}
+
+// ArtikelInvalidError membawa pesan per kolom untuk respons 422.
+type ArtikelInvalidError struct{ Errors map[string]string }
+
+func (e *ArtikelInvalidError) Error() string { return ErrArtikelTidakValid.Error() }
+
+// BuatArtikel memvalidasi lalu menerbitkan berita/artikel baru.
+func (s *PortalModulService) BuatArtikel(in ArtikelInput) (*domain.Artikel, error) {
+	in.Judul = strings.TrimSpace(in.Judul)
+	in.Ringkasan = strings.TrimSpace(in.Ringkasan)
+	in.Penulis = strings.TrimSpace(in.Penulis)
+	in.Konten = strings.TrimSpace(in.Konten)
+
+	galat := map[string]string{}
+	if in.Jenis != string(domain.JenisArtikelBerita) && in.Jenis != string(domain.JenisArtikelEdukasi) {
+		galat["jenis"] = "Pilih berita atau artikel."
+	}
+	if n := utf8.RuneCountInString(in.Judul); n < 5 || n > 200 {
+		galat["judul"] = "Judul 5 sampai 200 karakter."
+	}
+	if n := utf8.RuneCountInString(in.Ringkasan); n < 10 || n > 500 {
+		galat["ringkasan"] = "Ringkasan 10 sampai 500 karakter."
+	}
+	if n := utf8.RuneCountInString(in.Penulis); n < 2 || n > 120 {
+		galat["penulis"] = "Penulis 2 sampai 120 karakter."
+	}
+	if utf8.RuneCountInString(in.Konten) < 20 {
+		galat["konten"] = "Isi minimal 20 karakter."
+	}
+	if len(galat) > 0 {
+		return nil, &ArtikelInvalidError{Errors: galat}
+	}
+
+	a := &domain.Artikel{
+		Jenis:     domain.JenisArtikel(in.Jenis),
+		Judul:     in.Judul,
+		Ringkasan: in.Ringkasan,
+		Penulis:   in.Penulis,
+		Konten:    in.Konten,
+	}
+	if err := s.repo.CreateArtikel(a); err != nil {
+		return nil, err
+	}
+	return a, nil
 }

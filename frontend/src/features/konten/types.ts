@@ -16,6 +16,16 @@ export interface ArtikelDetail extends Artikel {
   konten: string
 }
 
+export interface ArtikelInput {
+  jenis: JenisArtikel
+  judul: string
+  ringkasan: string
+  penulis: string
+  konten: string
+}
+
+export const BATAS_ARTIKEL = { judulMin: 5, judulMax: 200, ringkasanMin: 10, ringkasanMax: 500, penulisMin: 2, penulisMax: 120, kontenMin: 20 } as const
+
 export interface DaftarArtikel {
   items: Artikel[]
   page: number

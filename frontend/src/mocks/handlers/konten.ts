@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from 'msw'
 import type { ArtikelDetail, Bantuan, JenisArtikel } from '@/features/konten/types'
-import { notFound } from '../http'
+import { currentUser, invalid, notFound, unauthorized } from '../http'
 
 const PER_PAGE = 6
 const hariLalu = (h: number) => new Date(Date.now() - h * 86_400_000).toISOString()
@@ -50,6 +50,28 @@ export const kontenHandlers = [
       totalPages: Math.max(1, Math.ceil(cocok.length / PER_PAGE)),
       total: cocok.length,
     })
+  }),
+
+  http.post('/api/artikel', async ({ request }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    if (user.role !== 'super_admin') return HttpResponse.json({ message: 'Hanya Super Admin yang dapat menambah berita atau artikel.' }, { status: 403 })
+    const b = (await request.json()) as Partial<Record<'jenis' | 'judul' | 'ringkasan' | 'penulis' | 'konten', string>>
+    const judul = (b.judul ?? '').trim()
+    const ringkasan = (b.ringkasan ?? '').trim()
+    const penulis = (b.penulis ?? '').trim()
+    const konten = (b.konten ?? '').trim()
+    const galat: Record<string, string> = {}
+    if (b.jenis !== 'berita' && b.jenis !== 'artikel') galat.jenis = 'Pilih berita atau artikel.'
+    if (judul.length < 5 || judul.length > 200) galat.judul = 'Judul 5 sampai 200 karakter.'
+    if (ringkasan.length < 10 || ringkasan.length > 500) galat.ringkasan = 'Ringkasan 10 sampai 500 karakter.'
+    if (penulis.length < 2 || penulis.length > 120) galat.penulis = 'Penulis 2 sampai 120 karakter.'
+    if (konten.length < 20) galat.konten = 'Isi minimal 20 karakter.'
+    if (Object.keys(galat).length) return invalid(galat)
+    await delay(300)
+    const baru: ArtikelDetail = { id: Math.max(0, ...artikel.map((a) => a.id)) + 1, jenis: b.jenis as JenisArtikel, judul, ringkasan, penulis, tanggal: new Date().toISOString(), views: 0, konten }
+    artikel.unshift(baru)
+    return HttpResponse.json(baru, { status: 201 })
   }),
 
   http.get('/api/artikel/:id', async ({ params }) => {

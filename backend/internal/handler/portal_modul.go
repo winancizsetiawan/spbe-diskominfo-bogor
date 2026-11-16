@@ -48,6 +48,29 @@ func (h *PortalModulHandler) GetArtikelDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// BuatArtikel menangani POST /api/artikel (Super Admin).
+func (h *PortalModulHandler) BuatArtikel(c *gin.Context) {
+	if _, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat menambah berita atau artikel."); !ok {
+		return
+	}
+	var in service.ArtikelInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Permintaan tidak valid."})
+		return
+	}
+	a, err := h.svc.BuatArtikel(in)
+	if err != nil {
+		var invalid *service.ArtikelInvalidError
+		if errors.As(err, &invalid) {
+			c.JSON(http.StatusUnprocessableEntity, domain.NewErrorResponse(service.ErrArtikelTidakValid.Error(), invalid.Errors))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan tulisan."})
+		return
+	}
+	c.JSON(http.StatusCreated, a)
+}
+
 // GetBantuan menangani GET /api/bantuan
 func (h *PortalModulHandler) GetBantuan(c *gin.Context) {
 	c.JSON(http.StatusOK, service.DataBantuanStatis())

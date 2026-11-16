@@ -1,5 +1,10 @@
+import { ChevronDown, Plus } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { useAuth } from '@/auth/useAuth'
 import { Badge } from '@/components/ui/Badge'
+import { buttonClass } from '@/components/ui/Button'
+import { Dropdown, menuItemClass } from '@/components/ui/Dropdown'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Pagination } from '@/components/ui/Pagination'
 import { Spinner } from '@/components/ui/Spinner'
@@ -8,7 +13,8 @@ import { errorMessage } from '@/lib/errors'
 import { formatTanggalSingkat } from '@/lib/format'
 import { useUrlFilter } from '@/lib/useUrlFilter'
 import { useDaftarArtikel } from '../api'
-import { JENIS_LABEL, type FilterJenis } from '../types'
+import { TambahTulisanDialog } from '../components/TambahTulisanDialog'
+import { JENIS_LABEL, type FilterJenis, type JenisArtikel } from '../types'
 
 const JENIS = Object.keys(JENIS_LABEL) as FilterJenis[]
 
@@ -16,6 +22,9 @@ const chipClass = (aktif: boolean) =>
   `rounded-full px-3.5 py-1.5 text-sm font-medium ${aktif ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`
 
 export function BeritaListPage() {
+  const { user } = useAuth()
+  const superAdmin = user?.role === 'super_admin'
+  const [dialog, setDialog] = useState<{ buka: boolean; jenis: JenisArtikel }>({ buka: false, jenis: 'berita' })
   const [params, ubahFilter] = useUrlFilter()
   const jenisParam = params.get('jenis') as FilterJenis | null
   const jenis = jenisParam && JENIS.includes(jenisParam) ? jenisParam : 'semua'
@@ -24,7 +33,32 @@ export function BeritaListPage() {
 
   return (
     <>
-      <PageHeader title="Berita & Artikel" description="Kabar terbaru dan tulisan seputar transformasi digital pemerintahan Kota Bogor." />
+      <PageHeader
+        title="Berita & Artikel"
+        description="Kabar terbaru dan tulisan seputar transformasi digital pemerintahan Kota Bogor."
+        actions={
+          superAdmin && (
+            <Dropdown
+              align="right"
+              tombolClass={buttonClass('primary')}
+              label={
+                <>
+                  <Plus aria-hidden className="size-4" />
+                  Tambah
+                  <ChevronDown aria-hidden className="size-4" />
+                </>
+              }
+            >
+              {(['berita', 'artikel'] as const).map((j) => (
+                <button key={j} type="button" role="menuitem" className={menuItemClass} onClick={() => setDialog({ buka: true, jenis: j })}>
+                  {JENIS_LABEL[j]}
+                </button>
+              ))}
+            </Dropdown>
+          )
+        }
+      />
+      {superAdmin && <TambahTulisanDialog open={dialog.buka} jenis={dialog.jenis} onClose={() => setDialog((d) => ({ ...d, buka: false }))} />}
       <div role="group" aria-label="Filter jenis" className="mb-4 flex gap-2">
         {JENIS.map((j) => (
           <button key={j} type="button" aria-pressed={jenis === j} className={chipClass(jenis === j)} onClick={() => ubahFilter({ jenis: j === 'semua' ? undefined : j, page: undefined })}>

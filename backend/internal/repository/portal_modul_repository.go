@@ -35,6 +35,10 @@ func (r *PortalModulRepository) FindAllArtikel(jenis string) ([]domain.Artikel, 
 	return list, err
 }
 
+func (r *PortalModulRepository) CreateArtikel(a *domain.Artikel) error {
+	return r.db.Create(a).Error
+}
+
 func (r *PortalModulRepository) FindArtikelByID(id uint) (*domain.Artikel, error) {
 	var a domain.Artikel
 	if err := r.db.First(&a, id).Error; err != nil {

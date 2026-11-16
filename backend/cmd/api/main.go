@@ -175,6 +175,7 @@ func main() {
 			// Rute Beranda, Artikel/Berita, Bantuan, Dasbor, & Pencarian Global
 			api.GET("/artikel", portalHandler.ListArtikel)
 			api.GET("/artikel/:id", portalHandler.GetArtikelDetail)
+			api.POST("/artikel", portalHandler.BuatArtikel)
 			api.GET("/bantuan", portalHandler.GetBantuan)
 
 			api.GET("/beranda/publik", portalHandler.GetBerandaPublik)
