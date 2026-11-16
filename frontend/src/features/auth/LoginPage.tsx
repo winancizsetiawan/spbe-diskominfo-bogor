@@ -8,18 +8,12 @@ import { Spinner } from '@/components/ui/Spinner'
 import { safeReturn } from '@/lib/safeReturn'
 import { CaptchaGambar, useCaptcha } from './Captcha'
 
-const PERAN: { role: Role; label: string }[] = [
-  { role: 'super_admin', label: 'Super Admin' },
-  { role: 'admin_opd', label: 'Admin OPD' },
-  { role: 'asn', label: 'ASN & Akademisi' },
-]
-
 // Akun contoh mode demo. Tidak dipakai di mode Keycloak; kredensial asli diperiksa SSO.
-const AKUN_DEMO: { role: Role; tab: Role; username: string; sandi: string }[] = [
-  { role: 'super_admin', tab: 'super_admin', username: 'superadmin', sandi: 'Super@123' },
-  { role: 'admin_opd', tab: 'admin_opd', username: 'adminopd', sandi: 'Admin@123' },
-  { role: 'asn', tab: 'asn', username: 'asn', sandi: 'Asn@123' },
-  { role: 'akademisi', tab: 'asn', username: 'akademisi', sandi: 'Akademisi@123' },
+const AKUN_DEMO: { role: Role; username: string; sandi: string }[] = [
+  { role: 'super_admin', username: 'superadmin', sandi: 'Super@123' },
+  { role: 'admin_opd', username: 'adminopd', sandi: 'Admin@123' },
+  { role: 'asn', username: 'asn', sandi: 'Asn@123' },
+  { role: 'akademisi', username: 'akademisi', sandi: 'Akademisi@123' },
 ]
 
 const fieldClass =
@@ -37,7 +31,6 @@ export function LoginPage() {
   const { status, user } = useAuth()
   const captcha = useCaptcha()
 
-  const [role, setRole] = useState<Role>('asn')
   const [username, setUsername] = useState('')
   const [sandi, setSandi] = useState('')
   const [jawaban, setJawaban] = useState('')
@@ -62,9 +55,9 @@ export function LoginPage() {
       captcha.segarkan()
       setJawaban('')
     }
-    const akun = AKUN_DEMO.find((a) => a.tab === role && a.username === username.trim() && a.sandi === sandi)
+    const akun = AKUN_DEMO.find((a) => a.username === username.trim() && a.sandi === sandi)
     if (!akun && !baru.username && !baru.sandi && !baru.captcha) {
-      baru.sandi = 'Username atau kata sandi salah untuk peran ini.'
+      baru.sandi = 'Username atau kata sandi salah.'
       captcha.segarkan()
       setJawaban('')
     }
@@ -98,21 +91,6 @@ export function LoginPage() {
         <h1 className="text-3xl font-bold text-brand-800">Login</h1>
 
         <form onSubmit={kirim} noValidate className="mt-6 space-y-5">
-          <fieldset>
-            <legend className="sr-only">Masuk sebagai</legend>
-            <div className="grid grid-cols-3 gap-1 rounded-full bg-slate-100 p-1">
-              {PERAN.map((p) => (
-                <label
-                  key={p.role}
-                  className={`flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-center text-sm font-medium has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-brand-600 ${role === p.role ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                >
-                  <input type="radio" name="peran" value={p.role} checked={role === p.role} onChange={() => setRole(p.role)} className="sr-only" />
-                  {p.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
           <div className="space-y-1.5">
             <label htmlFor="login-username" className="block text-sm font-semibold text-slate-800">
               Username
