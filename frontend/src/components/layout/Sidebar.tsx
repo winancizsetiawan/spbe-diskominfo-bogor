@@ -1,5 +1,5 @@
 import {
-  AppWindow, ArrowLeftRight, BadgeCheck, CalendarClock, ChartColumn, Check, CircleHelp, ClipboardList, DatabaseBackup, FileSpreadsheet, FileText,
+  AppWindow, ArrowLeftRight, BadgeCheck, CalendarClock, ChartColumn, Check, CircleHelp, ClipboardList, DatabaseBackup, FileText,
   FolderOpen, GraduationCap, History, House, LayoutDashboard, LogOut, Menu, MessageSquareText, MessagesSquare,
   Network, Newspaper, Search, ShieldAlert, UserRound, Users, Workflow, X, type LucideIcon,
 } from 'lucide-react'
@@ -30,7 +30,6 @@ const IKON: Record<string, LucideIcon> = {
   '/admin/moderasi': ShieldAlert,
   '/admin/periode': CalendarClock,
   '/admin/audit': History,
-  '/admin/data-dasbor': FileSpreadsheet,
   '/admin/backup': DatabaseBackup,
   '/admin/kritik': MessageSquareText,
   '/berita': Newspaper,

@@ -1,6 +1,8 @@
-import { LockKeyhole } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { LockKeyhole, Upload } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
+import { useAuth } from '@/auth/useAuth'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/Spinner'
@@ -13,6 +15,7 @@ import { formatAngka, formatTanggal } from '@/lib/format'
 import { useDasborArsitektur } from './api'
 import { BatangDatar } from './components/BatangDatar'
 import { Katalog } from './components/Katalog'
+import { PanelDataDasbor } from './components/PanelDataDasbor'
 import { KurvaRencana } from './components/KurvaRencana'
 import { ProporsiBar } from './components/ProporsiBar'
 import { DOMAIN, type DasborPublik, type Domain } from './types'
@@ -412,13 +415,27 @@ function DasborArsitektur({ internal }: { internal: boolean }) {
   const [params, setParams] = useSearchParams()
   const aktif = (DOMAIN.find((d) => d.key === params.get('domain'))?.key ?? 'proses-bisnis') as Domain
   const pilih = (key: Domain) => setParams(key === 'proses-bisnis' ? {} : { domain: key }, { replace: true })
+  // Unggah Excel hanya di Dasbor Analitik dan hanya untuk Super Admin.
+  const { can } = useAuth()
+  const bolehPerbarui = internal && can('dasbor:data')
+  const [panelTerbuka, setPanelTerbuka] = useState(false)
+  const belumAdaData = isStatus(dasbor.error, 404)
 
   return (
     <>
       <PageHeader
         title={internal ? 'Dasbor Analitik' : 'Dasbor Publik'}
         description={`${internal ? 'Data lengkap' : 'Ringkasan'} Arsitektur SPBE Kota Bogor: proses bisnis, layanan, data, aplikasi, infrastruktur, keamanan, dan peta rencana.`}
+        actions={
+          bolehPerbarui &&
+          !panelTerbuka && (
+            <Button onClick={() => setPanelTerbuka(true)}>
+              <Upload className="size-4" aria-hidden /> Unggah Excel
+            </Button>
+          )
+        }
       />
+      {bolehPerbarui && (panelTerbuka || belumAdaData) && <PanelDataDasbor onTutup={() => setPanelTerbuka(false)} />}
       {dasbor.isPending ? (
         <Spinner className="py-24" />
       ) : isStatus(dasbor.error, 404) ? (

@@ -61,7 +61,6 @@ export const SIDEBAR_NAV: NavGroup[] = [
       { label: 'Moderasi', to: '/admin/moderasi', perm: 'moderasi' },
       { label: 'Periode', to: '/admin/periode', perm: 'periode:kelola' },
       { label: 'Audit Trail', to: '/admin/audit', perm: 'audit:lihat' },
-      { label: 'Data Dasbor', to: '/admin/data-dasbor', perm: 'dasbor:data' },
       { label: 'Backup', to: '/admin/backup', perm: 'backup:kelola' },
       { label: 'Kritik & Saran', to: '/admin/kritik', perm: 'kritik:lihat' },
     ],
@@ -88,7 +87,6 @@ export const KELOLA_NAV: NavItem[] = [
   { label: 'Moderasi Forum', to: '/admin/moderasi', perm: 'moderasi' },
   { label: 'Periode Pembaruan', to: '/admin/periode', perm: 'periode:kelola' },
   { label: 'Audit Trail', to: '/admin/audit', perm: 'audit:lihat' },
-  { label: 'Data Dasbor', to: '/admin/data-dasbor', perm: 'dasbor:data' },
   { label: 'Backup', to: '/admin/backup', perm: 'backup:kelola' },
   { label: 'Kritik & Saran', to: '/admin/kritik', perm: 'kritik:lihat' },
 ]

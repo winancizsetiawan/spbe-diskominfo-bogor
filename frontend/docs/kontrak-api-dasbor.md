@@ -5,8 +5,8 @@ BE membaca `dasborPublik.json` dan `dasborInternal.json` dari folder `DASBOR_DAT
 tidak masuk git). Bila berkasnya belum ada, BE membalas **404** dan FE menampilkan "Data dasbor belum tersedia";
 bagian statistik di halaman depan disembunyikan.
 
-**Memperbarui data (cara utama):** Super Admin membuka menu **Sistem → Data Dasbor** (`/admin/data-dasbor`), mengunggah
-Excel matriks, memeriksa pratinjau angka, lalu menekan **Terapkan**. BE mengolah Excel sendiri
+**Memperbarui data (cara utama):** Super Admin membuka **Dasbor Analitik** (`/dasbor/analitik`), menekan **Unggah Excel**,
+memeriksa pratinjau angka, lalu menekan **Terapkan**. Tombol ini tidak tampil untuk peran lain. BE mengolah Excel sendiri
 ([`backend/internal/dasbor`](../../backend/internal/dasbor), port Go dari skrip Python dengan hasil identik), menyimpan
 versi lama di `DASBOR_DATA_DIR/riwayat/` (5 versi terakhir, dapat dipulihkan), dan mencatat audit `dasbor`.
 
