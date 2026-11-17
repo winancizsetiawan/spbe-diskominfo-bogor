@@ -30,6 +30,7 @@ const ProfilPage = halaman(() => import('@/features/profil/pages/ProfilPage'), '
 const PenggunaPage = halaman(() => import('@/features/pengguna/pages/PenggunaPage'), 'PenggunaPage')
 const DasborInstansiPage = halaman(() => import('@/features/dasbor/pages/DasborInstansiPage'), 'DasborInstansiPage')
 const BeritaListPage = halaman(() => import('@/features/konten/pages/BeritaListPage'), 'BeritaListPage')
+const TambahTulisanPage = halaman(() => import('@/features/konten/pages/TambahTulisanPage'), 'TambahTulisanPage')
 const BeritaDetailPage = halaman(() => import('@/features/konten/pages/BeritaDetailPage'), 'BeritaDetailPage')
 const BantuanPage = halaman(() => import('@/features/konten/pages/BantuanPage'), 'BantuanPage')
 const KursusListPage = halaman(() => import('@/features/pembelajaran/pages/KursusListPage'), 'KursusListPage')
@@ -111,6 +112,7 @@ export const router = createBrowserRouter([
             { path: 'admin/repositori', element: <RepositoriListPage /> },
             { path: 'admin/repositori/baru', element: <UnggahDokumenPage /> },
           ]),
+          guarded('repositori:kelola', [{ path: 'berita/baru', element: <TambahTulisanPage /> }]),
           guarded('moderasi', [{ path: 'admin/moderasi', element: <ModerasiPage /> }]),
           guarded('kritik:lihat', [{ path: 'admin/kritik', element: <KritikAdminPage /> }]),
           guarded('periode:kelola', [{ path: 'admin/periode', element: <PeriodePage /> }]),

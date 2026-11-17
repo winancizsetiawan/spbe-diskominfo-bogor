@@ -1,6 +1,5 @@
-import { ChevronDown, Plus } from 'lucide-react'
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { ChevronDown, Plus, Star } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
 import { useAuth } from '@/auth/useAuth'
 import { Badge } from '@/components/ui/Badge'
 import { buttonClass } from '@/components/ui/Button'
@@ -13,8 +12,7 @@ import { errorMessage } from '@/lib/errors'
 import { formatTanggalSingkat } from '@/lib/format'
 import { useUrlFilter } from '@/lib/useUrlFilter'
 import { useDaftarArtikel } from '../api'
-import { TambahTulisanDialog } from '../components/TambahTulisanDialog'
-import { JENIS_LABEL, type FilterJenis, type JenisArtikel } from '../types'
+import { JENIS_LABEL, type FilterJenis } from '../types'
 
 const JENIS = Object.keys(JENIS_LABEL) as FilterJenis[]
 
@@ -24,7 +22,7 @@ const chipClass = (aktif: boolean) =>
 export function BeritaListPage() {
   const { user } = useAuth()
   const superAdmin = user?.role === 'super_admin'
-  const [dialog, setDialog] = useState<{ buka: boolean; jenis: JenisArtikel }>({ buka: false, jenis: 'berita' })
+  const navigate = useNavigate()
   const [params, ubahFilter] = useUrlFilter()
   const jenisParam = params.get('jenis') as FilterJenis | null
   const jenis = jenisParam && JENIS.includes(jenisParam) ? jenisParam : 'semua'
@@ -50,7 +48,7 @@ export function BeritaListPage() {
               }
             >
               {(['berita', 'artikel'] as const).map((j) => (
-                <button key={j} type="button" role="menuitem" className={menuItemClass} onClick={() => setDialog({ buka: true, jenis: j })}>
+                <button key={j} type="button" role="menuitem" className={menuItemClass} onClick={() => navigate(`/berita/baru?jenis=${j}`)}>
                   {JENIS_LABEL[j]}
                 </button>
               ))}
@@ -58,7 +56,6 @@ export function BeritaListPage() {
           )
         }
       />
-      {superAdmin && <TambahTulisanDialog open={dialog.buka} jenis={dialog.jenis} onClose={() => setDialog((d) => ({ ...d, buka: false }))} />}
       <div role="group" aria-label="Filter jenis" className="mb-4 flex gap-2">
         {JENIS.map((j) => (
           <button key={j} type="button" aria-pressed={jenis === j} className={chipClass(jenis === j)} onClick={() => ubahFilter({ jenis: j === 'semua' ? undefined : j, page: undefined })}>
@@ -85,8 +82,21 @@ export function BeritaListPage() {
                       {formatTanggalSingkat(a.tanggal)} · {a.penulis}
                     </span>
                   </div>
-                  <h2 className="font-semibold text-slate-900">{a.judul}</h2>
+                  <h2 className="font-semibold text-slate-900">
+                    {a.unggulan && <Star aria-label="Unggulan" className="mr-1.5 -mt-0.5 inline size-4 fill-amber-400 text-amber-500" />}
+                    {a.judul}
+                  </h2>
                   <p className="mt-1 text-sm text-slate-600">{a.ringkasan}</p>
+                  {(a.kategori || a.label.length > 0) && (
+                    <p className="mt-2 flex flex-wrap gap-1.5 text-xs text-slate-500">
+                      {a.kategori && <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">{a.kategori}</span>}
+                      {a.label.map((l) => (
+                        <span key={l} className="rounded border border-slate-200 px-1.5 py-0.5">
+                          #{l}
+                        </span>
+                      ))}
+                    </p>
+                  )}
                 </Link>
               </li>
             ))}

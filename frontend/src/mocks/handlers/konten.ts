@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse } from 'msw'
-import type { ArtikelDetail, Bantuan, JenisArtikel } from '@/features/konten/types'
+import type { AksesArtikel, ArtikelDetail, Bantuan, FormatArtikel, JenisArtikel } from '@/features/konten/types'
 import { currentUser, invalid, notFound, unauthorized } from '../http'
 
 const PER_PAGE = 6
@@ -7,7 +7,9 @@ const hariLalu = (h: number) => new Date(Date.now() - h * 86_400_000).toISOStrin
 const P = 'Diskominfo Kota Bogor'
 
 // Hanya artikel berstatus terbit yang ada di sini; draft dikelola Super Admin dan tidak pernah dikirim ke publik.
-export const artikel: ArtikelDetail[] = [
+type BenihArtikel = Omit<ArtikelDetail, 'format' | 'urlSumber' | 'kolaborator' | 'kategori' | 'label' | 'statusAkses' | 'unggulan'>
+
+const benih: BenihArtikel[] = [
   { id: 1, jenis: 'berita', judul: 'Kota Bogor Perkuat Integrasi Layanan Digital Antar-OPD', ringkasan: 'Pemerintah Kota Bogor mempercepat integrasi layanan lewat portal SPBE terpadu.', penulis: P, tanggal: hariLalu(2), views: 412, konten: 'Pemerintah Kota Bogor mempercepat integrasi layanan digital antar perangkat daerah melalui portal SPBE terpadu.\n\nLangkah ini diharapkan mengurangi duplikasi aplikasi dan mempermudah pertukaran data antar-OPD.' },
   { id: 2, jenis: 'berita', judul: 'Pelatihan Arsitektur SPBE Diikuti 40 Admin OPD', ringkasan: 'Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.', penulis: P, tanggal: hariLalu(9), views: 268, konten: 'Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi.' },
   { id: 3, jenis: 'berita', judul: 'Batas Waktu Pembaruan Data Aplikasi Triwulan Berjalan', ringkasan: 'Admin OPD diminta melengkapi data sebelum tenggat.', penulis: P, tanggal: hariLalu(14), views: 190, konten: 'Admin OPD diingatkan melengkapi dan mengajukan validasi data aplikasi sebelum tenggat periode berjalan.\n\nPengingat otomatis dikirim pada H-7, H-3, dan H-1.' },
@@ -15,6 +17,19 @@ export const artikel: ArtikelDetail[] = [
   { id: 5, jenis: 'artikel', judul: 'Praktik Baik Backup Data Aplikasi Pemerintah', ringkasan: 'Backup harian dengan retensi tujuh hari dan uji pemulihan berkala.', penulis: 'Tim Keamanan Informasi', tanggal: hariLalu(33), views: 345, konten: 'Backup harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh backup terakhir dan uji pemulihan secara berkala.' },
   { id: 6, jenis: 'artikel', judul: 'Panduan Menulis Thread Forum yang Efektif', ringkasan: 'Cara merumuskan pertanyaan agar cepat dijawab komunitas.', penulis: 'Moderator Forum', tanggal: hariLalu(41), views: 121, konten: 'Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial.' },
 ]
+
+const KATEGORI_BENIH: Record<JenisArtikel, string> = { berita: 'Layanan Digital', artikel: 'Arsitektur SPBE' }
+
+export const artikel: ArtikelDetail[] = benih.map((a) => ({
+  ...a,
+  format: 'teks',
+  urlSumber: '',
+  kolaborator: [],
+  kategori: KATEGORI_BENIH[a.jenis],
+  label: [],
+  statusAkses: 'publik',
+  unggulan: false,
+}))
 
 export const bantuan: Bantuan = {
   faq: [
@@ -35,15 +50,18 @@ export const bantuan: Bantuan = {
   ],
 }
 
-const ringkas = ({ konten: _k, ...a }: ArtikelDetail) => a
+const ringkas = ({ konten: _k, urlSumber: _u, kolaborator: _c, statusAkses: _s, ...a }: ArtikelDetail) => a
 
 export const kontenHandlers = [
   http.get('/api/artikel', async ({ request }) => {
     const url = new URL(request.url)
     const page = Math.max(1, Number(url.searchParams.get('page')) || 1)
     const jenis = url.searchParams.get('jenis') as JenisArtikel | null
+    const sudahLogin = currentUser(request) !== null
     await delay(250)
-    const cocok = artikel.filter((a) => !jenis || jenis === ('semua' as string) || a.jenis === jenis).sort((a, b) => b.tanggal.localeCompare(a.tanggal))
+    const cocok = artikel
+      .filter((a) => (!jenis || jenis === ('semua' as string) || a.jenis === jenis) && (sudahLogin || a.statusAkses === 'publik'))
+      .sort((a, b) => b.tanggal.localeCompare(a.tanggal))
     return HttpResponse.json({
       items: cocok.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(ringkas),
       page,
@@ -56,28 +74,76 @@ export const kontenHandlers = [
     const user = currentUser(request)
     if (!user) return unauthorized()
     if (user.role !== 'super_admin') return HttpResponse.json({ message: 'Hanya Super Admin yang dapat menambah berita atau artikel.' }, { status: 403 })
-    const b = (await request.json()) as Partial<Record<'jenis' | 'judul' | 'ringkasan' | 'penulis' | 'konten', string>>
+    const b = (await request.json()) as Partial<{
+      jenis: string
+      judul: string
+      format: string
+      urlSumber: string
+      penulis: string[]
+      kolaborator: string[]
+      ringkasan: string
+      konten: string
+      kategori: string
+      label: string[]
+      tanggalTerbit: string
+      statusAkses: string
+      unggulan: boolean
+    }>
+    const bersih = (d?: string[]) => {
+      const lihat = new Set<string>()
+      return (d ?? []).map((x) => String(x).trim()).filter((x) => x && !lihat.has(x.toLowerCase()) && lihat.add(x.toLowerCase()))
+    }
     const judul = (b.judul ?? '').trim()
     const ringkasan = (b.ringkasan ?? '').trim()
-    const penulis = (b.penulis ?? '').trim()
     const konten = (b.konten ?? '').trim()
+    const urlSumber = (b.urlSumber ?? '').trim()
+    const kategori = (b.kategori ?? '').trim()
+    const penulis = bersih(b.penulis)
+    const kolaborator = bersih(b.kolaborator)
+    const label = bersih(b.label)
     const galat: Record<string, string> = {}
     if (b.jenis !== 'berita' && b.jenis !== 'artikel') galat.jenis = 'Pilih berita atau artikel.'
     if (judul.length < 5 || judul.length > 200) galat.judul = 'Judul 5 sampai 200 karakter.'
+    if (!['gambar', 'video', 'audio', 'teks'].includes(b.format ?? '')) galat.format = 'Pilih format: gambar, video, audio, atau teks.'
+    if (urlSumber && !/^https?:\/\/\S+$/i.test(urlSumber)) galat.urlSumber = 'Isi URL lengkap yang diawali http:// atau https://.'
+    if (penulis.length === 0) galat.penulis = 'Isi minimal satu penulis.'
+    else if (penulis.length > 5 || penulis.some((x) => x.length > 100)) galat.penulis = 'Maksimal 5 penulis, tiap nama maksimal 100 karakter.'
+    if (kolaborator.length > 10 || kolaborator.some((x) => x.length > 100)) galat.kolaborator = 'Maksimal 10 kolaborator, tiap nama maksimal 100 karakter.'
     if (ringkasan.length < 10 || ringkasan.length > 500) galat.ringkasan = 'Ringkasan 10 sampai 500 karakter.'
-    if (penulis.length < 2 || penulis.length > 120) galat.penulis = 'Penulis 2 sampai 120 karakter.'
     if (konten.length < 20) galat.konten = 'Isi minimal 20 karakter.'
+    if (kategori.length < 2 || kategori.length > 80) galat.kategori = 'Pilih kategori.'
+    if (label.length > 10 || label.some((x) => x.length > 40)) galat.label = 'Maksimal 10 label, tiap label maksimal 40 karakter.'
+    if (b.statusAkses !== 'publik' && b.statusAkses !== 'internal') galat.statusAkses = 'Pilih status akses.'
+    const tgl = (b.tanggalTerbit ?? '').trim()
+    if (tgl && Number.isNaN(Date.parse(`${tgl}T00:00:00`))) galat.tanggalTerbit = 'Format tanggal tidak valid.'
     if (Object.keys(galat).length) return invalid(galat)
     await delay(300)
-    const baru: ArtikelDetail = { id: Math.max(0, ...artikel.map((a) => a.id)) + 1, jenis: b.jenis as JenisArtikel, judul, ringkasan, penulis, tanggal: new Date().toISOString(), views: 0, konten }
+    const baru: ArtikelDetail = {
+      id: Math.max(0, ...artikel.map((a) => a.id)) + 1,
+      jenis: b.jenis as JenisArtikel,
+      judul,
+      ringkasan,
+      penulis: penulis.join(', '),
+      tanggal: tgl ? new Date(`${tgl}T00:00:00`).toISOString() : new Date().toISOString(),
+      views: 0,
+      konten,
+      format: b.format as FormatArtikel,
+      urlSumber,
+      kolaborator,
+      kategori,
+      label,
+      statusAkses: b.statusAkses as AksesArtikel,
+      unggulan: !!b.unggulan,
+    }
     artikel.unshift(baru)
     return HttpResponse.json(baru, { status: 201 })
   }),
 
-  http.get('/api/artikel/:id', async ({ params }) => {
+  http.get('/api/artikel/:id', async ({ request, params }) => {
     await delay(200)
     const a = artikel.find((x) => x.id === Number(params.id))
     if (!a) return notFound('Artikel tidak ditemukan.')
+    if (a.statusAkses === 'internal' && !currentUser(request)) return HttpResponse.json({ message: 'Masuk untuk membaca tulisan ini.' }, { status: 401 })
     a.views += 1
     return HttpResponse.json(a)
   }),

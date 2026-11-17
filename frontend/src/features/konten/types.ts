@@ -1,6 +1,11 @@
 export type JenisArtikel = 'artikel' | 'berita'
 export type FilterJenis = 'semua' | JenisArtikel
 
+/** Bentuk isi tulisan, mengikuti formulir "Tambah Pengetahuan" di SIMPAN BRIN. */
+export type FormatArtikel = 'gambar' | 'video' | 'audio' | 'teks'
+/** Publik dibaca siapa saja; internal hanya oleh yang sudah masuk. */
+export type AksesArtikel = 'publik' | 'internal'
+
 export interface Artikel {
   id: number
   jenis: JenisArtikel
@@ -9,22 +14,50 @@ export interface Artikel {
   penulis: string
   tanggal: string
   views: number
+  format: FormatArtikel
+  kategori: string
+  label: string[]
+  unggulan: boolean
 }
 
 /** Isi berupa teks polos; paragraf dipisah baris kosong dan dirender sebagai teks (bukan HTML). */
 export interface ArtikelDetail extends Artikel {
   konten: string
+  /** Tautan ke sumber (gambar, video, audio, atau teks asli); kosong bila tidak ada. */
+  urlSumber: string
+  kolaborator: string[]
+  statusAkses: AksesArtikel
 }
 
 export interface ArtikelInput {
   jenis: JenisArtikel
   judul: string
+  format: FormatArtikel
+  urlSumber: string
+  penulis: string[]
+  kolaborator: string[]
   ringkasan: string
-  penulis: string
   konten: string
+  kategori: string
+  label: string[]
+  /** YYYY-MM-DD; kosong berarti hari ini. */
+  tanggalTerbit: string
+  statusAkses: AksesArtikel
+  unggulan: boolean
 }
 
-export const BATAS_ARTIKEL = { judulMin: 5, judulMax: 200, ringkasanMin: 10, ringkasanMax: 500, penulisMin: 2, penulisMax: 120, kontenMin: 20 } as const
+export const BATAS_ARTIKEL = {
+  judulMin: 5,
+  judulMax: 200,
+  ringkasanMin: 10,
+  ringkasanMax: 500,
+  kontenMin: 20,
+  penulisMaks: 5,
+  kolaboratorMaks: 10,
+  labelMaks: 10,
+  namaMaks: 100,
+  labelPanjangMaks: 40,
+} as const
 
 export interface DaftarArtikel {
   items: Artikel[]
@@ -46,3 +79,10 @@ export interface Bantuan {
 }
 
 export const JENIS_LABEL: Record<FilterJenis, string> = { semua: 'Semua', berita: 'Berita', artikel: 'Artikel' }
+
+export const FORMAT_LABEL: Record<FormatArtikel, string> = { gambar: 'Gambar', video: 'Video', audio: 'Audio', teks: 'Teks' }
+export const URL_LABEL: Record<FormatArtikel, string> = { gambar: 'URL gambar', video: 'URL video', audio: 'URL audio', teks: 'URL teks' }
+export const AKSES_LABEL: Record<AksesArtikel, string> = { publik: 'Publik (semua orang)', internal: 'Internal (setelah masuk)' }
+
+/** Daftar sementara; ganti dengan kategori master bila sudah ada sumbernya. Server menerima teks 2 sampai 80 karakter. */
+export const KATEGORI_ARTIKEL = ['Kebijakan SPBE', 'Arsitektur SPBE', 'Keamanan Informasi', 'Layanan Digital', 'Pelatihan dan Kegiatan', 'Umum'] as const

@@ -1,4 +1,5 @@
 import { api } from '@/api/client'
+import { authAdapter } from '@/auth/adapter'
 import type { Dokumen } from '@/features/dokumen/types'
 import type { MetadataDokumen, SesiUnggah } from './types'
 import { tipeDariNama } from './types'
@@ -18,7 +19,7 @@ const dibatalkan = () => new DOMException('Unggahan dibatalkan.', 'AbortError')
  * Kirim berkas langsung ke Object Storage. XMLHttpRequest dipakai karena fetch
  * belum dapat melaporkan progres unggahan.
  */
-function kirimBerkas(sesi: SesiUnggah, file: File, { onProgres, signal }: Opsi): Promise<void> {
+function kirimBerkas(sesi: SesiUnggah, file: File, token: string | null, { onProgres, signal }: Opsi): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(dibatalkan())
     const form = new FormData()
@@ -27,6 +28,8 @@ function kirimBerkas(sesi: SesiUnggah, file: File, { onProgres, signal }: Opsi):
 
     const xhr = new XMLHttpRequest()
     xhr.open('POST', sesi.urlUnggah)
+    // Token hanya dikirim ke API kita sendiri (alamat relatif /api/...), tidak ke penyimpanan eksternal.
+    if (token && sesi.urlUnggah.startsWith('/api/')) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgres(Math.round((e.loaded / e.total) * 100))
     }
@@ -56,7 +59,7 @@ export async function unggahDokumen(file: File, metadata: MetadataDokumen, opsi:
 
   opsi.onFase('mengunggah')
   opsi.onProgres(0)
-  await kirimBerkas(sesi, file, opsi)
+  await kirimBerkas(sesi, file, await authAdapter.getToken(), opsi)
 
   opsi.onFase('menyimpan')
   return api<Dokumen>('/dokumen/unggah/selesai', { method: 'POST', json: { idSesi: sesi.idSesi }, signal: opsi.signal })
