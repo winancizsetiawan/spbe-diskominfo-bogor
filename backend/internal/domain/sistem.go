@@ -23,6 +23,7 @@ const (
 	AksiValidasi       AksiAktivitas = "validasi"
 	AksiBackup         AksiAktivitas = "backup"
 	AksiPeriode        AksiAktivitas = "periode"
+	AksiDasbor         AksiAktivitas = "dasbor"
 )
 
 type HasilAudit string

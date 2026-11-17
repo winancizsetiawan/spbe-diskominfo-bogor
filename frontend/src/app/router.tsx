@@ -43,6 +43,7 @@ const DasborPublikPage = halaman(() => import('@/features/dasbor-publik/DasborPu
 const DasborArsitekturPage = halaman(() => import('@/features/dasbor-publik/DasborPublikPage'), 'DasborArsitekturPage')
 const AuditPage = halaman(() => import('@/features/sistem/pages/AuditPage'), 'AuditPage')
 const BackupPage = halaman(() => import('@/features/sistem/pages/BackupPage'), 'BackupPage')
+const DataDasborPage = halaman(() => import('@/features/sistem/pages/DataDasborPage'), 'DataDasborPage')
 const PeriodePage = halaman(() => import('@/features/sistem/pages/PeriodePage'), 'PeriodePage')
 const FlowchartListPage = halaman(() => import('@/features/flowchart/pages/FlowchartListPage'), 'FlowchartListPage')
 const FlowchartDetailPage = halaman(() => import('@/features/flowchart/pages/FlowchartDetailPage'), 'FlowchartDetailPage')
@@ -126,6 +127,7 @@ export const router = createBrowserRouter([
           guarded('periode:kelola', [{ path: 'admin/periode', element: <PeriodePage /> }]),
           guarded('audit:lihat', [{ path: 'admin/audit', element: <AuditPage /> }]),
           guarded('backup:kelola', [{ path: 'admin/backup', element: <BackupPage /> }]),
+          guarded('dasbor:data', [{ path: 'admin/data-dasbor', element: <DataDasborPage /> }]),
         ],
       },
       { path: '*', element: <NotFoundPage /> },

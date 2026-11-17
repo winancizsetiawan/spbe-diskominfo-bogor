@@ -25,6 +25,7 @@ const HAK_AKSES: { perm: Permission; label: string }[] = [
   { perm: 'periode:kelola', label: 'Atur periode pembaruan' },
   { perm: 'audit:lihat', label: 'Lihat audit trail' },
   { perm: 'backup:kelola', label: 'Kelola backup' },
+  { perm: 'dasbor:data', label: 'Perbarui data dasbor' },
 ]
 
 // Halaman akun Keycloak untuk ubah kata sandi; kosong selama SSO belum terhubung (mode demo).

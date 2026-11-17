@@ -116,6 +116,13 @@ func main() {
 			}
 			sistemHandler := handler.NewSistemHandler(sistemService)
 
+			// Pembaruan data Dasbor Publik/Analitik dari Excel (Super Admin).
+			dataDasbor := handler.NewDataDasborHandler(cfg.DasborDataDir, sistemService.CatatAktivitas)
+			api.GET("/dasbor/data", dataDasbor.GetStatus)
+			api.POST("/dasbor/data/pratinjau", dataDasbor.Pratinjau)
+			api.POST("/dasbor/data/terapkan", dataDasbor.Terapkan)
+			api.POST("/dasbor/data/pulihkan", dataDasbor.Pulihkan)
+
 			pmRepo := repository.NewPenggunaModulRepository(db)
 			handler.ResolverPengguna = pmRepo.FindUserByRole
 			pmService := service.NewPenggunaModulService(pmRepo, sistemService)

@@ -36,6 +36,7 @@ export type AksiAktivitas =
   | 'validasi'
   | 'backup'
   | 'periode'
+  | 'dasbor'
 
 export interface Aktivitas {
   id: number
@@ -64,6 +65,7 @@ export const AKSI_LABEL: Record<AksiAktivitas, string> = {
   validasi: 'Validasi data',
   backup: 'Backup',
   periode: 'Periode pembaruan',
+  dasbor: 'Data dasbor',
 }
 
 /** Nomor seluler Indonesia: 08xx atau +628xx, 10–13 digit tanpa kode negara awalan nol. */

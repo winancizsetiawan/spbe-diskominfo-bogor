@@ -55,7 +55,9 @@ sudo useradd --system --home /opt/spbe --shell /usr/sbin/nologin spbe
 sudo mkdir -p /opt/spbe/backend /etc/spbe
 sudo cp spbe-api /opt/spbe/backend/
 sudo mkdir -p /opt/spbe/backend/data/dasbor /opt/spbe/backend/uploads /opt/spbe/backend/backups
-# letakkan dasborPublik.json dan dasborInternal.json (data internal, kirim lewat jalur tertutup) di data/dasbor/
+# data dasbor: setelah aplikasi berjalan, Super Admin mengunggah Excel matriks lewat menu Sistem > Data Dasbor.
+# (Alternatif: salin dasborPublik.json dan dasborInternal.json hasil skrip ke data/dasbor/ lewat jalur tertutup.)
+# Folder data/dasbor harus dapat ditulis akun spbe; versi lama disimpan di data/dasbor/riwayat/.
 sudo chown -R spbe:spbe /opt/spbe && sudo chmod 700 /opt/spbe/backend/backups
 ```
 

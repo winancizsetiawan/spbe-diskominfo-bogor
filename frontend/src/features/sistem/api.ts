@@ -1,11 +1,24 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/api/client'
-import type { AuditFilter, DaftarAudit, DaftarBackup, DaftarPeriode, Periode, PeriodeInput, RiwayatBackup } from './types'
+import { api, ApiError } from '@/api/client'
+import { authAdapter } from '@/auth/adapter'
+import { authReady } from '@/auth/ready'
+import type {
+  AuditFilter,
+  DaftarAudit,
+  DaftarBackup,
+  DaftarPeriode,
+  Periode,
+  PeriodeInput,
+  PratinjauDataDasbor,
+  RiwayatBackup,
+  StatusDataDasbor,
+} from './types'
 
 export const sistemKeys = {
   audit: (filter: AuditFilter) => ['sistem', 'audit', filter] as const,
   backup: ['sistem', 'backup'] as const,
   periode: ['sistem', 'periode'] as const,
+  dataDasbor: ['sistem', 'data-dasbor'] as const,
 }
 
 function auditQuery(filter: AuditFilter) {
@@ -39,6 +52,54 @@ export function useJalankanBackup() {
     mutationFn: () => api<RiwayatBackup>('/backup', { method: 'POST' }),
     // Juga saat 409: backup lain sedang berjalan, tampilan perlu menyesuaikan.
     onSettled: () => void qc.invalidateQueries({ queryKey: sistemKeys.backup }),
+  })
+}
+
+export function useDataDasbor() {
+  return useQuery({ queryKey: sistemKeys.dataDasbor, queryFn: () => api<StatusDataDasbor>('/dasbor/data') })
+}
+
+/** Unggah Excel untuk dipratinjau. Memakai fetch karena api() hanya mengirim JSON. */
+export async function pratinjauDataDasbor(file: File, signal?: AbortSignal): Promise<PratinjauDataDasbor> {
+  await authReady
+  const form = new FormData()
+  form.append('file', file)
+  const token = await authAdapter.getToken()
+  const res = await fetch('/api/dasbor/data/pratinjau', {
+    method: 'POST',
+    body: form,
+    signal,
+    headers: token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' },
+  })
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string }
+    throw new ApiError(res.status, res.status >= 500 || !body.message ? 'Excel gagal diolah. Silakan coba lagi.' : body.message)
+  }
+  return (await res.json()) as PratinjauDataDasbor
+}
+
+function useSetelahUbahDasbor() {
+  const qc = useQueryClient()
+  return (status: StatusDataDasbor) => {
+    qc.setQueryData(sistemKeys.dataDasbor, status)
+    // Dasbor Publik dan Analitik memakai data baru.
+    void qc.invalidateQueries({ queryKey: ['dasbor'] })
+  }
+}
+
+export function useTerapkanDataDasbor() {
+  const setelah = useSetelahUbahDasbor()
+  return useMutation({
+    mutationFn: (idDraf: string) => api<StatusDataDasbor>('/dasbor/data/terapkan', { method: 'POST', json: { idDraf } }),
+    onSuccess: setelah,
+  })
+}
+
+export function usePulihkanDataDasbor() {
+  const setelah = useSetelahUbahDasbor()
+  return useMutation({
+    mutationFn: (versi: string) => api<StatusDataDasbor>('/dasbor/data/pulihkan', { method: 'POST', json: { versi } }),
+    onSuccess: setelah,
   })
 }
 

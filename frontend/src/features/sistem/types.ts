@@ -85,6 +85,73 @@ export const STATUS_BACKUP: Record<StatusBackup, { label: string; tone: 'warning
 /** Backup harian dianggap terlambat bila yang berhasil terakhir lebih tua dari ini. */
 export const BATAS_BACKUP_TERLAMBAT_JAM = 26
 
+// ---- Data Dasbor Publik/Analitik (Excel matriks arsitektur) ----
+
+export interface RingkasanDasbor {
+  judul: string
+  /** YYYY-MM-DD saat Excel diolah. */
+  diolah: string
+  opd: number
+  prosesBisnis: number
+  iku: number
+  layanan: number
+  data: number
+  dataTerbuka: number
+  aplikasi: number
+  pusatData: number
+  server: number
+  itemKeamanan: number
+  kegiatanPetaRencana: number
+}
+
+export interface MetaDasbor {
+  namaBerkas: string
+  diunggahOleh: string
+  diterapkanPada: string
+  /** Terisi bila versi ini hasil pemulihan dari riwayat. */
+  dipulihkanDari?: string
+}
+
+export interface VersiDasbor {
+  /** Kosong untuk data aktif; berisi id arsip (YYYYMMDD-HHMMSS) untuk riwayat. */
+  versi?: string
+  /** null untuk data lama yang disalin manual (sebelum fitur unggah). */
+  meta: MetaDasbor | null
+  ringkasan: RingkasanDasbor | null
+  diubahPada: string
+}
+
+export interface StatusDataDasbor {
+  aktif: VersiDasbor | null
+  riwayat: VersiDasbor[]
+}
+
+export interface PratinjauDataDasbor {
+  idDraf: string
+  namaBerkas: string
+  ringkasan: RingkasanDasbor
+  sebelumnya: RingkasanDasbor | null
+  peringatan: string[]
+  berlakuHingga: string
+}
+
+/** Urutan dan label angka ringkasan yang ditampilkan di pratinjau. */
+export const BARIS_RINGKASAN: { kunci: keyof Omit<RingkasanDasbor, 'judul' | 'diolah'>; label: string; publik?: boolean }[] = [
+  { kunci: 'opd', label: 'OPD dengan data arsitektur' },
+  { kunci: 'prosesBisnis', label: 'Proses bisnis' },
+  { kunci: 'iku', label: 'Indikator kinerja (IKU)' },
+  { kunci: 'layanan', label: 'Layanan' },
+  { kunci: 'data', label: 'Data' },
+  { kunci: 'dataTerbuka', label: 'Data bersifat terbuka (tampil di publik)', publik: true },
+  { kunci: 'aplikasi', label: 'Aplikasi' },
+  { kunci: 'pusatData', label: 'Pusat data' },
+  { kunci: 'server', label: 'Server (internal)' },
+  { kunci: 'itemKeamanan', label: 'Item keamanan (internal)' },
+  { kunci: 'kegiatanPetaRencana', label: 'Kegiatan peta rencana' },
+]
+
+export const BATAS_EXCEL_DASBOR_MB = 30
+
 // ---- Periode Pembaruan Data (Revisi 5.16, K19) ----
 
 export type StatusPeriode = 'akan_datang' | 'berjalan' | 'selesai'

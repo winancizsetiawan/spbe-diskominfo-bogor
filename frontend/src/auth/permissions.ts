@@ -17,6 +17,7 @@ export type Permission =
   | 'audit:lihat'
   | 'backup:kelola'
   | 'kritik:lihat'
+  | 'dasbor:data' // perbarui data Dasbor Publik/Analitik dari Excel matriks arsitektur
 
 const SEMUA_INTERNAL: Role[] = ['asn', 'akademisi', 'verifikator', 'admin_opd', 'super_admin']
 const PENGELOLA: Role[] = ['admin_opd', 'super_admin']
@@ -37,6 +38,7 @@ const ALLOWED: Record<Permission, Role[]> = {
   'audit:lihat': SUPER,
   'backup:kelola': SUPER,
   'kritik:lihat': SUPER,
+  'dasbor:data': SUPER,
 }
 
 export function can(user: User | null, permission: Permission): boolean {

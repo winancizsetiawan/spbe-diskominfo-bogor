@@ -26,6 +26,10 @@ Jumlah endpoint: **80**
 | GET | `/api/dasbor/analitik` | Login | Get analitik |
 | GET | `/api/dasbor/instansi` | Admin OPD, Super Admin | Get dasbor instansi |
 | GET | `/api/dasbor/embed` | Login | Get dasbor embed |
+| GET | `/api/dasbor/data` | Super Admin | Status data dasbor aktif dan riwayat versi |
+| POST | `/api/dasbor/data/pratinjau` | Super Admin | Unggah Excel matriks (multipart `file`, maks. 30 MB) dan pratinjau ringkasannya |
+| POST | `/api/dasbor/data/terapkan` | Super Admin | Terapkan draf pratinjau (`idDraf`); data lama diarsipkan |
+| POST | `/api/dasbor/data/pulihkan` | Super Admin | Pulihkan versi riwayat (`versi`) |
 
 ## referensi
 
@@ -96,6 +100,10 @@ Jumlah endpoint: **80**
 | POST | `/api/forum/thread/:id/balasan` | Login | Buat balasan |
 | PUT | `/api/forum/balasan/:id/nilai` | Login | Toggle nilai balasan |
 | POST | `/api/forum/laporan` | Login | Buat laporan |
+| PUT | `/api/forum/thread/:id/penerima` | Pembuat thread, Super Admin | Ubah penerima (penugasan) thread |
+| GET | `/api/forum/pengguna` | Login | Cari pengguna aktif untuk dipilih sebagai penerima (`q`) |
+| POST | `/api/forum/lampiran` | Login | Unggah lampiran gambar/PDF (multipart `file`, maks. 5 MB) |
+| GET | `/api/forum/lampiran/:nama` | Tautan bertanda | Buka lampiran (`?e=&s=`, berlaku 30 menit) |
 
 ## moderasi
 

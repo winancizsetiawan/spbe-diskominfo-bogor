@@ -5,9 +5,22 @@ BE membaca `dasborPublik.json` dan `dasborInternal.json` dari folder `DASBOR_DAT
 tidak masuk git). Bila berkasnya belum ada, BE membalas **404** dan FE menampilkan "Data dasbor belum tersedia";
 bagian statistik di halaman depan disembunyikan.
 
-**Memperbarui data:** jalankan `python frontend/scripts/excel_dasbor_publik.py "<matriks>.xlsx"`. Skrip menulis ke
+**Memperbarui data (cara utama):** Super Admin membuka menu **Sistem → Data Dasbor** (`/admin/data-dasbor`), mengunggah
+Excel matriks, memeriksa pratinjau angka, lalu menekan **Terapkan**. BE mengolah Excel sendiri
+([`backend/internal/dasbor`](../../backend/internal/dasbor), port Go dari skrip Python dengan hasil identik), menyimpan
+versi lama di `DASBOR_DATA_DIR/riwayat/` (5 versi terakhir, dapat dipulihkan), dan mencatat audit `dasbor`.
+
+**Cara alternatif (tanpa server):** `python frontend/scripts/excel_dasbor_publik.py "<matriks>.xlsx"` menulis ke
 `frontend/src/mocks/dataNyata/` (mode mock) dan menyalin ke `backend/data/dasbor/`. BE membaca ulang berkas yang
-berubah tanpa perlu restart.
+berubah tanpa perlu restart. Bila aturan pembatasan data publik diubah, ubah skrip Python **dan**
+`backend/internal/dasbor/konversi.go` bersamaan; uji paritasnya ada di `konversi_test.go`.
+
+| Endpoint pengelolaan (Super Admin) | Fungsi |
+|---|---|
+| `GET /api/dasbor/data` | Data aktif (ringkasan, asal berkas, pengunggah) dan riwayat versi |
+| `POST /api/dasbor/data/pratinjau` | Multipart `file` (.xlsx, maks. 30 MB). Mengolah Excel tanpa menerapkan; balas `idDraf`, ringkasan, perbandingan dengan data aktif, dan peringatan. Format salah → 422 dengan nama sheet/kolom yang hilang |
+| `POST /api/dasbor/data/terapkan` | `{ idDraf }` (berlaku 30 menit, sekali pakai, hanya pengunggahnya). Data aktif diarsipkan lalu diganti |
+| `POST /api/dasbor/data/pulihkan` | `{ versi }` (mis. `20261117-141452`). Data aktif diarsipkan lalu versi itu dipakai lagi |
 
 | Endpoint | Akses | Dipakai di |
 |---|---|---|
