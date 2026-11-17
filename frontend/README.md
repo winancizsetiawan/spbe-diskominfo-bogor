@@ -21,7 +21,7 @@ Buka http://localhost:5173. Mode bawaan (`.env.development`) memakai login demo 
 
 | Variabel | Nilai | Arti |
 |---|---|---|
-| `VITE_AUTH_MODE` | `mock` / `keycloak` | Login demo atau SSO Keycloak. **Bawaan: `keycloak`** bila tidak diset, jadi build tanpa konfigurasi tidak membuka login demo. Kode login demo tidak ikut ke bundle kecuali diminta `mock` |
+| `VITE_AUTH_MODE` | `mock` / `lokal` / `keycloak` | Login demo, login di halaman portal (`lokal`: token sesi dari BE; ASN dengan NIP + kata sandi TND), atau SSO Keycloak. **Bawaan: `keycloak`** bila tidak diset, jadi build tanpa konfigurasi tidak membuka login demo. Kode login demo tidak ikut ke bundle kecuali diminta `mock` |
 | `VITE_API_MOCK` | `true` / `false` | MSW mencegat `/api/*` atau diteruskan ke backend |
 
 Mock API memakai Service Worker MSW. Bila browser memblokir Service Worker, `fetch` ke `/api/*` dicegat langsung di halaman (lihat `src/mocks/browser.ts`).

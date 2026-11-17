@@ -46,7 +46,12 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   if (res.status === 401 && authAdapter.hasSession()) {
     res = await send(path, init, true)
     if (res.status === 401) {
-      authAdapter.login(window.location.pathname + window.location.search)
+      // Token ditolak server: buang dulu, supaya halaman login tidak memakainya lagi dan
+      // mengarahkan ulang terus-menerus (/masuk?kembali=/masuk?kembali=...).
+      authAdapter.lupakanSesi?.()
+      if (!window.location.pathname.startsWith('/masuk')) {
+        authAdapter.login(window.location.pathname + window.location.search)
+      }
       throw new ApiError(401, 'Sesi Anda berakhir. Silakan masuk kembali.')
     }
   }

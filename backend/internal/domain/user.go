@@ -23,6 +23,11 @@ const (
 	StatusNonaktif StatusAkun = "nonaktif"
 )
 
+const (
+	SumberLokal = "lokal"
+	SumberTND   = "tnd"
+)
+
 // User merepresentasikan akun pengguna sistem SPBE
 type User struct {
 	ID              uint       `gorm:"primaryKey" json:"id"`
@@ -39,6 +44,10 @@ type User struct {
 	TerkunciHingga  *time.Time `json:"terkunciHingga,omitempty"`
 	KataSandi       *string    `gorm:"size:255" json:"-"`
 	SandiDiubahPada *time.Time `json:"sandiDiubahPada,omitempty"`
+	// Nip terisi untuk ASN yang masuk lewat akun TND Pemkot Bogor.
+	Nip *string `gorm:"size:30;uniqueIndex" json:"-"`
+	// SumberAkun: "lokal" (kata sandi di portal) atau "tnd" (kata sandi dikelola TND, tidak disimpan di portal).
+	SumberAkun string `gorm:"size:20;not null;default:'lokal'" json:"-"`
 	CreatedAt       time.Time  `json:"-"`
 	UpdatedAt       time.Time  `json:"-"`
 }

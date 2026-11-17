@@ -26,6 +26,8 @@ import (
 const (
 	ModeDemo     = "demo"
 	ModeKeycloak = "keycloak"
+	// ModeLokal: hanya token sesi portal (login lewat halaman portal: akun lokal atau TND untuk ASN).
+	ModeLokal = "lokal"
 
 	RoleSuperAdmin  = "super_admin"
 	RoleAdminOPD    = "admin_opd"
@@ -65,8 +67,18 @@ func Validasi(c Config, produksi bool) error {
 		if c.Issuer == "" || c.JWKSURL == "" {
 			return errors.New("AUTH_MODE=keycloak membutuhkan KEYCLOAK_ISSUER dan KEYCLOAK_JWKS_URL")
 		}
+	case ModeLokal:
 	default:
-		return fmt.Errorf("AUTH_MODE %q tidak dikenal (pilih demo atau keycloak)", c.Mode)
+		return fmt.Errorf("AUTH_MODE %q tidak dikenal (pilih demo, lokal, atau keycloak)", c.Mode)
+	}
+	return nil
+}
+
+// ValidasiRahasiaSesi: di produksi rahasia token sesi wajib diisi dan cukup panjang, agar sesi tidak
+// gugur setiap restart dan tidak dapat ditebak.
+func ValidasiRahasiaSesi(rahasia string, produksi bool) error {
+	if produksi && len(rahasia) < 32 {
+		return errors.New("SESI_SECRET wajib diisi minimal 32 karakter acak saat APP_ENV=production")
 	}
 	return nil
 }
@@ -133,6 +145,23 @@ func Identitas(header string) (sudahLogin bool, peran, email string) {
 	mu.RLock()
 	c := cfg
 	mu.RUnlock()
+
+	// Token sesi portal (HS256) diperiksa di semua mode. Bila tidak sah, ditolak: tidak jatuh ke
+	// perlakuan token demo di bawah.
+	if adalahTokenSesi(token) {
+		sekarang := time.Now
+		if c.Sekarang != nil {
+			sekarang = c.Sekarang
+		}
+		p, e, err := periksaSesi(token, sekarang())
+		if err != nil {
+			return false, "", ""
+		}
+		return true, p, e
+	}
+	if c.Mode == ModeLokal {
+		return false, "", ""
+	}
 
 	if c.Mode == ModeDemo {
 		if strings.HasPrefix(token, "demo.") {

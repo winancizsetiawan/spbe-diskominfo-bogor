@@ -2,9 +2,11 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/service"
 
@@ -52,7 +54,23 @@ func (h *PenggunaModulHandler) Login(c *gin.Context) {
 		return
 	}
 
+	if !pasangTokenSesi(c, res) {
+		return
+	}
 	c.JSON(http.StatusOK, res)
+}
+
+// pasangTokenSesi menerbitkan token sesi portal untuk peran aktif dan email pengguna.
+func pasangTokenSesi(c *gin.Context, res *domain.LoginResponse) bool {
+	tok, exp, err := auth.TerbitkanSesi(string(res.Role), res.User.Email)
+	if err != nil {
+		log.Printf("[auth] gagal menerbitkan token sesi: %v", err)
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal membuat sesi. Silakan coba lagi."})
+		return false
+	}
+	res.Token, res.KedaluwarsaPada = tok, &exp
+	c.Header("Cache-Control", "no-store")
+	return true
 }
 
 // GetMe menangani GET /api/me
@@ -95,6 +113,10 @@ func (h *PenggunaModulHandler) SwitchRole(c *gin.Context) {
 		return
 	}
 
+	// Peran aktif ada di dalam token, jadi ganti peran menerbitkan token baru.
+	if !pasangTokenSesi(c, res) {
+		return
+	}
 	c.JSON(http.StatusOK, res)
 }
 
@@ -118,6 +140,11 @@ func (h *PenggunaModulHandler) UbahSandi(c *gin.Context) {
 				Message: "Periksa kembali isian Anda.",
 				Errors:  valErr.Errors,
 			})
+			return
+		}
+		var konflikErr *service.PenggunaKonflikError
+		if errors.As(err, &konflikErr) {
+			c.JSON(http.StatusConflict, domain.ErrorResponse{Message: konflikErr.Pesan})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui kata sandi."})

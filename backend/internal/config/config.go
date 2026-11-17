@@ -33,6 +33,14 @@ type Config struct {
 	KeycloakJWKSURL  string
 	KeycloakClientID string
 
+	// Token sesi portal (login lewat halaman portal). Produksi wajib SESI_SECRET >= 32 karakter acak.
+	SesiSecret    string
+	SesiDurasiJam int
+
+	// Login ASN lewat akun TND Pemkot Bogor. Kosong = login TND dimatikan.
+	TNDLoginURL        string
+	TNDBatasWaktuDetik int
+
 	// Backup nyata (pg_dump + arsip unggahan).
 	PgDumpPath    string
 	BackupDir     string
@@ -86,6 +94,12 @@ func LoadConfig() *Config {
 		KeycloakIssuer:   strings.TrimRight(getEnv("KEYCLOAK_ISSUER", ""), "/"),
 		KeycloakJWKSURL:  getEnv("KEYCLOAK_JWKS_URL", ""),
 		KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
+
+		SesiSecret:    getEnv("SESI_SECRET", ""),
+		SesiDurasiJam: getEnvInt("SESI_DURASI_JAM", 8),
+
+		TNDLoginURL:        strings.TrimSpace(getEnv("TND_LOGIN_URL", "https://tnd.kotabogor.go.id/api-baru/api/v1/login")),
+		TNDBatasWaktuDetik: getEnvInt("TND_BATAS_WAKTU_DETIK", 10),
 
 		PgDumpPath:    getEnv("PG_DUMP_PATH", "pg_dump"),
 		BackupDir:     getEnv("BACKUP_DIR", "./backups"),

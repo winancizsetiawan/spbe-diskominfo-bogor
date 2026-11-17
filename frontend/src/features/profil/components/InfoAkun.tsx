@@ -58,7 +58,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
           <div>
             <h2 className="font-semibold text-slate-900">Data pegawai</h2>
             <p className="flex items-center gap-1.5 text-sm text-slate-500">
-              <BadgeCheck className="size-4 text-emerald-600" aria-hidden /> Terverifikasi SSO · hanya baca
+              <BadgeCheck className="size-4 text-emerald-600" aria-hidden /> Terverifikasi {user.sumberAkun === 'tnd' ? 'TND' : 'SSO'} · hanya baca
             </p>
           </div>
         </div>
@@ -101,6 +101,15 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
         </ul>
       </Card>
 
+      {user.sumberAkun === 'tnd' ? (
+        <Card>
+          <h2 className="font-semibold text-slate-900">Keamanan akun</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Anda masuk dengan NIP dan kata sandi akun TND Pemkot Bogor. Kata sandi tidak disimpan di portal SPBE; untuk menggantinya,
+            gunakan aplikasi TND.
+          </p>
+        </Card>
+      ) : (
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -155,6 +164,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
           )}
         </div>
       </Card>
+      )}
 
       <TeleponDialog open={ubahTelepon} noTelepon={profil.noTelepon} onClose={() => setUbahTelepon(false)} />
       <UbahSandiDialog open={ubahSandi} onClose={() => setUbahSandi(false)} />

@@ -16,6 +16,8 @@ type Instansi struct {
 	ID        uint          `gorm:"primaryKey" json:"id"`
 	Nama      string        `gorm:"size:150;not null;uniqueIndex" json:"nama"`
 	Jenis     JenisInstansi `gorm:"size:50;not null;default:'OPD'" json:"jenis"`
+	// IdOpdTnd: opd_id dari TND, untuk mencocokkan OPD pegawai yang masuk lewat akun TND.
+	IdOpdTnd *int `gorm:"uniqueIndex" json:"-"`
 	CreatedAt time.Time     `json:"-"`
 	UpdatedAt time.Time     `json:"-"`
 }

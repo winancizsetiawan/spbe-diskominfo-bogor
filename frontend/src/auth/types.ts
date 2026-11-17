@@ -13,6 +13,16 @@ export interface User {
   sandiDiubahPada?: string | null
   wajibGantiSandi?: boolean
   sisaHariSandi?: number
+  /** "tnd": ASN masuk dengan NIP dan kata sandi TND; kata sandinya tidak dapat diganti dari portal. */
+  sumberAkun?: 'lokal' | 'tnd'
+}
+
+/** Jawaban POST /api/auth/login dan /api/auth/switch-role. Mode mock (MSW) tidak mengirim token. */
+export interface JawabanLogin {
+  role: Role
+  user: User
+  token?: string
+  kedaluwarsaPada?: string
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -32,11 +42,11 @@ export const ROLE_BADGE_CLASS: Record<Role, string> = {
 }
 
 export const ROLE_MODE_DESKRIPSI: Record<Role, string> = {
-  asn: 'Mode Kerja ASN — Akses SOP internal pemerintahan, pembelajaran kompetensi, dan kolaborasi antar-OPD.',
-  akademisi: 'Mode Kerja Akademisi — Akses literatur regulasi SPBE, analitik arsitektur daerah, dan diskusi kajian ilmiah.',
-  verifikator: 'Mode Kerja Verifikator — Pemeriksaan dan persetujuan publikasi berita serta artikel edukasi SPBE.',
-  admin_opd: 'Mode Kerja Admin OPD — Pengelolaan katalog aplikasi, klasifikasi RAA, dan proses bisnis instansi.',
-  super_admin: 'Mode Kerja Super Admin — Pengelolaan penuh portal, validasi data OPD, repositori, dan keamanan sistem.',
+  asn: 'Akses dokumen dan SOP internal, pembelajaran SPBE, forum diskusi antar-OPD, dan Dasbor Analitik.',
+  akademisi: 'Akses dokumen dan regulasi SPBE, Dasbor Analitik arsitektur Kota Bogor, pembelajaran, dan forum diskusi.',
+  verifikator: 'Memeriksa dan menyetujui berita serta artikel SPBE sebelum terbit.',
+  admin_opd: 'Mengelola data aplikasi, klasifikasi RAA, flowchart proses bisnis, dan dasbor instansi Anda.',
+  super_admin: 'Mengelola seluruh portal: pengguna, validasi data OPD, repositori, moderasi forum, data dasbor, dan backup.',
 }
 
 export function daftarPeranPengguna(user: User | null): Role[] {

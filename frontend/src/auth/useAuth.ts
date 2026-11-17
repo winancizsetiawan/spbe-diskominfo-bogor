@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { toast } from '@/components/ui/toast'
-import { authAdapter } from './adapter'
+import { errorMessage } from '@/lib/errors'
+import { authAdapter, authMode } from './adapter'
 import { can, type Permission } from './permissions'
 import { useSession } from './session'
-import { ROLE_LABEL, type Role, type User } from './types'
+import { ROLE_LABEL, type JawabanLogin, type Role } from './types'
 
 export function useAuth() {
   const { status, user, notice, setUser } = useSession()
@@ -13,16 +14,22 @@ export function useAuth() {
   const switchRole = async (nextRole: Role) => {
     if (!user || user.role === nextRole) return
     try {
-      const res = await api<{ role: Role; user: User }>('/auth/switch-role', {
+      const res = await api<JawabanLogin>('/auth/switch-role', {
         method: 'POST',
         json: { role: nextRole },
       })
-      authAdapter.loginAs?.(res.role, res.user.email)
+      // Peran aktif tersimpan di token sesi, jadi BE menerbitkan token baru.
+      if (res.token && res.kedaluwarsaPada && authAdapter.loginToken) authAdapter.loginToken(res.token, res.kedaluwarsaPada)
+      else authAdapter.loginAs?.(res.role, res.user.email)
       setUser(res.user)
       void qc.invalidateQueries()
       toast.success(`Peran aktif berhasil diubah menjadi ${ROLE_LABEL[res.role]}.`)
-    } catch {
-      // Cadangan bila mode mock / offline
+    } catch (err) {
+      // Cadangan hanya untuk mode demo tanpa BE; di mode lain kegagalan ditampilkan apa adanya.
+      if (authMode !== 'mock') {
+        toast.error(errorMessage(err))
+        return
+      }
       authAdapter.loginAs?.(nextRole, user.email)
       setUser({ ...user, role: nextRole })
       void qc.invalidateQueries()

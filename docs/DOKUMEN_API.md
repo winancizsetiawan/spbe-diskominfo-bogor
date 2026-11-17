@@ -145,8 +145,9 @@ Jumlah endpoint: **80**
 
 | Metode | Jalur | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/api/auth/login` | Publik | Login |
-| POST | `/api/auth/ubah-sandi` | Login | Ubah sandi |
+| POST | `/api/auth/login` | Publik | Login di halaman portal (`username`, `sandi`). Username NIP 18 digit diperiksa ke API login TND; akun ASN dibuat otomatis pada login pertama. Balasan memuat `token` (token sesi HS256, kirim sebagai `Authorization: Bearer`) dan `kedaluwarsaPada`. Galat: 401 salah, 423 diblokir (5x salah), 403 pegawai tidak aktif di TND, 503 TND tidak dapat dihubungi |
+| POST | `/api/auth/switch-role` | Login | Ganti peran aktif; menerbitkan token sesi baru |
+| POST | `/api/auth/ubah-sandi` | Login | Ubah sandi (akun TND ditolak 409: kata sandi dikelola TND) |
 | POST | `/api/auth/simulasi-kedaluwarsa` | Login | Simulasi kedaluwarsa sandi (alat uji, hanya terdaftar bila `APP_ENV=development`) |
 
 ## me

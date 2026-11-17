@@ -31,6 +31,13 @@ func main() {
 		log.Fatalf("Konfigurasi autentikasi tidak valid: %v", err)
 	}
 	auth.Init(authCfg)
+	if err := auth.ValidasiRahasiaSesi(cfg.SesiSecret, cfg.AppEnv == "production"); err != nil {
+		log.Fatalf("Konfigurasi sesi tidak valid: %v", err)
+	}
+	auth.AturSesi(cfg.SesiSecret, time.Duration(cfg.SesiDurasiJam)*time.Hour)
+	if cfg.SesiSecret == "" {
+		log.Println("[PERINGATAN] SESI_SECRET kosong: rahasia sesi acak dipakai; semua sesi login gugur saat server restart.")
+	}
 	// Kata sandi demo per peran hanya untuk pengembangan lokal.
 	service.AktifkanSandiDemo(cfg.AppEnv == "development")
 	if cfg.AuthMode == auth.ModeDemo {
@@ -126,6 +133,10 @@ func main() {
 			pmRepo := repository.NewPenggunaModulRepository(db)
 			handler.ResolverPengguna = pmRepo.FindUserByRole
 			pmService := service.NewPenggunaModulService(pmRepo, sistemService)
+			if cfg.TNDLoginURL != "" {
+				pmService.PasangTND(service.NewKlienTND(cfg.TNDLoginURL, time.Duration(cfg.TNDBatasWaktuDetik)*time.Second))
+				log.Printf("Login ASN lewat TND aktif: %s", cfg.TNDLoginURL)
+			}
 			pmHandler := handler.NewPenggunaModulHandler(pmService)
 
 			portalRepo := repository.NewPortalModulRepository(db)

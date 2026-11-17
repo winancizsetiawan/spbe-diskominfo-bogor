@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_AUTH_MODE: 'mock' | 'keycloak'
+  readonly VITE_AUTH_MODE: 'mock' | 'lokal' | 'keycloak'
   readonly VITE_API_MOCK: string
   readonly VITE_KEYCLOAK_URL: string
   readonly VITE_KEYCLOAK_REALM: string

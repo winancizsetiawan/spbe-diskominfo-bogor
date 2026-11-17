@@ -61,6 +61,9 @@ type LoginInput struct {
 type LoginResponse struct {
 	Role Role        `json:"role"`
 	User PenggunaDTO `json:"user"`
+	// Token sesi portal (diisi handler). FE mengirimnya sebagai "Authorization: Bearer <token>".
+	Token           string     `json:"token,omitempty"`
+	KedaluwarsaPada *time.Time `json:"kedaluwarsaPada,omitempty"`
 }
 
 type UbahSandiInput struct {
@@ -87,6 +90,8 @@ type PenggunaDTO struct {
 	SandiDiubahPada *time.Time      `json:"sandiDiubahPada,omitempty"`
 	WajibGantiSandi bool            `json:"wajibGantiSandi"`
 	SisaHariSandi   int             `json:"sisaHariSandi"`
+	// "lokal" atau "tnd". Akun TND tidak dapat mengganti kata sandi di portal.
+	SumberAkun string `json:"sumberAkun"`
 }
 
 type HitunganRolePengguna struct {

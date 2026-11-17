@@ -79,6 +79,7 @@ func (e *PenggunaKonflikError) Error() string {
 type PenggunaModulService struct {
 	repo      *repository.PenggunaModulRepository
 	sistemSvc *SistemService
+	tnd       *KlienTND
 }
 
 func NewPenggunaModulService(repo *repository.PenggunaModulRepository, sistemSvc *SistemService) *PenggunaModulService {
@@ -105,7 +106,16 @@ func (s *PenggunaModulService) AmbilUserDariRole(role string) (*domain.User, err
 
 func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 	diubahPada, wajibGanti, sisaHari := hitungStatusSandi(u)
+	sumber := u.SumberAkun
+	if sumber == "" {
+		sumber = domain.SumberLokal
+	}
+	if sumber == domain.SumberTND {
+		// Kebijakan masa berlaku kata sandi akun TND diatur oleh TND, bukan portal.
+		diubahPada, wajibGanti, sisaHari = nil, false, MasaAktifSandiHari
+	}
 	return domain.PenggunaDTO{
+		SumberAkun:  sumber,
 		ID:          u.ID,
 		Nama:        u.Nama,
 		Email:       u.Email,
@@ -181,6 +191,11 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 		}}
 	}
 
+	// NIP 18 digit: ASN masuk dengan akun TND (kata sandi diperiksa TND, tidak disimpan di portal).
+	if s.tnd != nil && AdalahNIP(username) {
+		return s.loginTND(username, in.Sandi)
+	}
+
 	var u *domain.User
 	if r, ok := usernameKeRole[username]; ok && sandiDemoAktif.Load() {
 		u, _ = s.repo.FindUserByRole(string(r))
@@ -195,82 +210,19 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 
 	now := time.Now()
 
-	// Pulihkan otomatis bila masa blokir sementara (15 menit) telah selesai
-	if u.TerkunciHingga != nil && now.After(*u.TerkunciHingga) {
-		u.GagalLogin = 0
-		u.TerkunciHingga = nil
-		if u.StatusAkun == domain.StatusNonaktif {
-			u.StatusAkun = domain.StatusAktif
-		}
-		_ = s.repo.UpdateUser(u)
+	// Pulihkan blokir yang sudah lewat masanya; tolak bila akun masih diblokir atau nonaktif.
+	if status, err := s.cekBlokir(u, now); err != nil {
+		return nil, status, err
 	}
-
-	// Cek apakah akun masih dalam masa blokir atau dinonaktifkan
-	if (u.TerkunciHingga != nil && now.Before(*u.TerkunciHingga)) || u.StatusAkun == domain.StatusNonaktif {
-		uid := u.ID
-		s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, "Percobaan masuk ditolak: akun sedang diblokir/nonaktif", domain.HasilGagal)
-		if u.TerkunciHingga != nil && now.Before(*u.TerkunciHingga) {
-			sisaMenit := int(math.Ceil(u.TerkunciHingga.Sub(now).Minutes()))
-			if sisaMenit < 1 {
-				sisaMenit = 1
-			}
-			return nil, 423, fmt.Errorf("Akun Anda diblokir karena %d kali salah memasukkan kata sandi. Silakan tunggu %d menit lagi atau hubungi Super Admin Diskominfo untuk memulihkan akun Anda.", MaksGagalLogin, sisaMenit)
-		}
-		return nil, 423, errors.New("Akun Anda sedang dinonaktifkan/diblokir. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda.")
+	// Akun TND tidak punya kata sandi di portal: arahkan masuk dengan NIP.
+	if u.SumberAkun == domain.SumberTND && (u.KataSandi == nil || *u.KataSandi == "") {
+		return nil, 401, errors.New("Akun ini masuk dengan NIP dan kata sandi TND.")
 	}
-
 	if !sandiCocok(u, in.Sandi) {
-		u.GagalLogin++
-		uid := u.ID
-
-		if u.GagalLogin >= MaksGagalLogin {
-			terkunci := now.Add(DurasiBlokirLogin)
-			u.TerkunciHingga = &terkunci
-			if u.Role != domain.RoleSuperAdmin {
-				u.StatusAkun = domain.StatusNonaktif
-			}
-			_ = s.repo.UpdateUser(u)
-
-			s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, fmt.Sprintf("Akun diblokir otomatis setelah %d kali salah kata sandi", MaksGagalLogin), domain.HasilGagal)
-
-			admins, _ := s.repo.FindSuperAdmins()
-			for _, adm := range admins {
-				_ = s.repo.CreateNotifikasi(&domain.Notifikasi{
-					UserID:      adm.ID,
-					Kategori:    domain.KategoriNotifSistem,
-					Judul:       "Peringatan Keamanan: Akun Diblokir",
-					Pesan:       fmt.Sprintf("Akun %s (%s) diblokir otomatis karena %d kali gagal login berturut-turut.", u.Nama, roleValidMap[u.Role], MaksGagalLogin),
-					UrlTujuan:   "/admin/pengguna",
-					SudahDibaca: false,
-					DibuatPada:  now,
-				})
-			}
-
-			return nil, 423, fmt.Errorf("Akun Anda telah diblokir karena %d kali salah memasukkan kata sandi. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda atau tunggu 15 menit.", MaksGagalLogin)
-		}
-
-		_ = s.repo.UpdateUser(u)
-		sisa := MaksGagalLogin - u.GagalLogin
-		s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, fmt.Sprintf("Percobaan masuk gagal (%d/%d): kata sandi salah", u.GagalLogin, MaksGagalLogin), domain.HasilGagal)
-		return nil, 401, fmt.Errorf("Username atau kata sandi salah. Sisa percobaan: %d kali lagi sebelum akun diblokir.", sisa)
+		status, err := s.catatGagalLogin(u, now)
+		return nil, status, err
 	}
-
-	// Login berhasil: reset penghitung gagal login
-	u.GagalLogin = 0
-	u.TerkunciHingga = nil
-	u.LoginTerakhir = &now
-	if u.SandiDiubahPada == nil {
-		u.SandiDiubahPada = &now
-	}
-	_ = s.repo.UpdateUser(u)
-
-	uid := u.ID
-	s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, "Login portal berhasil", domain.HasilBerhasil)
-
-	return &domain.LoginResponse{
-		Role: u.Role,
-		User: kePenggunaDTO(*u),
-	}, 200, nil
+	return s.loginBerhasil(u, now, "Login portal berhasil"), 200, nil
 }
 
 // UbahSandi menangani penggantian kata sandi berkala (kebijakan wajib ganti tiap 365 hari).
@@ -278,6 +230,10 @@ func (s *PenggunaModulService) UbahSandi(role string, in domain.UbahSandiInput) 
 	u, err := s.AmbilUserDariRole(role)
 	if err != nil {
 		return nil, err
+	}
+
+	if u.SumberAkun == domain.SumberTND {
+		return nil, &PenggunaKonflikError{Pesan: "Kata sandi akun Anda dikelola TND Pemkot Bogor. Ganti kata sandi melalui aplikasi TND."}
 	}
 
 	errs := make(map[string]string)
