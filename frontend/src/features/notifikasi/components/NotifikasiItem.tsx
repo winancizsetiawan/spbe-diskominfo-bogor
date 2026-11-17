@@ -1,4 +1,4 @@
-import { FileText, GraduationCap, MessagesSquare, ShieldCheck, type LucideIcon } from 'lucide-react'
+import { CheckCircle2, FileText, GraduationCap, MessagesSquare, ShieldCheck, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { waktuRelatif } from '@/lib/format'
 import { safeReturn } from '@/lib/safeReturn'
@@ -10,6 +10,7 @@ const IKON: Record<KategoriNotifikasi, { ikon: LucideIcon; warna: string }> = {
   forum: { ikon: MessagesSquare, warna: 'bg-brand-50 text-brand-700' },
   pembelajaran: { ikon: GraduationCap, warna: 'bg-amber-50 text-amber-700' },
   dokumen: { ikon: FileText, warna: 'bg-sky-50 text-sky-700' },
+  validasi: { ikon: CheckCircle2, warna: 'bg-indigo-50 text-indigo-700' },
 }
 
 interface Props {

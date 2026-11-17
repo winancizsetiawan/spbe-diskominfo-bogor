@@ -25,7 +25,7 @@ const SUPER: Role[] = ['super_admin']
 const ALLOWED: Record<Permission, Role[]> = {
   'konten:internal': SEMUA_INTERNAL,
   'sop:lihat': ['asn', 'admin_opd', 'super_admin'],
-  'artikel:verifikasi': ['verifikator', 'super_admin'],
+  'artikel:verifikasi': ['verifikator'],
   'aplikasi:kelola': PENGELOLA,
   'dasbor:instansi': PENGELOLA,
   'validasi:ajukan': ['admin_opd'],

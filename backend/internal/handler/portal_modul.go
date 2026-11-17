@@ -110,15 +110,15 @@ func (h *PortalModulHandler) UbahArtikel(c *gin.Context) {
 	c.JSON(http.StatusOK, a)
 }
 
-// ListVerifikasiArtikel menangani GET /api/artikel/verifikasi (Verifikator & Super Admin).
+// ListVerifikasiArtikel menangani GET /api/artikel/verifikasi (khusus Verifikator).
 func (h *PortalModulHandler) ListVerifikasiArtikel(c *gin.Context) {
 	kunci, ok := wajibLogin(c)
 	if !ok {
 		return
 	}
 	peran := auth.PeranDari(kunci)
-	if peran != string(domain.RoleVerifikator) && peran != string(domain.RoleSuperAdmin) {
-		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator atau Super Admin yang dapat mengakses verifikasi konten."})
+	if peran != string(domain.RoleVerifikator) {
+		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator yang dapat mengakses verifikasi konten."})
 		return
 	}
 	res, err := h.svc.ListVerifikasiArtikel()
@@ -129,15 +129,15 @@ func (h *PortalModulHandler) ListVerifikasiArtikel(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// VerifikasiArtikel menangani POST /api/artikel/:id/verifikasi (Verifikator & Super Admin).
+// VerifikasiArtikel menangani POST /api/artikel/:id/verifikasi (khusus Verifikator).
 func (h *PortalModulHandler) VerifikasiArtikel(c *gin.Context) {
 	kunci, ok := wajibLogin(c)
 	if !ok {
 		return
 	}
 	peran := auth.PeranDari(kunci)
-	if peran != string(domain.RoleVerifikator) && peran != string(domain.RoleSuperAdmin) {
-		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator atau Super Admin yang dapat memverifikasi berita atau artikel."})
+	if peran != string(domain.RoleVerifikator) {
+		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator yang dapat memverifikasi dan menerbitkan berita atau artikel."})
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
