@@ -149,6 +149,9 @@ func main() {
 			api.GET("/kritik", sistemHandler.ListKritik)
 
 			// Rute Auth, Profil, Manajemen Pengguna, Notifikasi, & Pembelajaran (LMS)
+			api.POST("/auth/login", pmHandler.Login)
+			api.POST("/auth/ubah-sandi", pmHandler.UbahSandi)
+			api.POST("/auth/simulasi-kedaluwarsa", pmHandler.SimulasiKedaluwarsaSandi)
 			api.GET("/me", pmHandler.GetMe)
 			api.GET("/profil", pmHandler.GetProfil)
 			api.PUT("/profil", pmHandler.UbahProfil)

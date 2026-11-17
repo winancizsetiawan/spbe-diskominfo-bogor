@@ -29,7 +29,47 @@ var (
 		domain.RoleAdminOPD:   "Admin OPD",
 		domain.RoleSuperAdmin: "Super Admin",
 	}
+
+	sandiPerRole = map[domain.Role]string{
+		domain.RoleSuperAdmin: "Super@123",
+		domain.RoleAdminOPD:   "Admin@123",
+		domain.RoleASN:        "Asn@123",
+		domain.RoleAkademisi:  "Akademisi@123",
+	}
+
+	usernameKeRole = map[string]domain.Role{
+		"superadmin": domain.RoleSuperAdmin,
+		"adminopd":   domain.RoleAdminOPD,
+		"asn":        domain.RoleASN,
+		"akademisi":  domain.RoleAkademisi,
+	}
 )
+
+const (
+	MaksGagalLogin     = 5
+	DurasiBlokirLogin  = 15 * time.Minute
+	MasaAktifSandiHari = 365
+)
+
+func sandiAktifUser(u domain.User) string {
+	if u.KataSandi != nil && *u.KataSandi != "" {
+		return *u.KataSandi
+	}
+	return sandiPerRole[u.Role]
+}
+
+func hitungStatusSandi(u domain.User) (*time.Time, bool, int) {
+	patokan := time.Now()
+	if u.SandiDiubahPada != nil {
+		patokan = *u.SandiDiubahPada
+	} else if !u.CreatedAt.IsZero() {
+		patokan = u.CreatedAt
+	}
+	usiaHari := int(time.Since(patokan).Hours() / 24)
+	sisaHari := MasaAktifSandiHari - usiaHari
+	wajibGanti := sisaHari <= 0
+	return &patokan, wajibGanti, sisaHari
+}
 
 type PenggunaKonflikError struct {
 	Pesan string
@@ -63,6 +103,7 @@ func (s *PenggunaModulService) AmbilUserDariRole(role string) (*domain.User, err
 }
 
 func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
+	diubahPada, wajibGanti, sisaHari := hitungStatusSandi(u)
 	return domain.PenggunaDTO{
 		ID:         u.ID,
 		Nama:       u.Nama,
@@ -73,7 +114,10 @@ func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 			ID:   u.Instansi.ID,
 			Nama: u.Instansi.Nama,
 		},
-		LoginTerakhir: u.LoginTerakhir,
+		LoginTerakhir:   u.LoginTerakhir,
+		SandiDiubahPada: diubahPada,
+		WajibGantiSandi: wajibGanti,
+		SisaHariSandi:   sisaHari,
 	}
 }
 
@@ -82,6 +126,181 @@ func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 func (s *PenggunaModulService) GetMe(role string) (*domain.PenggunaDTO, error) {
 	u, err := s.AmbilUserDariRole(role)
 	if err != nil {
+		return nil, err
+	}
+	if u.TerkunciHingga != nil && time.Now().After(*u.TerkunciHingga) {
+		u.GagalLogin = 0
+		u.TerkunciHingga = nil
+		if u.StatusAkun == domain.StatusNonaktif {
+			u.StatusAkun = domain.StatusAktif
+		}
+		_ = s.repo.UpdateUser(u)
+	}
+	dto := kePenggunaDTO(*u)
+	return &dto, nil
+}
+
+// Login menangani autentikasi dengan Brute Force Detection (blokir setelah 5 kali salah kata sandi).
+func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginResponse, int, error) {
+	username := strings.ToLower(strings.TrimSpace(in.Username))
+	if username == "" || in.Sandi == "" {
+		return nil, 422, &ValidationError{Errors: map[string]string{
+			"username": "Username dan kata sandi wajib diisi.",
+		}}
+	}
+
+	var u *domain.User
+	if r, ok := usernameKeRole[username]; ok {
+		u, _ = s.repo.FindUserByRole(string(r))
+	} else {
+		u, _ = s.repo.FindUserByEmail(username)
+	}
+
+	if u == nil {
+		s.sistemSvc.CatatAktivitas(nil, domain.AksiLogin, fmt.Sprintf("Percobaan masuk gagal: akun '%s' tidak terdaftar", username), domain.HasilGagal)
+		return nil, 401, errors.New("Username atau kata sandi salah.")
+	}
+
+	now := time.Now()
+
+	// Pulihkan otomatis bila masa blokir sementara (15 menit) telah selesai
+	if u.TerkunciHingga != nil && now.After(*u.TerkunciHingga) {
+		u.GagalLogin = 0
+		u.TerkunciHingga = nil
+		if u.StatusAkun == domain.StatusNonaktif {
+			u.StatusAkun = domain.StatusAktif
+		}
+		_ = s.repo.UpdateUser(u)
+	}
+
+	// Cek apakah akun masih dalam masa blokir atau dinonaktifkan
+	if (u.TerkunciHingga != nil && now.Before(*u.TerkunciHingga)) || u.StatusAkun == domain.StatusNonaktif {
+		uid := u.ID
+		s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, "Percobaan masuk ditolak: akun sedang diblokir/nonaktif", domain.HasilGagal)
+		if u.TerkunciHingga != nil && now.Before(*u.TerkunciHingga) {
+			sisaMenit := int(math.Ceil(u.TerkunciHingga.Sub(now).Minutes()))
+			if sisaMenit < 1 {
+				sisaMenit = 1
+			}
+			return nil, 423, fmt.Errorf("Akun Anda diblokir karena %d kali salah memasukkan kata sandi. Silakan tunggu %d menit lagi atau hubungi Super Admin Diskominfo untuk memulihkan akun Anda.", MaksGagalLogin, sisaMenit)
+		}
+		return nil, 423, errors.New("Akun Anda sedang dinonaktifkan/diblokir. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda.")
+	}
+
+	sandiHarapan := sandiAktifUser(*u)
+	if in.Sandi != sandiHarapan {
+		u.GagalLogin++
+		uid := u.ID
+
+		if u.GagalLogin >= MaksGagalLogin {
+			terkunci := now.Add(DurasiBlokirLogin)
+			u.TerkunciHingga = &terkunci
+			if u.Role != domain.RoleSuperAdmin {
+				u.StatusAkun = domain.StatusNonaktif
+			}
+			_ = s.repo.UpdateUser(u)
+
+			s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, fmt.Sprintf("Akun diblokir otomatis setelah %d kali salah kata sandi", MaksGagalLogin), domain.HasilGagal)
+
+			admins, _ := s.repo.FindSuperAdmins()
+			for _, adm := range admins {
+				_ = s.repo.CreateNotifikasi(&domain.Notifikasi{
+					UserID:      adm.ID,
+					Kategori:    domain.KategoriNotifSistem,
+					Judul:       "Peringatan Keamanan: Akun Diblokir",
+					Pesan:       fmt.Sprintf("Akun %s (%s) diblokir otomatis karena %d kali gagal login berturut-turut.", u.Nama, roleValidMap[u.Role], MaksGagalLogin),
+					UrlTujuan:   "/admin/pengguna",
+					SudahDibaca: false,
+					DibuatPada:  now,
+				})
+			}
+
+			return nil, 423, fmt.Errorf("Akun Anda telah diblokir karena %d kali salah memasukkan kata sandi. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda atau tunggu 15 menit.", MaksGagalLogin)
+		}
+
+		_ = s.repo.UpdateUser(u)
+		sisa := MaksGagalLogin - u.GagalLogin
+		s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, fmt.Sprintf("Percobaan masuk gagal (%d/%d): kata sandi salah", u.GagalLogin, MaksGagalLogin), domain.HasilGagal)
+		return nil, 401, fmt.Errorf("Username atau kata sandi salah. Sisa percobaan: %d kali lagi sebelum akun diblokir.", sisa)
+	}
+
+	// Login berhasil: reset penghitung gagal login
+	u.GagalLogin = 0
+	u.TerkunciHingga = nil
+	u.LoginTerakhir = &now
+	if u.SandiDiubahPada == nil {
+		u.SandiDiubahPada = &now
+	}
+	_ = s.repo.UpdateUser(u)
+
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, "Login portal berhasil", domain.HasilBerhasil)
+
+	return &domain.LoginResponse{
+		Role: u.Role,
+		User: kePenggunaDTO(*u),
+	}, 200, nil
+}
+
+// UbahSandi menangani penggantian kata sandi berkala (kebijakan wajib ganti tiap 365 hari).
+func (s *PenggunaModulService) UbahSandi(role string, in domain.UbahSandiInput) (*domain.PenggunaDTO, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+
+	errs := make(map[string]string)
+	sandiSaatIni := sandiAktifUser(*u)
+
+	if in.SandiLama == "" {
+		errs["sandiLama"] = "Kata sandi saat ini wajib diisi."
+	} else if in.SandiLama != sandiSaatIni {
+		errs["sandiLama"] = "Kata sandi saat ini tidak sesuai."
+	}
+
+	if utf8.RuneCountInString(in.SandiBaru) < 8 {
+		errs["sandiBaru"] = "Kata sandi baru minimal 8 karakter."
+	} else if in.SandiBaru == sandiSaatIni {
+		errs["sandiBaru"] = "Kata sandi baru tidak boleh sama dengan kata sandi lama."
+	}
+
+	if in.KonfirmasiSandi != in.SandiBaru {
+		errs["konfirmasiSandi"] = "Konfirmasi kata sandi tidak cocok."
+	}
+
+	if len(errs) > 0 {
+		return nil, &ValidationError{Errors: errs}
+	}
+
+	now := time.Now()
+	baru := in.SandiBaru
+	u.KataSandi = &baru
+	u.SandiDiubahPada = &now
+	if err := s.repo.UpdateUser(u); err != nil {
+		return nil, err
+	}
+
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Memperbarui kata sandi berkala (kebijakan keamanan tahunan)", domain.HasilBerhasil)
+
+	dto := kePenggunaDTO(*u)
+	return &dto, nil
+}
+
+// SimulasiKedaluwarsaSandi mengatur tanggal ubah sandi > 365 hari yang lalu untuk keperluan uji/demo kebijakan tahunan.
+func (s *PenggunaModulService) SimulasiKedaluwarsaSandi(role string, kedaluwarsa bool) (*domain.PenggunaDTO, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	var tgl time.Time
+	if kedaluwarsa {
+		tgl = time.Now().AddDate(0, 0, -(MasaAktifSandiHari + 1))
+	} else {
+		tgl = time.Now()
+	}
+	u.SandiDiubahPada = &tgl
+	if err := s.repo.UpdateUser(u); err != nil {
 		return nil, err
 	}
 	dto := kePenggunaDTO(*u)
@@ -444,11 +663,13 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		if *in.StatusAkun == domain.StatusNonaktif {
 			target.StatusAkun = domain.StatusNonaktif
 		} else if *in.StatusAkun == domain.StatusAktif {
-			if target.LoginTerakhir != nil {
+			if target.LoginTerakhir != nil || target.KeycloakSub != nil || target.GagalLogin > 0 {
 				target.StatusAkun = domain.StatusAktif
 			} else {
 				target.StatusAkun = domain.StatusDiundang
 			}
+			target.GagalLogin = 0
+			target.TerkunciHingga = nil
 		}
 	}
 

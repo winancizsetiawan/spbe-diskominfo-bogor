@@ -1,12 +1,16 @@
-import { BadgeCheck, KeyRound, Pencil } from 'lucide-react'
+import { BadgeCheck, Clock, KeyRound, Pencil } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { can, type Permission } from '@/auth/permissions'
 import type { User } from '@/auth/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { toast } from '@/components/ui/toast'
+import { formatTanggal } from '@/lib/format'
+import { useSimulasiKedaluwarsaSandi } from '../api'
 import type { ProfilSaya } from '../types'
 import { TeleponDialog } from './TeleponDialog'
+import { UbahSandiDialog } from './UbahSandiDialog'
 
 /** Hak akses ditampilkan sebagai label turunan dari role, bukan wewenang tambahan (Design D2). */
 const HAK_AKSES: { perm: Permission; label: string }[] = [
@@ -40,6 +44,11 @@ function Baris({ label, children }: { label: string; children: ReactNode }) {
 
 export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
   const [ubahTelepon, setUbahTelepon] = useState(false)
+  const [ubahSandi, setUbahSandi] = useState(false)
+  const simulasi = useSimulasiKedaluwarsaSandi()
+
+  const sisaHari = user.sisaHariSandi ?? 365
+  const wajibGanti = user.wajibGantiSandi ?? false
 
   return (
     <div className="space-y-6">
@@ -92,32 +101,62 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
       </Card>
 
       <Card>
-        <h2 className="font-semibold text-slate-900">Keamanan akun</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Kata sandi dikelola di SSO Pemkot Bogor. Portal tidak menyimpan kata sandi Anda.
-        </p>
-        {URL_AKUN_SSO ? (
-          <a
-            href={URL_AKUN_SSO}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <KeyRound className="size-4" aria-hidden /> Ubah kata sandi di SSO
-          </a>
-        ) : (
-          <>
-            <Button variant="secondary" className="mt-3" disabled aria-describedby="sso-belum">
-              <KeyRound className="size-4" aria-hidden /> Ubah kata sandi di SSO
-            </Button>
-            <p id="sso-belum" className="mt-2 text-xs text-slate-500">
-              Tersedia setelah portal terhubung ke SSO Pemkot Bogor (mode demo aktif).
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-slate-900">Keamanan akun & Kebijakan Kata Sandi Tahunan</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Sesuai kebijakan keamanan SPBE, kata sandi wajib diperbarui setiap 1 tahun (365 hari).
             </p>
-          </>
-        )}
+          </div>
+          <Badge tone={wajibGanti ? 'danger' : sisaHari <= 14 ? 'warning' : 'success'}>
+            {wajibGanti ? 'Kedaluwarsa · Wajib Diganti' : `Aktif · Sisa ${sisaHari} hari`}
+          </Badge>
+        </div>
+
+        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Baris label="Terakhir diperbarui">
+            {user.sandiDiubahPada ? formatTanggal(user.sandiDiubahPada) : 'Baru diaktifkan'}
+          </Baris>
+          <Baris label="Masa berlaku">
+            {wajibGanti ? 'Telah melewati batas 365 hari' : `${sisaHari} hari lagi sebelum wajib ganti`}
+          </Baris>
+        </dl>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {URL_AKUN_SSO ? (
+            <a
+              href={URL_AKUN_SSO}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <KeyRound className="size-4" aria-hidden /> Ubah kata sandi di SSO
+            </a>
+          ) : (
+            <>
+              <Button onClick={() => setUbahSandi(true)}>
+                <KeyRound className="size-4" aria-hidden /> Ubah Kata Sandi
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={simulasi.isPending}
+                onClick={() =>
+                  simulasi.mutate(true, {
+                    onSuccess: () => toast.info('Simulasi diaktifkan: usia kata sandi diset > 365 hari.'),
+                    onError: () =>
+                      toast.error('Gagal: endpoint simulasi belum tersedia. Pastikan backend sudah di-restart dengan kode terbaru.'),
+                  })
+                }
+              >
+                <Clock className="size-4" aria-hidden /> Simulasikan Kedaluwarsa (&gt; 1 Tahun)
+              </Button>
+            </>
+          )}
+        </div>
       </Card>
 
       <TeleponDialog open={ubahTelepon} noTelepon={profil.noTelepon} onClose={() => setUbahTelepon(false)} />
+      <UbahSandiDialog open={ubahSandi} onClose={() => setUbahSandi(false)} />
     </div>
   )
 }

@@ -1,6 +1,7 @@
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, useSearchParams } from 'react-router'
+import { api, ApiError } from '@/api/client'
 import { authAdapter, authMode } from '@/auth/adapter'
 import type { Role } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
@@ -16,6 +17,41 @@ const AKUN_DEMO: { role: Role; username: string; sandi: string }[] = [
   { role: 'akademisi', username: 'akademisi', sandi: 'Akademisi@123' },
 ]
 
+const MAKS_GAGAL_LOGIN = 5
+const DURASI_BLOKIR_MS = 15 * 60 * 1000
+const KUNCI_STORAGE_BRUTE = 'spbe.bruteForce'
+
+interface StatusBruteForce {
+  gagal: number
+  terkunciHingga: number | null
+}
+
+function bacaBruteForce(username: string): StatusBruteForce {
+  try {
+    const raw = localStorage.getItem(KUNCI_STORAGE_BRUTE)
+    const semua = raw ? (JSON.parse(raw) as Record<string, StatusBruteForce>) : {}
+    const data = semua[username.toLowerCase()] ?? { gagal: 0, terkunciHingga: null }
+    if (data.terkunciHingga && Date.now() > data.terkunciHingga) {
+      simpanBruteForce(username, { gagal: 0, terkunciHingga: null })
+      return { gagal: 0, terkunciHingga: null }
+    }
+    return data
+  } catch {
+    return { gagal: 0, terkunciHingga: null }
+  }
+}
+
+function simpanBruteForce(username: string, status: StatusBruteForce) {
+  try {
+    const raw = localStorage.getItem(KUNCI_STORAGE_BRUTE)
+    const semua = raw ? (JSON.parse(raw) as Record<string, StatusBruteForce>) : {}
+    semua[username.toLowerCase()] = status
+    localStorage.setItem(KUNCI_STORAGE_BRUTE, JSON.stringify(semua))
+  } catch {
+    // Abaikan bila localStorage tidak tersedia
+  }
+}
+
 const fieldClass =
   'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100 aria-[invalid=true]:border-red-500'
 
@@ -23,6 +59,7 @@ interface Galat {
   username?: string
   sandi?: string
   captcha?: string
+  blokir?: string
 }
 
 export function LoginPage() {
@@ -35,6 +72,7 @@ export function LoginPage() {
   const [sandi, setSandi] = useState('')
   const [jawaban, setJawaban] = useState('')
   const [lihat, setLihat] = useState(false)
+  const [memuat, setMemuat] = useState(false)
   const [galat, setGalat] = useState<Galat>({})
 
   useEffect(() => {
@@ -44,10 +82,11 @@ export function LoginPage() {
   if (user) return <Navigate to={kembali} replace />
   if (authMode === 'keycloak') return <Spinner className="py-24" label="Mengarahkan ke SSO Pemkot Bogor…" />
 
-  const kirim = (e: FormEvent) => {
+  const kirim = async (e: FormEvent) => {
     e.preventDefault()
     const baru: Galat = {}
-    if (!username.trim()) baru.username = 'Username wajib diisi.'
+    const userTrim = username.trim()
+    if (!userTrim) baru.username = 'Username wajib diisi.'
     if (!sandi) baru.sandi = 'Kata sandi wajib diisi.'
     if (!jawaban.trim()) baru.captcha = 'Jawab soal captcha.'
     else if (!captcha.benar(jawaban)) {
@@ -55,17 +94,71 @@ export function LoginPage() {
       captcha.segarkan()
       setJawaban('')
     }
-    const akun = AKUN_DEMO.find((a) => a.username === username.trim() && a.sandi === sandi)
-    if (!akun && !baru.username && !baru.sandi && !baru.captcha) {
-      baru.sandi = 'Username atau kata sandi salah.'
+    if (Object.keys(baru).length > 0) {
+      setGalat(baru)
+      return
+    }
+
+    setMemuat(true)
+    try {
+      const res = await api<{ role: Role }>('/auth/login', {
+        method: 'POST',
+        json: { username: userTrim, sandi },
+      })
+      simpanBruteForce(userTrim, { gagal: 0, terkunciHingga: null })
+      authAdapter.loginAs?.(res.role)
+      window.location.assign(kembali)
+      return
+    } catch (err) {
+      if (err instanceof ApiError && err.status > 0 && err.status !== 404) {
+        captcha.segarkan()
+        setJawaban('')
+        if (err.status === 423) {
+          setGalat({ blokir: err.message })
+        } else {
+          setGalat({ sandi: err.message })
+        }
+        setMemuat(false)
+        return
+      }
+    }
+
+    // Cadangan lokal bila server backend belum aktif atau menggunakan mode mock
+    const st = bacaBruteForce(userTrim)
+    if (st.terkunciHingga && Date.now() < st.terkunciHingga) {
+      const sisaMenit = Math.max(1, Math.ceil((st.terkunciHingga - Date.now()) / 60000))
       captcha.segarkan()
       setJawaban('')
+      setGalat({
+        blokir: `Akun Anda diblokir karena ${MAKS_GAGAL_LOGIN} kali salah memasukkan kata sandi. Silakan tunggu ${sisaMenit} menit lagi atau hubungi Super Admin Diskominfo untuk memulihkan akun Anda.`,
+      })
+      setMemuat(false)
+      return
     }
-    setGalat(baru)
-    if (!akun || Object.keys(baru).length > 0) return
 
+    const akun = AKUN_DEMO.find((a) => a.username === userTrim.toLowerCase() && a.sandi === sandi)
+    if (!akun) {
+      const gagalBaru = st.gagal + 1
+      captcha.segarkan()
+      setJawaban('')
+      if (gagalBaru >= MAKS_GAGAL_LOGIN) {
+        simpanBruteForce(userTrim, { gagal: gagalBaru, terkunciHingga: Date.now() + DURASI_BLOKIR_MS })
+        setGalat({
+          blokir: `Akun Anda telah diblokir karena ${MAKS_GAGAL_LOGIN} kali salah memasukkan kata sandi. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda atau tunggu 15 menit.`,
+        })
+      } else {
+        simpanBruteForce(userTrim, { gagal: gagalBaru, terkunciHingga: null })
+        const sisa = MAKS_GAGAL_LOGIN - gagalBaru
+        setGalat({
+          sandi: `Username atau kata sandi salah. Sisa percobaan: ${sisa} kali lagi sebelum akun diblokir.`,
+        })
+      }
+      setMemuat(false)
+      return
+    }
+
+    simpanBruteForce(userTrim, { gagal: 0, terkunciHingga: null })
     authAdapter.loginAs?.(akun.role)
-    // Muat ulang penuh agar AuthProvider membaca sesi baru, sama seperti kembali dari SSO.
     window.location.assign(kembali)
   }
 
@@ -91,6 +184,16 @@ export function LoginPage() {
         <h1 className="text-3xl font-bold text-brand-800">Login</h1>
 
         <form onSubmit={kirim} noValidate className="mt-6 space-y-5">
+          {galat.blokir && (
+            <div role="alert" className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-red-600" aria-hidden />
+              <div className="space-y-1">
+                <p className="font-semibold text-red-900">Akun Diblokir (Proteksi Brute Force)</p>
+                <p>{galat.blokir}</p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label htmlFor="login-username" className="block text-sm font-semibold text-slate-800">
               Username
@@ -173,9 +276,10 @@ export function LoginPage() {
 
           <button
             type="submit"
-            className="min-h-12 w-full cursor-pointer rounded-full bg-gradient-to-r from-brand-900 to-brand-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/25 hover:brightness-110"
+            disabled={memuat}
+            className="min-h-12 w-full cursor-pointer rounded-full bg-gradient-to-r from-brand-900 to-brand-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/25 hover:brightness-110 disabled:opacity-60"
           >
-            Masuk ke Akun
+            {memuat ? 'Memeriksa…' : 'Masuk ke Akun'}
           </button>
           <p className="text-center text-sm text-slate-600">
             Belum terdaftar di Arsitektur SPBE?

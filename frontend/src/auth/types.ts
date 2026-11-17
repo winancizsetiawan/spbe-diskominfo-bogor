@@ -9,6 +9,9 @@ export interface User {
   role: Role
   statusAkun: StatusAkun
   instansi: { id: number; nama: string }
+  sandiDiubahPada?: string | null
+  wajibGantiSandi?: boolean
+  sisaHariSandi?: number
 }
 
 export const ROLE_LABEL: Record<Role, string> = {

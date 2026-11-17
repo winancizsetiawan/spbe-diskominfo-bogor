@@ -29,8 +29,12 @@ type User struct {
 	StatusAkun    StatusAkun `gorm:"size:30;not null;default:'aktif'" json:"statusAkun"`
 	InstansiID    uint       `gorm:"not null" json:"-"`
 	Instansi      Instansi   `gorm:"foreignKey:InstansiID" json:"instansi"`
-	LoginTerakhir *time.Time `json:"loginTerakhir,omitempty"`
-	CreatedAt     time.Time  `json:"-"`
+	LoginTerakhir   *time.Time `json:"loginTerakhir,omitempty"`
+	GagalLogin      int        `gorm:"not null;default:0" json:"gagalLogin"`
+	TerkunciHingga  *time.Time `json:"terkunciHingga,omitempty"`
+	KataSandi       *string    `gorm:"size:255" json:"-"`
+	SandiDiubahPada *time.Time `json:"sandiDiubahPada,omitempty"`
+	CreatedAt       time.Time  `json:"-"`
 	UpdatedAt     time.Time  `json:"-"`
 }
 

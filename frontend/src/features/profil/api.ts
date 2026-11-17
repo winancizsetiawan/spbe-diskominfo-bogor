@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type Paged } from '@/api/client'
+import { useSession } from '@/auth/session'
+import type { User } from '@/auth/types'
 import type { Aktivitas, PreferensiNotifikasi, ProfilSaya } from './types'
 
 export const profilKeys = {
@@ -52,5 +54,27 @@ export function useAktivitas(page: number) {
     queryKey: profilKeys.aktivitas(page),
     queryFn: () => api<Paged<Aktivitas>>(`/profil/aktivitas?page=${page}`),
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useUbahSandi() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { sandiLama: string; sandiBaru: string; konfirmasiSandi: string }) =>
+      api<User>('/auth/ubah-sandi', { method: 'POST', json: input }),
+    onSuccess: (updatedUser) => {
+      useSession.getState().setUser(updatedUser)
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}
+
+export function useSimulasiKedaluwarsaSandi() {
+  return useMutation({
+    mutationFn: (kedaluwarsa: boolean) =>
+      api<User>('/auth/simulasi-kedaluwarsa', { method: 'POST', json: { kedaluwarsa } }),
+    onSuccess: (updatedUser) => {
+      useSession.getState().setUser(updatedUser)
+    },
   })
 }

@@ -53,16 +53,35 @@ type PreferensiResponse struct {
 	KanalEmail bool `json:"kanalEmail"`
 }
 
+type LoginInput struct {
+	Username string `json:"username"`
+	Sandi    string `json:"sandi"`
+}
+
+type LoginResponse struct {
+	Role Role        `json:"role"`
+	User PenggunaDTO `json:"user"`
+}
+
+type UbahSandiInput struct {
+	SandiLama       string `json:"sandiLama"`
+	SandiBaru       string `json:"sandiBaru"`
+	KonfirmasiSandi string `json:"konfirmasiSandi"`
+}
+
 // ---- 2. Manajemen Pengguna (Admin) ----
 
 type PenggunaDTO struct {
-	ID            uint            `json:"id"`
-	Nama          string          `json:"nama"`
-	Email         string          `json:"email"`
-	Role          Role            `json:"role"`
-	StatusAkun    StatusAkun      `json:"statusAkun"`
-	Instansi      InstansiRingkas `json:"instansi"`
-	LoginTerakhir *time.Time      `json:"loginTerakhir,omitempty"`
+	ID              uint            `json:"id"`
+	Nama            string          `json:"nama"`
+	Email           string          `json:"email"`
+	Role            Role            `json:"role"`
+	StatusAkun      StatusAkun      `json:"statusAkun"`
+	Instansi        InstansiRingkas `json:"instansi"`
+	LoginTerakhir   *time.Time      `json:"loginTerakhir,omitempty"`
+	SandiDiubahPada *time.Time      `json:"sandiDiubahPada,omitempty"`
+	WajibGantiSandi bool            `json:"wajibGantiSandi"`
+	SisaHariSandi   int             `json:"sisaHariSandi"`
 }
 
 type HitunganRolePengguna struct {

@@ -34,6 +34,21 @@ func (r *PenggunaModulRepository) FindUserByID(id uint) (*domain.User, error) {
 	return &u, nil
 }
 
+func (r *PenggunaModulRepository) FindUserByEmail(email string) (*domain.User, error) {
+	var u domain.User
+	err := r.db.Preload("Instansi").Where("LOWER(email) = LOWER(?)", email).First(&u).Error
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *PenggunaModulRepository) FindSuperAdmins() ([]domain.User, error) {
+	var list []domain.User
+	err := r.db.Where("role = ?", domain.RoleSuperAdmin).Find(&list).Error
+	return list, err
+}
+
 func (r *PenggunaModulRepository) FindOrCreateProfil(userID uint) (*domain.ProfilPengguna, error) {
 	var p domain.ProfilPengguna
 	err := r.db.Where("user_id = ?", userID).First(&p).Error

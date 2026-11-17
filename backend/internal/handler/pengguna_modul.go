@@ -30,6 +30,31 @@ func wajibLogin(c *gin.Context) (role string, ok bool) {
 
 // ---- 1. Auth & Profil ----
 
+// Login menangani POST /api/auth/login (termasuk Brute Force Detection 5x salah kata sandi)
+func (h *PenggunaModulHandler) Login(c *gin.Context) {
+	var in domain.LoginInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+
+	res, status, err := h.svc.Login(in)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali isian Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		c.JSON(status, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 // GetMe menangani GET /api/me
 func (h *PenggunaModulHandler) GetMe(c *gin.Context) {
 	role, ok := wajibLogin(c)
@@ -39,6 +64,54 @@ func (h *PenggunaModulHandler) GetMe(c *gin.Context) {
 	res, err := h.svc.GetMe(role)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: "Sesi tidak valid."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// UbahSandi menangani POST /api/auth/ubah-sandi
+func (h *PenggunaModulHandler) UbahSandi(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	var in domain.UbahSandiInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+
+	res, err := h.svc.UbahSandi(role, in)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali isian Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui kata sandi."})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// SimulasiKedaluwarsaSandi menangani POST /api/auth/simulasi-kedaluwarsa
+func (h *PenggunaModulHandler) SimulasiKedaluwarsaSandi(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	var in struct {
+		Kedaluwarsa bool `json:"kedaluwarsa"`
+	}
+	_ = c.ShouldBindJSON(&in)
+
+	res, err := h.svc.SimulasiKedaluwarsaSandi(role, in.Kedaluwarsa)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal mengubah status simulasi kata sandi."})
 		return
 	}
 	c.JSON(http.StatusOK, res)
