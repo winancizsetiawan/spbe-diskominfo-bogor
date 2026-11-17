@@ -11,7 +11,9 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func Connect(dsn string, isDevelopment bool) (*gorm.DB, error) {
+// Connect membuka koneksi dan memigrasi skema. Data contoh (seeder) hanya diisi bila `isiDataContoh`
+// true; di produksi harus false agar tidak ada user, peran, dan data uji (Buku Panduan B.13).
+func Connect(dsn string, isDevelopment bool, isiDataContoh bool) (*gorm.DB, error) {
 	logLevel := logger.Warn
 	if isDevelopment {
 		logLevel = logger.Info
@@ -68,6 +70,10 @@ func Connect(dsn string, isDevelopment bool) (*gorm.DB, error) {
 	}
 
 	// Jalankan seed data awal
+	if !isiDataContoh {
+		log.Println("Data contoh (seeder) dilewati: SEED_DATA=false.")
+		return db, nil
+	}
 	if err := SeedData(db); err != nil {
 		log.Printf("Peringatan saat seeding data: %v", err)
 	}

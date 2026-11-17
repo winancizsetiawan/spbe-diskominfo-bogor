@@ -21,6 +21,9 @@ func NewValidasiHandler(validasiService service.ValidasiService) *ValidasiHandle
 
 // GetDaftar mengambil daftar antrean pengajuan berhalaman beserta tab statistik
 func (h *ValidasiHandler) GetDaftar(c *gin.Context) {
+	if _, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat memvalidasi data."); !ok {
+		return
+	}
 	var filter domain.ValidasiFilter
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
@@ -46,6 +49,9 @@ func (h *ValidasiHandler) GetDaftar(c *gin.Context) {
 
 // GetDetail mengambil 1 data pengajuan lengkap beserta objek target yang ditinjau
 func (h *ValidasiHandler) GetDetail(c *gin.Context) {
+	if _, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat memvalidasi data."); !ok {
+		return
+	}
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -64,6 +70,9 @@ func (h *ValidasiHandler) GetDetail(c *gin.Context) {
 
 // Ajukan menangani pengajuan data aplikasi/flowchart dari OPD ke Diskominfo
 func (h *ValidasiHandler) Ajukan(c *gin.Context) {
+	if !wajibAdminOPD(c) {
+		return
+	}
 	var input domain.AjukanInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -73,15 +82,13 @@ func (h *ValidasiHandler) Ajukan(c *gin.Context) {
 		return
 	}
 
-	// Pengguna default pemohon: Admin OPD Dinas Kesehatan (instansiID: 2)
-	currentUser := domain.User{
-		ID:         3,
-		Nama:       "Ajri Dalae",
-		Role:       domain.RoleAdminOPD,
-		InstansiID: 2,
+	// Pemohon adalah pengguna yang sedang masuk (instansinya yang dipakai).
+	pemohon, _, ok := penggunaSaatIni(c)
+	if !ok {
+		return
 	}
 
-	hasil, err := h.validasiService.Ajukan(input, currentUser)
+	hasil, err := h.validasiService.Ajukan(input, *pemohon)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal memproses pengajuan data", nil))
 		return
@@ -92,6 +99,9 @@ func (h *ValidasiHandler) Ajukan(c *gin.Context) {
 
 // Putuskan menangani persetujuan/penolakan oleh Super Admin Diskominfo
 func (h *ValidasiHandler) Putuskan(c *gin.Context) {
+	if _, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat memvalidasi data."); !ok {
+		return
+	}
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {

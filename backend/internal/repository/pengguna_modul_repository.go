@@ -17,12 +17,7 @@ func NewPenggunaModulRepository(db *gorm.DB) *PenggunaModulRepository {
 // ---- 1. Auth & Profil ----
 
 func (r *PenggunaModulRepository) FindUserByRole(role string) (*domain.User, error) {
-	var u domain.User
-	err := r.db.Preload("Instansi").Where("role = ?", role).Order("id ASC").First(&u).Error
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
+	return cariPengguna(r.db, role, true)
 }
 
 func (r *PenggunaModulRepository) FindUserByID(id uint) (*domain.User, error) {

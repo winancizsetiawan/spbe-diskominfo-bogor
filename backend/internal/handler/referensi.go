@@ -19,6 +19,9 @@ func NewReferensiHandler(instansiRepo repository.InstansiRepository) *ReferensiH
 
 // GetInstansi mengembalikan daftar seluruh instansi/OPD untuk pilihan formulir dan filter
 func (h *ReferensiHandler) GetInstansi(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	data, err := h.instansiRepo.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil data instansi", nil))

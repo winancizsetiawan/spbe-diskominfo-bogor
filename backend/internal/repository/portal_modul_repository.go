@@ -15,21 +15,21 @@ func NewPortalModulRepository(db *gorm.DB) *PortalModulRepository {
 }
 
 func (r *PortalModulRepository) FindUserByRole(role string) (*domain.User, error) {
-	var u domain.User
-	err := r.db.Preload("Instansi").Where("role = ?", role).Order("id ASC").First(&u).Error
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
+	return cariPengguna(r.db, role, true)
 }
 
 // ---- 1. Artikel & Berita ----
 
-func (r *PortalModulRepository) FindAllArtikel(jenis string) ([]domain.Artikel, error) {
+// FindAllArtikel mengembalikan tulisan terurut terbaru. Tulisan berakses internal
+// hanya ikut bila `sudahLogin`; unggulan didahulukan di daftar yang sama tanggal.
+func (r *PortalModulRepository) FindAllArtikel(jenis string, sudahLogin bool) ([]domain.Artikel, error) {
 	var list []domain.Artikel
 	q := r.db.Model(&domain.Artikel{})
 	if jenis != "" && jenis != "semua" {
 		q = q.Where("jenis = ?", jenis)
+	}
+	if !sudahLogin {
+		q = q.Where("status_akses = ?", domain.AksesPublik)
 	}
 	err := q.Order("tanggal DESC, id DESC").Find(&list).Error
 	return list, err

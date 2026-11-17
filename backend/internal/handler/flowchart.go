@@ -31,7 +31,19 @@ func NewFlowchartHandler(fcService service.FlowchartService, aplService service.
 
 // GetOpsi mengembalikan pilihan aplikasi (dan SOP) untuk keperluan dropdown di form frontend
 func (h *FlowchartHandler) GetOpsi(c *gin.Context) {
-	daftarApl, err := h.aplikasiService.GetDaftar(domain.AplikasiFilter{Page: 1})
+	if !wajibPengelola(c) {
+		return
+	}
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	filterApl := domain.AplikasiFilter{Page: 1}
+	if terbatas {
+		id := p.InstansiID
+		filterApl.InstansiID = &id
+	}
+	daftarApl, err := h.aplikasiService.GetDaftar(filterApl)
 	type OpsiAplikasi struct {
 		ID   uint   `json:"id"`
 		Nama string `json:"nama"`
@@ -70,6 +82,9 @@ func (h *FlowchartHandler) GetOpsi(c *gin.Context) {
 
 // GetDaftar mengambil daftar flowchart beserta filter dan paginasi
 func (h *FlowchartHandler) GetDaftar(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var filter domain.FlowchartFilter
 
 	if err := c.ShouldBindQuery(&filter); err != nil {
@@ -84,6 +99,14 @@ func (h *FlowchartHandler) GetDaftar(c *gin.Context) {
 		}
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		id := p.InstansiID
+		filter.InstansiID = &id
+	}
 	res, err := h.flowchartService.GetDaftar(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil data flowchart", nil))
@@ -95,6 +118,9 @@ func (h *FlowchartHandler) GetDaftar(c *gin.Context) {
 
 // GetDetail mengambil 1 data spesifik berdasarkan ID
 func (h *FlowchartHandler) GetDetail(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -102,8 +128,12 @@ func (h *FlowchartHandler) GetDetail(c *gin.Context) {
 		return
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
 	fc, err := h.flowchartService.GetDetail(uint(id))
-	if err != nil {
+	if err != nil || (terbatas && fc.InstansiID != p.InstansiID) {
 		c.JSON(http.StatusNotFound, domain.NewErrorResponse("Flowchart tidak ditemukan", nil))
 		return
 	}
@@ -113,6 +143,9 @@ func (h *FlowchartHandler) GetDetail(c *gin.Context) {
 
 // Create menangani penambahan data flowchart baru
 func (h *FlowchartHandler) Create(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var input domain.FlowchartInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -122,8 +155,12 @@ func (h *FlowchartHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Memanggil service dengan instansiID default (2 = Dinas Kesehatan) dan user ("Admin OPD")
-	fc, err := h.flowchartService.Create(input, uint(2), "Admin OPD")
+	// Instansi dan nama pembuat diambil dari pengguna yang sedang masuk.
+	p, _, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	fc, err := h.flowchartService.Create(input, p.InstansiID, p.Nama)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal menyimpan flowchart", nil))
 		return
@@ -134,6 +171,9 @@ func (h *FlowchartHandler) Create(c *gin.Context) {
 
 // Update menangani pembaruan data flowchart yang sudah ada
 func (h *FlowchartHandler) Update(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
@@ -149,7 +189,18 @@ func (h *FlowchartHandler) Update(c *gin.Context) {
 		return
 	}
 
-	fc, err := h.flowchartService.Update(uint(id), input, "Admin OPD")
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		ada, errD := h.flowchartService.GetDetail(uint(id))
+		if errD != nil || ada.InstansiID != p.InstansiID {
+			c.JSON(http.StatusNotFound, domain.NewErrorResponse("Flowchart tidak ditemukan", nil))
+			return
+		}
+	}
+	fc, err := h.flowchartService.Update(uint(id), input, p.Nama)
 	if err != nil {
 		if strings.Contains(err.Error(), "menunggu validasi") {
 			c.JSON(http.StatusConflict, domain.NewErrorResponse(err.Error(), nil))

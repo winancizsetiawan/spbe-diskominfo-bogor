@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/repository"
 )
@@ -61,6 +62,10 @@ func (s *ForumService) ambilUserAktif(role string) (*domain.User, error) {
 	u, err := s.repo.FindUserByRole(role)
 	if err != nil {
 		// Fallback ke user pertama jika role spesifik tidak ditemukan
+		// Pengguna dengan email tidak boleh digantikan pengguna lain; cadangan ke ASN hanya untuk mode demo.
+		if _, email := auth.Pisah(role); email != "" {
+			return nil, err
+		}
 		return s.repo.FindUserByRole(string(domain.RoleASN))
 	}
 	return u, nil

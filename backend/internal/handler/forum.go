@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/service"
 
@@ -21,19 +21,14 @@ func NewForumHandler(svc *service.ForumService) *ForumHandler {
 }
 
 // ekstrakRoleLogin membaca token "Bearer demo.<role>" atau token JWT dari header Authorization.
+// ekstrakRoleLogin mengembalikan "pengenal" pengguna (peran + email terverifikasi, lihat auth.Kunci).
+// Teruskan nilainya apa adanya ke layanan; untuk membandingkan hak akses pakai auth.PeranDari.
 func ekstrakRoleLogin(c *gin.Context) (sudahLogin bool, role string) {
-	auth := strings.TrimSpace(c.GetHeader("Authorization"))
-	if !strings.HasPrefix(auth, "Bearer ") {
+	ok, peran, email := auth.Identitas(c.GetHeader("Authorization"))
+	if !ok {
 		return false, ""
 	}
-	token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
-	if token == "" {
-		return false, ""
-	}
-	if strings.HasPrefix(token, "demo.") {
-		return true, strings.TrimPrefix(token, "demo.")
-	}
-	return true, string(domain.RoleASN)
+	return true, auth.Kunci(peran, email)
 }
 
 // GetKategori menangani GET /api/forum/kategori
@@ -252,7 +247,7 @@ func (h *ForumHandler) ListModerasi(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: "Sesi tidak valid."})
 		return
 	}
-	if role != string(domain.RoleSuperAdmin) {
+	if auth.PeranDari(role) != string(domain.RoleSuperAdmin) {
 		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Super Admin yang dapat memoderasi."})
 		return
 	}
@@ -281,7 +276,7 @@ func (h *ForumHandler) TindakanModerasi(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: "Sesi tidak valid."})
 		return
 	}
-	if role != string(domain.RoleSuperAdmin) {
+	if auth.PeranDari(role) != string(domain.RoleSuperAdmin) {
 		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Super Admin yang dapat memoderasi."})
 		return
 	}

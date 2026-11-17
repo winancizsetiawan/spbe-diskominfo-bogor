@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/repository"
 )
@@ -20,6 +21,7 @@ import (
 var (
 	ErrArtikelTidakDitemukan  = errors.New("Artikel tidak ditemukan.")
 	ErrArtikelTidakValid      = errors.New("Data artikel tidak valid.")
+	ErrArtikelButuhLogin      = errors.New("Masuk untuk membaca tulisan ini.")
 	ErrInstansiTidakDitemukan = errors.New("Instansi tidak ditemukan.")
 	ErrJenisDasborTidakValid  = errors.New("Jenis dasbor tidak dikenal.")
 
@@ -75,6 +77,10 @@ func (s *PortalModulService) ambilUser(role string) (*domain.User, error) {
 	}
 	u, err := s.repo.FindUserByRole(role)
 	if err != nil {
+		// Pengguna dengan email tidak boleh digantikan pengguna lain; cadangan ke ASN hanya untuk mode demo.
+		if _, email := auth.Pisah(role); email != "" {
+			return nil, err
+		}
 		return s.repo.FindUserByRole(string(domain.RoleASN))
 	}
 	return u, nil
@@ -120,13 +126,13 @@ func DataBantuanStatis() domain.BantuanResponse {
 	}
 }
 
-func (s *PortalModulService) ListArtikel(jenis string, page int) (domain.PagedResponse[domain.ArtikelRingkasDTO], error) {
+func (s *PortalModulService) ListArtikel(jenis string, page int, sudahLogin bool) (domain.PagedResponse[domain.ArtikelRingkasDTO], error) {
 	if page < 1 {
 		page = 1
 	}
 	perPage := 6
 
-	rows, err := s.repo.FindAllArtikel(jenis)
+	rows, err := s.repo.FindAllArtikel(jenis, sudahLogin)
 	if err != nil {
 		return domain.PagedResponse[domain.ArtikelRingkasDTO]{}, err
 	}
@@ -141,6 +147,10 @@ func (s *PortalModulService) ListArtikel(jenis string, page int) (domain.PagedRe
 			Penulis:   a.Penulis,
 			Tanggal:   a.Tanggal,
 			Views:     a.Views,
+			Format:    a.Format,
+			Kategori:  a.Kategori,
+			Label:     append([]string{}, a.Label...),
+			Unggulan:  a.Unggulan,
 		})
 	}
 
@@ -167,10 +177,13 @@ func (s *PortalModulService) ListArtikel(jenis string, page int) (domain.PagedRe
 	}, nil
 }
 
-func (s *PortalModulService) GetArtikelDetail(id uint) (*domain.Artikel, error) {
+func (s *PortalModulService) GetArtikelDetail(id uint, sudahLogin bool) (*domain.Artikel, error) {
 	a, err := s.repo.FindArtikelByID(id)
 	if err != nil {
 		return nil, ErrArtikelTidakDitemukan
+	}
+	if a.StatusAkses == domain.AksesInternal && !sudahLogin {
+		return nil, ErrArtikelButuhLogin
 	}
 	_ = s.repo.IncrementArtikelViews(id)
 	a.Views += 1
@@ -892,7 +905,7 @@ func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tip
 	}
 
 	// 3. Berita & Artikel (Publik)
-	artikelList, _ := s.repo.FindAllArtikel("semua")
+	artikelList, _ := s.repo.FindAllArtikel("semua", sudahLogin)
 	for _, a := range artikelList {
 		jenisLabel := "Artikel"
 		if a.Jenis == domain.JenisArtikelBerita {
@@ -1064,12 +1077,21 @@ func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tip
 }
 
 // ArtikelInput adalah isian Super Admin untuk menerbitkan berita atau artikel.
+// Susunannya mengikuti formulir "Tambah Pengetahuan" di SIMPAN BRIN.
 type ArtikelInput struct {
-	Jenis     string `json:"jenis"`
-	Judul     string `json:"judul"`
-	Ringkasan string `json:"ringkasan"`
-	Penulis   string `json:"penulis"`
-	Konten    string `json:"konten"`
+	Jenis         string   `json:"jenis"`
+	Judul         string   `json:"judul"`
+	Format        string   `json:"format"`
+	UrlSumber     string   `json:"urlSumber"`
+	Penulis       []string `json:"penulis"`
+	Kolaborator   []string `json:"kolaborator"`
+	Ringkasan     string   `json:"ringkasan"`
+	Konten        string   `json:"konten"`
+	Kategori      string   `json:"kategori"`
+	Label         []string `json:"label"`
+	TanggalTerbit string   `json:"tanggalTerbit"` // YYYY-MM-DD; kosong = hari ini
+	StatusAkses   string   `json:"statusAkses"`
+	Unggulan      bool     `json:"unggulan"`
 }
 
 // ArtikelInvalidError membawa pesan per kolom untuk respons 422.
@@ -1077,12 +1099,44 @@ type ArtikelInvalidError struct{ Errors map[string]string }
 
 func (e *ArtikelInvalidError) Error() string { return ErrArtikelTidakValid.Error() }
 
+// bersihkanDaftar memangkas spasi, membuang yang kosong dan duplikat (tanpa membedakan huruf besar/kecil).
+func bersihkanDaftar(in []string) []string {
+	out := make([]string, 0, len(in))
+	terlihat := map[string]bool{}
+	for _, v := range in {
+		v = strings.TrimSpace(v)
+		k := strings.ToLower(v)
+		if v == "" || terlihat[k] {
+			continue
+		}
+		terlihat[k] = true
+		out = append(out, v)
+	}
+	return out
+}
+
+func panjangDaftarValid(d []string, maks, panjangMaks int) bool {
+	if len(d) > maks {
+		return false
+	}
+	for _, v := range d {
+		if utf8.RuneCountInString(v) > panjangMaks {
+			return false
+		}
+	}
+	return true
+}
+
 // BuatArtikel memvalidasi lalu menerbitkan berita/artikel baru.
 func (s *PortalModulService) BuatArtikel(in ArtikelInput) (*domain.Artikel, error) {
 	in.Judul = strings.TrimSpace(in.Judul)
 	in.Ringkasan = strings.TrimSpace(in.Ringkasan)
-	in.Penulis = strings.TrimSpace(in.Penulis)
 	in.Konten = strings.TrimSpace(in.Konten)
+	in.UrlSumber = strings.TrimSpace(in.UrlSumber)
+	in.Kategori = strings.TrimSpace(in.Kategori)
+	penulis := bersihkanDaftar(in.Penulis)
+	kolaborator := bersihkanDaftar(in.Kolaborator)
+	label := bersihkanDaftar(in.Label)
 
 	galat := map[string]string{}
 	if in.Jenis != string(domain.JenisArtikelBerita) && in.Jenis != string(domain.JenisArtikelEdukasi) {
@@ -1091,25 +1145,68 @@ func (s *PortalModulService) BuatArtikel(in ArtikelInput) (*domain.Artikel, erro
 	if n := utf8.RuneCountInString(in.Judul); n < 5 || n > 200 {
 		galat["judul"] = "Judul 5 sampai 200 karakter."
 	}
+	switch domain.FormatArtikel(in.Format) {
+	case domain.FormatGambar, domain.FormatVideo, domain.FormatAudio, domain.FormatTeks:
+	default:
+		galat["format"] = "Pilih format: gambar, video, audio, atau teks."
+	}
+	if in.UrlSumber != "" {
+		u, err := url.Parse(in.UrlSumber)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || utf8.RuneCountInString(in.UrlSumber) > 500 {
+			galat["urlSumber"] = "Isi URL lengkap yang diawali http:// atau https://."
+		}
+	}
+	if len(penulis) == 0 {
+		galat["penulis"] = "Isi minimal satu penulis."
+	} else if !panjangDaftarValid(penulis, 5, 100) {
+		galat["penulis"] = "Maksimal 5 penulis, tiap nama maksimal 100 karakter."
+	}
+	if !panjangDaftarValid(kolaborator, 10, 100) {
+		galat["kolaborator"] = "Maksimal 10 kolaborator, tiap nama maksimal 100 karakter."
+	}
 	if n := utf8.RuneCountInString(in.Ringkasan); n < 10 || n > 500 {
 		galat["ringkasan"] = "Ringkasan 10 sampai 500 karakter."
 	}
-	if n := utf8.RuneCountInString(in.Penulis); n < 2 || n > 120 {
-		galat["penulis"] = "Penulis 2 sampai 120 karakter."
-	}
 	if utf8.RuneCountInString(in.Konten) < 20 {
 		galat["konten"] = "Isi minimal 20 karakter."
+	}
+	if n := utf8.RuneCountInString(in.Kategori); n < 2 || n > 80 {
+		galat["kategori"] = "Pilih kategori."
+	}
+	if !panjangDaftarValid(label, 10, 40) {
+		galat["label"] = "Maksimal 10 label, tiap label maksimal 40 karakter."
+	}
+	akses := domain.AksesArtikel(in.StatusAkses)
+	if akses != domain.AksesPublik && akses != domain.AksesInternal {
+		galat["statusAkses"] = "Pilih status akses."
+	}
+	tanggal := time.Now()
+	if strings.TrimSpace(in.TanggalTerbit) != "" {
+		t, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(in.TanggalTerbit), time.Local)
+		if err != nil {
+			galat["tanggalTerbit"] = "Format tanggal tidak valid."
+		} else {
+			tanggal = t
+		}
 	}
 	if len(galat) > 0 {
 		return nil, &ArtikelInvalidError{Errors: galat}
 	}
 
 	a := &domain.Artikel{
-		Jenis:     domain.JenisArtikel(in.Jenis),
-		Judul:     in.Judul,
-		Ringkasan: in.Ringkasan,
-		Penulis:   in.Penulis,
-		Konten:    in.Konten,
+		Jenis:       domain.JenisArtikel(in.Jenis),
+		Judul:       in.Judul,
+		Ringkasan:   in.Ringkasan,
+		Penulis:     strings.Join(penulis, ", "),
+		Konten:      in.Konten,
+		Tanggal:     tanggal,
+		Format:      domain.FormatArtikel(in.Format),
+		UrlSumber:   in.UrlSumber,
+		Kolaborator: kolaborator,
+		Kategori:    in.Kategori,
+		Label:       label,
+		StatusAkses: akses,
+		Unggulan:    in.Unggulan,
 	}
 	if err := s.repo.CreateArtikel(a); err != nil {
 		return nil, err

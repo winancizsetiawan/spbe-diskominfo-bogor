@@ -2,13 +2,11 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/service"
 
@@ -23,24 +21,11 @@ func NewDokumenHandler(svc *service.DokumenService) *DokumenHandler {
 	return &DokumenHandler{svc: svc}
 }
 
-// ekstrakPeranRequest membaca header Authorization (misal "Bearer demo.super_admin")
-// untuk menentukan apakah pengguna sudah login dan apakah dia super_admin.
+// ekstrakPeranRequest menentukan apakah pengguna sudah masuk dan apakah dia Super Admin.
+// Token diverifikasi oleh paket auth; peran tidak pernah diambil dari tebakan teks token.
 func ekstrakPeranRequest(c *gin.Context) (sudahLogin bool, isSuperAdmin bool) {
-	auth := strings.TrimSpace(c.GetHeader("Authorization"))
-	if auth == "" {
-		return false, false
-	}
-	if strings.HasPrefix(auth, "Bearer ") {
-		token := strings.TrimPrefix(auth, "Bearer ")
-		if token == "" {
-			return false, false
-		}
-		if strings.HasSuffix(token, "super_admin") {
-			return true, true
-		}
-		return true, false
-	}
-	return false, false
+	ok, peran := auth.Dari(c.GetHeader("Authorization"))
+	return ok, ok && peran == auth.RoleSuperAdmin
 }
 
 func kelompokDariQuery(v string) domain.KelompokDokumen {
@@ -169,6 +154,7 @@ func (h *DokumenHandler) Unduh(c *gin.Context) {
 		return
 	}
 
+	res.URL = tautanUnduhBertanda(res.URL)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -239,40 +225,6 @@ func (h *DokumenHandler) MulaiUnggah(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
-}
-
-// UnggahBerkas menangani POST /api/dokumen/unggah/berkas/:idSesi
-func (h *DokumenHandler) UnggahBerkas(c *gin.Context) {
-	idSesi := c.Param("idSesi")
-	fileHeader, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Berkas tidak ditemukan."})
-		return
-	}
-
-	folderUnggah := filepath.Join("uploads", "dokumen")
-	if err := os.MkdirAll(folderUnggah, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyiapkan ruang penyimpanan."})
-		return
-	}
-
-	ext := filepath.Ext(fileHeader.Filename)
-	namaSimpan := fmt.Sprintf("%s%s", idSesi, ext)
-	pathLokal := filepath.Join(folderUnggah, namaSimpan)
-
-	if err := c.SaveUploadedFile(fileHeader, pathLokal); err != nil {
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan berkas."})
-		return
-	}
-
-	urlPublik := "/api/dokumen/berkas/" + namaSimpan
-	if err := h.svc.SimpanBerkasSesi(idSesi, urlPublik); err != nil {
-		_ = os.Remove(pathLokal)
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
-		return
-	}
-
-	c.Status(http.StatusNoContent)
 }
 
 // SelesaiUnggah menangani POST /api/dokumen/unggah/selesai

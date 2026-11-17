@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"time"
 
+	"spbe-backend/internal/auth"
+	"spbe-backend/internal/backup"
 	"spbe-backend/internal/config"
 	"spbe-backend/internal/database"
 	"spbe-backend/internal/handler"
@@ -21,8 +25,20 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	// Autentikasi: salah konfigurasi di produksi menghentikan server, bukan jatuh ke mode demo.
+	authCfg := auth.Config{Mode: cfg.AuthMode, Issuer: cfg.KeycloakIssuer, JWKSURL: cfg.KeycloakJWKSURL, ClientID: cfg.KeycloakClientID}
+	if err := auth.Validasi(authCfg, cfg.AppEnv == "production"); err != nil {
+		log.Fatalf("Konfigurasi autentikasi tidak valid: %v", err)
+	}
+	auth.Init(authCfg)
+	// Kata sandi demo per peran hanya untuk pengembangan lokal.
+	service.AktifkanSandiDemo(cfg.AppEnv == "development")
+	if cfg.AuthMode == auth.ModeDemo {
+		log.Println("[PERINGATAN] AUTH_MODE=demo: token \"demo.<peran>\" diterima. Hanya untuk pengembangan lokal.")
+	}
+
 	// 2. Menghubungkan ke Database PostgreSQL
-	db, err := database.Connect(cfg.DSN(), cfg.AppEnv == "development")
+	db, err := database.Connect(cfg.DSN(), cfg.AppEnv == "development", cfg.SeedData)
 	if err != nil {
 		log.Printf("[PERINGATAN] Gagal terhubung ke PostgreSQL: %v", err)
 		log.Println("[INFO] Pastikan service PostgreSQL lokal Anda aktif, dan database 'spbe_bogor' sudah dibuat.")
@@ -31,12 +47,16 @@ func main() {
 
 	// 3. Inisialisasi Gin Engine
 	r := gin.New()
-	_ = r.SetTrustedProxies(nil)
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		log.Fatalf("TRUSTED_PROXIES tidak valid: %v", err)
+	}
 
 	// 4. Pasang middleware standar
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	r.Use(middleware.HeaderKeamanan(cfg.AppEnv == "production"))
 	r.Use(middleware.SetupCORS(cfg.CorsAllowedOrigins))
+	r.Use(middleware.BatasLaju(600, time.Minute))
 
 	// 5. Inisialisasi Handler
 	healthHandler := handler.NewHealthHandler()
@@ -52,6 +72,12 @@ func main() {
 		api.GET("/dasbor/analitik", dasborArsitektur.GetAnalitik)
 
 		if db != nil {
+			if n, err := service.HashSandiTeksBiasa(db); err != nil {
+				log.Printf("[PERINGATAN] Gagal men-hash kata sandi lama: %v", err)
+			} else if n > 0 {
+				log.Printf("%d kata sandi teks biasa diganti hash.", n)
+			}
+
 			instansiRepo := repository.NewInstansiRepository(db)
 			referensiHandler := handler.NewReferensiHandler(instansiRepo)
 
@@ -78,9 +104,20 @@ func main() {
 
 			sistemRepo := repository.NewSistemRepository(db)
 			sistemService := service.NewSistemService(sistemRepo)
+			pelaksanaBackup := &backup.Runner{
+				PgDump: cfg.PgDumpPath, Dir: cfg.BackupDir, UploadsDir: cfg.UploadsDir, Retensi: cfg.BackupRetensi,
+				Host: cfg.DBHost, Port: cfg.DBPort, User: cfg.DBUser, Password: cfg.DBPassword, DBName: cfg.DBName,
+			}
+			sistemService.PasangBackup(pelaksanaBackup, cfg.BackupJam)
+			if err := pelaksanaBackup.Siap(); err != nil {
+				log.Printf("[PERINGATAN] Backup tidak aktif: %v", err)
+			} else {
+				jadwalkanBackupHarian(sistemService, cfg.BackupJam, cfg.DBTimeZone)
+			}
 			sistemHandler := handler.NewSistemHandler(sistemService)
 
 			pmRepo := repository.NewPenggunaModulRepository(db)
+			handler.ResolverPengguna = pmRepo.FindUserByRole
 			pmService := service.NewPenggunaModulService(pmRepo, sistemService)
 			pmHandler := handler.NewPenggunaModulHandler(pmService)
 
@@ -114,7 +151,7 @@ func main() {
 			api.POST("/validasi/:id/keputusan", valHandler.Putuskan)
 
 			// Rute Dokumen SPBE, SOP Pemerintahan, & Admin Repositori
-			api.Static("/dokumen/berkas", "./uploads/dokumen")
+			api.GET("/dokumen/berkas/:nama", dokHandler.BerkasUnduh)
 			api.GET("/dokumen/ringkasan", dokHandler.GetRingkasan)
 			api.GET("/dokumen/kategori", dokHandler.GetKategori)
 			api.GET("/dokumen", dokHandler.List)
@@ -151,7 +188,10 @@ func main() {
 			// Rute Auth, Profil, Manajemen Pengguna, Notifikasi, & Pembelajaran (LMS)
 			api.POST("/auth/login", pmHandler.Login)
 			api.POST("/auth/ubah-sandi", pmHandler.UbahSandi)
-			api.POST("/auth/simulasi-kedaluwarsa", pmHandler.SimulasiKedaluwarsaSandi)
+			// Alat uji kebijakan sandi tahunan: tidak boleh ada di produksi.
+			if cfg.AppEnv == "development" {
+				api.POST("/auth/simulasi-kedaluwarsa", pmHandler.SimulasiKedaluwarsaSandi)
+			}
 			api.GET("/me", pmHandler.GetMe)
 			api.GET("/profil", pmHandler.GetProfil)
 			api.PUT("/profil", pmHandler.UbahProfil)
@@ -196,4 +236,27 @@ func main() {
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Gagal menjalankan server: %v", err)
 	}
+}
+
+// jadwalkanBackupHarian menjalankan backup otomatis setiap hari pada jam "HH:MM" di zona waktu yang diberikan.
+func jadwalkanBackupHarian(svc *service.SistemService, jamMenit, zona string) {
+	var jam, menit int
+	if _, err := fmt.Sscanf(jamMenit, "%d:%d", &jam, &menit); err != nil || jam < 0 || jam > 23 || menit < 0 || menit > 59 {
+		log.Printf("[PERINGATAN] BACKUP_JAM %q tidak valid, memakai 02:00", jamMenit)
+		jam, menit = 2, 0
+	}
+	loc, err := time.LoadLocation(zona)
+	if err != nil {
+		loc = time.Local
+	}
+	go func() {
+		for {
+			berikut := backup.WaktuBerikutnya(time.Now().In(loc), jam, menit)
+			log.Printf("Backup otomatis berikutnya: %s", berikut.Format("2006-01-02 15:04 MST"))
+			time.Sleep(time.Until(berikut))
+			if err := svc.JalankanBackupOtomatis(); err != nil {
+				log.Printf("[PERINGATAN] Backup otomatis: %v", err)
+			}
+		}
+	}()
 }

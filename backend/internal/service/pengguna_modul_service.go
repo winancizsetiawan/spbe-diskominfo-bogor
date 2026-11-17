@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/repository"
 )
@@ -51,13 +52,6 @@ const (
 	MasaAktifSandiHari = 365
 )
 
-func sandiAktifUser(u domain.User) string {
-	if u.KataSandi != nil && *u.KataSandi != "" {
-		return *u.KataSandi
-	}
-	return sandiPerRole[u.Role]
-}
-
 func hitungStatusSandi(u domain.User) (*time.Time, bool, int) {
 	patokan := time.Now()
 	if u.SandiDiubahPada != nil {
@@ -97,6 +91,10 @@ func (s *PenggunaModulService) AmbilUserDariRole(role string) (*domain.User, err
 	}
 	u, err := s.repo.FindUserByRole(role)
 	if err != nil {
+		// Pengguna dengan email tidak boleh digantikan pengguna lain; cadangan ke ASN hanya untuk mode demo.
+		if _, email := auth.Pisah(role); email != "" {
+			return nil, err
+		}
 		return s.repo.FindUserByRole(string(domain.RoleASN))
 	}
 	return u, nil
@@ -150,7 +148,7 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 	}
 
 	var u *domain.User
-	if r, ok := usernameKeRole[username]; ok {
+	if r, ok := usernameKeRole[username]; ok && sandiDemoAktif.Load() {
 		u, _ = s.repo.FindUserByRole(string(r))
 	} else {
 		u, _ = s.repo.FindUserByEmail(username)
@@ -187,8 +185,7 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 		return nil, 423, errors.New("Akun Anda sedang dinonaktifkan/diblokir. Hubungi Super Admin Diskominfo untuk memulihkan akun Anda.")
 	}
 
-	sandiHarapan := sandiAktifUser(*u)
-	if in.Sandi != sandiHarapan {
+	if !sandiCocok(u, in.Sandi) {
 		u.GagalLogin++
 		uid := u.ID
 
@@ -250,18 +247,22 @@ func (s *PenggunaModulService) UbahSandi(role string, in domain.UbahSandiInput) 
 	}
 
 	errs := make(map[string]string)
-	sandiSaatIni := sandiAktifUser(*u)
 
+	// Salinan agar pemeriksaan sandi lama tidak mengubah `u` sebelum semua isian valid.
+	salinan := *u
 	if in.SandiLama == "" {
 		errs["sandiLama"] = "Kata sandi saat ini wajib diisi."
-	} else if in.SandiLama != sandiSaatIni {
+	} else if !sandiCocok(&salinan, in.SandiLama) {
 		errs["sandiLama"] = "Kata sandi saat ini tidak sesuai."
 	}
 
 	if utf8.RuneCountInString(in.SandiBaru) < 8 {
 		errs["sandiBaru"] = "Kata sandi baru minimal 8 karakter."
-	} else if in.SandiBaru == sandiSaatIni {
-		errs["sandiBaru"] = "Kata sandi baru tidak boleh sama dengan kata sandi lama."
+	} else if len(errs) == 0 || errs["sandiLama"] == "" {
+		// Hanya membandingkan dengan sandi lama bila sandi lama itu benar, supaya tidak membocorkan nilainya.
+		if in.SandiBaru == in.SandiLama {
+			errs["sandiBaru"] = "Kata sandi baru tidak boleh sama dengan kata sandi lama."
+		}
 	}
 
 	if in.KonfirmasiSandi != in.SandiBaru {
@@ -273,8 +274,11 @@ func (s *PenggunaModulService) UbahSandi(role string, in domain.UbahSandiInput) 
 	}
 
 	now := time.Now()
-	baru := in.SandiBaru
-	u.KataSandi = &baru
+	hash, err := hashSandi(in.SandiBaru)
+	if err != nil {
+		return nil, err
+	}
+	u.KataSandi = &hash
 	u.SandiDiubahPada = &now
 	if err := s.repo.UpdateUser(u); err != nil {
 		return nil, err

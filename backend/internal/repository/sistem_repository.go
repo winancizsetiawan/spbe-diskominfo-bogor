@@ -15,12 +15,7 @@ func NewSistemRepository(db *gorm.DB) *SistemRepository {
 }
 
 func (r *SistemRepository) FindUserByRole(role string) (*domain.User, error) {
-	var u domain.User
-	err := r.db.Where("role = ?", role).First(&u).Error
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
+	return cariPengguna(r.db, role, false)
 }
 
 // ---- 1. Audit Trail ----

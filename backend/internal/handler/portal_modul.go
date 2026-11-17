@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/service"
 
@@ -25,7 +26,8 @@ func NewPortalModulHandler(svc *service.PortalModulService) *PortalModulHandler 
 func (h *PortalModulHandler) ListArtikel(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	jenis := c.Query("jenis")
-	res, err := h.svc.ListArtikel(jenis, page)
+	sudahLogin, _ := ekstrakRoleLogin(c)
+	res, err := h.svc.ListArtikel(jenis, page, sudahLogin)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat daftar artikel."})
 		return
@@ -40,7 +42,12 @@ func (h *PortalModulHandler) GetArtikelDetail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Artikel tidak ditemukan."})
 		return
 	}
-	res, err := h.svc.GetArtikelDetail(uint(id))
+	sudahLogin, _ := ekstrakRoleLogin(c)
+	res, err := h.svc.GetArtikelDetail(uint(id), sudahLogin)
+	if errors.Is(err, service.ErrArtikelButuhLogin) {
+		c.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
 	if err != nil {
 		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Artikel tidak ditemukan."})
 		return
@@ -110,7 +117,7 @@ func (h *PortalModulHandler) GetDasborInstansi(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if role != string(domain.RoleAdminOPD) && role != string(domain.RoleSuperAdmin) {
+	if auth.PeranDari(role) != string(domain.RoleAdminOPD) && auth.PeranDari(role) != string(domain.RoleSuperAdmin) {
 		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Peran Anda tidak memiliki akses ke dasbor ini."})
 		return
 	}
@@ -140,7 +147,7 @@ func (h *PortalModulHandler) GetDasborEmbed(c *gin.Context) {
 		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Jenis dasbor tidak dikenal."})
 		return
 	}
-	if jenis == "instansi" && role != string(domain.RoleAdminOPD) && role != string(domain.RoleSuperAdmin) {
+	if jenis == "instansi" && auth.PeranDari(role) != string(domain.RoleAdminOPD) && auth.PeranDari(role) != string(domain.RoleSuperAdmin) {
 		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Peran Anda tidak memiliki akses ke dasbor ini."})
 		return
 	}

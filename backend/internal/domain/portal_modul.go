@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"time"
+)
 
 // ---- 1. Konten (Berita, Artikel, & Bantuan) ----
 
@@ -11,15 +16,77 @@ const (
 	JenisArtikelEdukasi JenisArtikel = "artikel"
 )
 
+// DaftarTeks menyimpan daftar teks (kolaborator, label) sebagai JSON di satu kolom.
+type DaftarTeks []string
+
+func (DaftarTeks) GormDataType() string { return "jsonb" }
+
+func (d DaftarTeks) Value() (driver.Value, error) {
+	if d == nil {
+		return "[]", nil
+	}
+	b, err := json.Marshal([]string(d))
+	return string(b), err
+}
+
+func (d *DaftarTeks) Scan(src any) error {
+	var raw []byte
+	switch v := src.(type) {
+	case nil:
+		*d = DaftarTeks{}
+		return nil
+	case []byte:
+		raw = v
+	case string:
+		raw = []byte(v)
+	default:
+		return errors.New("DaftarTeks: tipe sumber tidak didukung")
+	}
+	var out []string
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return err
+	}
+	if out == nil {
+		out = []string{}
+	}
+	*d = out
+	return nil
+}
+
+// FormatArtikel adalah bentuk isi tulisan; "teks" bila isinya artikel biasa.
+type FormatArtikel string
+
+const (
+	FormatGambar FormatArtikel = "gambar"
+	FormatVideo  FormatArtikel = "video"
+	FormatAudio  FormatArtikel = "audio"
+	FormatTeks   FormatArtikel = "teks"
+)
+
+// AksesArtikel menentukan siapa yang boleh membaca: semua orang, atau hanya yang sudah masuk.
+type AksesArtikel string
+
+const (
+	AksesPublik   AksesArtikel = "publik"
+	AksesInternal AksesArtikel = "internal"
+)
+
 type Artikel struct {
-	ID        uint         `gorm:"primaryKey" json:"id"`
-	Jenis     JenisArtikel `gorm:"size:20;not null;index" json:"jenis"`
-	Judul     string       `gorm:"size:200;not null" json:"judul"`
-	Ringkasan string       `gorm:"size:500;not null" json:"ringkasan"`
-	Penulis   string       `gorm:"size:120;not null" json:"penulis"`
-	Tanggal   time.Time    `gorm:"autoCreateTime;index" json:"tanggal"`
-	Views     int          `gorm:"not null;default:0" json:"views"`
-	Konten    string       `gorm:"type:text;not null" json:"konten"`
+	ID          uint          `gorm:"primaryKey" json:"id"`
+	Jenis       JenisArtikel  `gorm:"size:20;not null;index" json:"jenis"`
+	Judul       string        `gorm:"size:200;not null" json:"judul"`
+	Ringkasan   string        `gorm:"size:500;not null" json:"ringkasan"`
+	Penulis     string        `gorm:"size:300;not null" json:"penulis"`
+	Tanggal     time.Time     `gorm:"autoCreateTime;index" json:"tanggal"`
+	Views       int           `gorm:"not null;default:0" json:"views"`
+	Konten      string        `gorm:"type:text;not null" json:"konten"`
+	Format      FormatArtikel `gorm:"size:10;not null;default:'teks'" json:"format"`
+	UrlSumber   string        `gorm:"size:500;not null;default:''" json:"urlSumber"`
+	Kolaborator DaftarTeks    `gorm:"type:jsonb;not null;default:'[]'" json:"kolaborator"`
+	Kategori    string        `gorm:"size:80;not null;default:''" json:"kategori"`
+	Label       DaftarTeks    `gorm:"type:jsonb;not null;default:'[]'" json:"label"`
+	StatusAkses AksesArtikel  `gorm:"size:10;not null;default:'publik';index" json:"statusAkses"`
+	Unggulan    bool          `gorm:"not null;default:false" json:"unggulan"`
 }
 
 func (Artikel) TableName() string {
@@ -34,6 +101,10 @@ type ArtikelRingkasDTO struct {
 	Penulis   string       `json:"penulis"`
 	Tanggal   time.Time    `json:"tanggal"`
 	Views     int          `json:"views"`
+	Format    FormatArtikel `json:"format"`
+	Kategori  string       `json:"kategori"`
+	Label     []string     `json:"label"`
+	Unggulan  bool         `json:"unggulan"`
 }
 
 type FAQItemDTO struct {

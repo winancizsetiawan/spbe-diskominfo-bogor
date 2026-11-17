@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -9,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"spbe-backend/internal/backup"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/repository"
 )
@@ -20,7 +22,6 @@ var (
 )
 
 const (
-	JadwalBackupOtomatis = "Setiap hari pukul 02.00 WIB"
 	RetensiBackupDefault = 7
 )
 
@@ -33,7 +34,30 @@ func (e *SistemKonflikError) Error() string {
 }
 
 type SistemService struct {
-	repo *repository.SistemRepository
+	repo   *repository.SistemRepository
+	runner *backup.Runner
+	jam    string // "HH:MM"
+}
+
+// PasangBackup menyambungkan pelaksana backup nyata dan jam jadwal hariannya.
+func (s *SistemService) PasangBackup(r *backup.Runner, jam string) {
+	s.runner = r
+	s.jam = jam
+}
+
+func (s *SistemService) retensi() int {
+	if s.runner != nil && s.runner.Retensi > 0 {
+		return s.runner.Retensi
+	}
+	return RetensiBackupDefault
+}
+
+func (s *SistemService) jadwalTeks() string {
+	jam := s.jam
+	if jam == "" {
+		jam = "02:00"
+	}
+	return "Setiap hari pukul " + strings.Replace(jam, ":", ".", 1) + " WIB"
 }
 
 func NewSistemService(repo *repository.SistemRepository) *SistemService {
@@ -233,8 +257,8 @@ func (s *SistemService) GetBackup() (domain.DaftarBackupResponse, error) {
 
 	return domain.DaftarBackupResponse{
 		Items:            items,
-		Jadwal:           JadwalBackupOtomatis,
-		Retensi:          RetensiBackupDefault,
+		Jadwal:           s.jadwalTeks(),
+		Retensi:          s.retensi(),
 		TerakhirBerhasil: terakhirBerhasil,
 	}, nil
 }
@@ -253,15 +277,6 @@ func (s *SistemService) MulaiBackupManual(role string) (*domain.RiwayatBackup, e
 		userIDPtr = &uid
 	}
 
-	semua, _ := s.repo.FindAllBackups()
-	ukuranDasar := 829.8
-	for _, b := range semua {
-		if b.Status == domain.StatusBackupBerhasil && b.UkuranMb != nil {
-			ukuranDasar = *b.UkuranMb
-			break
-		}
-	}
-
 	baris := &domain.RiwayatBackup{
 		Tipe:       domain.BackupManual,
 		Status:     domain.StatusBackupBerjalan,
@@ -271,30 +286,57 @@ func (s *SistemService) MulaiBackupManual(role string) (*domain.RiwayatBackup, e
 		PesanGagal: nil,
 	}
 
-	if err := s.repo.CreateBackup(baris, RetensiBackupDefault); err != nil {
+	if err := s.repo.CreateBackup(baris, s.retensi()); err != nil {
 		return nil, err
 	}
 
 	s.CatatAktivitas(userIDPtr, domain.AksiBackup, "Menjalankan backup manual", domain.HasilBerhasil)
 
-	// Selesaikan backup secara asinkron setelah 3 detik (sesuai perilaku di frontend polling)
-	go func(bID uint, dasar float64, uid *uint) {
-		time.Sleep(3 * time.Second)
-		ukuranBaru := math.Round((dasar+1.5)*10) / 10
-		bSelesai := &domain.RiwayatBackup{
-			ID:         bID,
-			Tipe:       domain.BackupManual,
-			Status:     domain.StatusBackupBerhasil,
-			UkuranMb:   &ukuranBaru,
-			Oleh:       &namaOleh,
-			Waktu:      baris.Waktu,
-			PesanGagal: nil,
-		}
-		_ = s.repo.UpdateBackup(bSelesai)
-		s.CatatAktivitas(uid, domain.AksiBackup, "Backup manual selesai", domain.HasilBerhasil)
-	}(baris.ID, ukuranDasar, userIDPtr)
+	go s.selesaikanBackup(baris, userIDPtr)
 
 	return baris, nil
+}
+
+// JalankanBackupOtomatis dipanggil penjadwal harian. Mengembalikan galat bila backup sebelumnya masih berjalan.
+func (s *SistemService) JalankanBackupOtomatis() error {
+	if s.repo.HasRunningBackup() {
+		return errors.New("backup sebelumnya masih berjalan")
+	}
+	oleh := "Sistem"
+	baris := &domain.RiwayatBackup{
+		Tipe:   domain.BackupOtomatis,
+		Status: domain.StatusBackupBerjalan,
+		Oleh:   &oleh,
+		Waktu:  time.Now(),
+	}
+	if err := s.repo.CreateBackup(baris, s.retensi()); err != nil {
+		return err
+	}
+	s.CatatAktivitas(nil, domain.AksiBackup, "Menjalankan backup otomatis", domain.HasilBerhasil)
+	s.selesaikanBackup(baris, nil)
+	return nil
+}
+
+// selesaikanBackup menjalankan backup nyata lalu memperbarui riwayat dengan ukuran atau pesan galat sebenarnya.
+func (s *SistemService) selesaikanBackup(baris *domain.RiwayatBackup, uid *uint) {
+	hasil, err := s.runner.Jalankan(context.Background())
+	if err != nil {
+		pesan := err.Error()
+		baris.Status = domain.StatusBackupGagal
+		baris.PesanGagal = &pesan
+		_ = s.repo.UpdateBackup(baris)
+		s.CatatAktivitas(uid, domain.AksiBackup, "Backup gagal: "+pesan, domain.HasilGagal)
+		return
+	}
+	mb := math.Round(float64(hasil.UkuranBytes)/1024.0/1024.0*100) / 100
+	if mb < 0.01 {
+		mb = 0.01
+	}
+	baris.Status = domain.StatusBackupBerhasil
+	baris.UkuranMb = &mb
+	baris.PesanGagal = nil
+	_ = s.repo.UpdateBackup(baris)
+	s.CatatAktivitas(uid, domain.AksiBackup, "Backup selesai", domain.HasilBerhasil)
 }
 
 // ---- 3. Periode Pembaruan Data ----

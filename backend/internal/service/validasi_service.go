@@ -140,6 +140,15 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				continue
 			}
 
+			if fc.InstansiID != user.InstansiID {
+				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
+					ID:     targetID,
+					Nama:   "Flowchart",
+					Alasan: "Data flowchart tidak ditemukan.", // sengaja sama: tidak mengungkap data instansi lain
+				})
+				continue
+			}
+
 			if fc.Status != domain.StatusDraft && fc.Status != domain.StatusPerluRevisi {
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     fc.ID,
@@ -188,6 +197,15 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 					ID:     targetID,
 					Nama:   "Aplikasi",
 					Alasan: "Data aplikasi tidak ditemukan.",
+				})
+				continue
+			}
+
+			if apl.InstansiID != user.InstansiID {
+				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
+					ID:     targetID,
+					Nama:   "Aplikasi",
+					Alasan: "Data aplikasi tidak ditemukan.", // sengaja sama: tidak mengungkap data instansi lain
 				})
 				continue
 			}

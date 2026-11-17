@@ -17,3 +17,4 @@ bin/
 # Data dasbor arsitektur (internal, dibuat dari matriks Excel) dan berkas unggahan runtime
 data/
 uploads/
+backups/

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -25,6 +26,26 @@ type Config struct {
 
 	// Folder berisi dasborPublik.json dan dasborInternal.json (dibuat frontend/scripts/excel_dasbor_publik.py).
 	DasborDataDir string
+
+	// Autentikasi. Mode "demo" hanya untuk pengembangan; produksi wajib "keycloak".
+	AuthMode         string
+	KeycloakIssuer   string
+	KeycloakJWKSURL  string
+	KeycloakClientID string
+
+	// Backup nyata (pg_dump + arsip unggahan).
+	PgDumpPath    string
+	BackupDir     string
+	BackupRetensi int
+	BackupJam     string // "HH:MM", waktu mengikuti DB_TIMEZONE
+	UploadsDir    string
+
+	// Alamat proxy tepercaya (mis. nginx di 127.0.0.1) agar IP klien dibaca dari X-Forwarded-For.
+	// Kosong = tidak ada proxy; IP klien diambil dari sambungan langsung.
+	TrustedProxies []string
+
+	// Mengisi data contoh saat start. Bawaan: hanya di pengembangan.
+	SeedData bool
 }
 
 func (c *Config) DSN() string {
@@ -60,12 +81,63 @@ func LoadConfig() *Config {
 		DBTimeZone: getEnv("DB_TIMEZONE", "Asia/Jakarta"),
 
 		DasborDataDir: getEnv("DASBOR_DATA_DIR", "./data/dasbor"),
+
+		AuthMode:         getEnv("AUTH_MODE", authModeBawaan(appEnv)),
+		KeycloakIssuer:   strings.TrimRight(getEnv("KEYCLOAK_ISSUER", ""), "/"),
+		KeycloakJWKSURL:  getEnv("KEYCLOAK_JWKS_URL", ""),
+		KeycloakClientID: getEnv("KEYCLOAK_CLIENT_ID", ""),
+
+		PgDumpPath:    getEnv("PG_DUMP_PATH", "pg_dump"),
+		BackupDir:     getEnv("BACKUP_DIR", "./backups"),
+		BackupRetensi: getEnvInt("BACKUP_RETENSI", 7),
+		BackupJam:     getEnv("BACKUP_JAM", "02:00"),
+		UploadsDir:    getEnv("UPLOADS_DIR", "./uploads"),
+
+		TrustedProxies: daftarEnv("TRUSTED_PROXIES"),
+
+		SeedData: getEnvBool("SEED_DATA", appEnv == "development"),
 	}
 }
 
 func getEnv(key, fallback string) string {
 	if val, ok := os.LookupEnv(key); ok && val != "" {
 		return val
+	}
+	return fallback
+}
+
+// authModeBawaan: pengembangan memakai demo, selain itu (produksi) wajib keycloak.
+func authModeBawaan(appEnv string) string {
+	if appEnv == "development" {
+		return "demo"
+	}
+	return "keycloak"
+}
+
+func getEnvInt(key string, fallback int) int {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return fallback
+}
+
+func daftarEnv(key string) []string {
+	var out []string
+	for _, v := range strings.Split(os.Getenv(key), ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			return b
+		}
 	}
 	return fallback
 }

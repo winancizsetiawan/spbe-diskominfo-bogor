@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"spbe-backend/internal/auth"
 	"spbe-backend/internal/domain"
 	"spbe-backend/internal/service"
 
@@ -25,7 +26,7 @@ func wajibSuperAdmin(c *gin.Context, pesanForbidden string) (role string, ok boo
 		c.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: "Sesi tidak valid."})
 		return "", false
 	}
-	if r != string(domain.RoleSuperAdmin) {
+	if auth.PeranDari(r) != string(domain.RoleSuperAdmin) {
 		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: pesanForbidden})
 		return "", false
 	}

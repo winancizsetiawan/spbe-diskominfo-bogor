@@ -29,12 +29,7 @@ func (r *ForumRepository) ExistsKategori(id uint) bool {
 }
 
 func (r *ForumRepository) FindUserByRole(role string) (*domain.User, error) {
-	var u domain.User
-	err := r.db.Preload("Instansi").Where("role = ?", role).First(&u).Error
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
+	return cariPengguna(r.db, role, true)
 }
 
 func (r *ForumRepository) FindAllThreads(f domain.ThreadFilter) ([]domain.ForumThread, int64, error) {

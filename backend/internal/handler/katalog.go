@@ -20,6 +20,9 @@ func NewKatalogHandler(aplikasiService service.AplikasiService) *KatalogHandler 
 
 // GetReferensiRaa mengembalikan pohon hierarki RAA (Level 1, 2, 3)
 func (h *KatalogHandler) GetReferensiRaa(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	nodes, err := h.aplikasiService.GetTreeRaa()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil referensi RAA", nil))
@@ -30,6 +33,9 @@ func (h *KatalogHandler) GetReferensiRaa(c *gin.Context) {
 
 // GetRingkasan mengembalikan ringkasan statistik (total, sesuai, perlu penyesuaian, belum)
 func (h *KatalogHandler) GetRingkasan(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var instansiID *uint
 	if inst := c.Query("instansi"); inst != "" {
 		if id, err := strconv.ParseUint(inst, 10, 32); err == nil {
@@ -38,6 +44,14 @@ func (h *KatalogHandler) GetRingkasan(c *gin.Context) {
 		}
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		id := p.InstansiID
+		instansiID = &id // Admin OPD hanya melihat instansinya sendiri
+	}
 	ringkasan, err := h.aplikasiService.GetRingkasan(instansiID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil ringkasan aplikasi", nil))
@@ -48,6 +62,9 @@ func (h *KatalogHandler) GetRingkasan(c *gin.Context) {
 
 // GetDaftar mengembalikan daftar aplikasi berhalaman dengan filter
 func (h *KatalogHandler) GetDaftar(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var filter domain.AplikasiFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("Parameter kueri tidak valid", nil))
@@ -61,6 +78,14 @@ func (h *KatalogHandler) GetDaftar(c *gin.Context) {
 		}
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		id := p.InstansiID
+		filter.InstansiID = &id
+	}
 	res, err := h.aplikasiService.GetDaftar(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil daftar aplikasi", nil))
@@ -71,6 +96,9 @@ func (h *KatalogHandler) GetDaftar(c *gin.Context) {
 
 // GetDetail mengembalikan detail 1 aplikasi
 func (h *KatalogHandler) GetDetail(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
@@ -78,8 +106,13 @@ func (h *KatalogHandler) GetDetail(c *gin.Context) {
 		return
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
 	apl, err := h.aplikasiService.GetDetail(uint(id))
-	if err != nil {
+	// Milik instansi lain dijawab "tidak ditemukan" agar keberadaannya tidak terungkap.
+	if err != nil || (terbatas && apl.InstansiID != p.InstansiID) {
 		c.JSON(http.StatusNotFound, domain.NewErrorResponse("Aplikasi tidak ditemukan", nil))
 		return
 	}
@@ -88,6 +121,9 @@ func (h *KatalogHandler) GetDetail(c *gin.Context) {
 
 // GetSiapDiajukan mengembalikan daftar aplikasi yang berstatus draft/perlu revisi
 func (h *KatalogHandler) GetSiapDiajukan(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var instansiID *uint
 	if inst := c.Query("instansi"); inst != "" {
 		if id, err := strconv.ParseUint(inst, 10, 32); err == nil {
@@ -96,6 +132,14 @@ func (h *KatalogHandler) GetSiapDiajukan(c *gin.Context) {
 		}
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		id := p.InstansiID
+		instansiID = &id
+	}
 	list, err := h.aplikasiService.GetSiapDiajukan(instansiID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil aplikasi siap diajukan", nil))
@@ -117,6 +161,9 @@ func (h *KatalogHandler) GetSiapDiajukan(c *gin.Context) {
 
 // Create menambah aplikasi baru
 func (h *KatalogHandler) Create(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	var input domain.AplikasiInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("Isian formulir tidak valid", map[string]string{
@@ -125,9 +172,16 @@ func (h *KatalogHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Default instansi: 2 (Dinas Kesehatan) jika belum ada token auth
-	defaultInstansiID := uint(2)
-	apl, err := h.aplikasiService.Create(input, defaultInstansiID)
+	// Admin OPD hanya mendaftarkan untuk instansinya sendiri. Super Admin boleh menyebut idInstansi,
+	// bila tidak, dipakai instansi miliknya.
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		input.IDInstansi = nil
+	}
+	apl, err := h.aplikasiService.Create(input, p.InstansiID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal menyimpan aplikasi baru", nil))
 		return
@@ -138,6 +192,9 @@ func (h *KatalogHandler) Create(c *gin.Context) {
 
 // Update mengubah data aplikasi
 func (h *KatalogHandler) Update(c *gin.Context) {
+	if !wajibPengelola(c) {
+		return
+	}
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
@@ -153,6 +210,18 @@ func (h *KatalogHandler) Update(c *gin.Context) {
 		return
 	}
 
+	p, terbatas, ok := penggunaSaatIni(c)
+	if !ok {
+		return
+	}
+	if terbatas {
+		ada, errD := h.aplikasiService.GetDetail(uint(id))
+		if errD != nil || ada.InstansiID != p.InstansiID {
+			c.JSON(http.StatusNotFound, domain.NewErrorResponse("Aplikasi tidak ditemukan", nil))
+			return
+		}
+		input.IDInstansi = nil
+	}
 	apl, err := h.aplikasiService.Update(uint(id), input)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, domain.NewErrorResponse(err.Error(), nil))

@@ -80,6 +80,9 @@ const (
 	masaSesiUnggah   = 10 * time.Minute
 )
 
+// BatasUnggahBytes adalah ukuran maksimal satu berkas unggahan.
+const BatasUnggahBytes = batasUnggahBytes
+
 type sesiUnggahRow struct {
 	Nama        string
 	TipeBerkas  domain.TipeBerkas
@@ -299,6 +302,20 @@ func (s *DokumenService) MulaiUnggah(in domain.MulaiUnggahInput) (*domain.SesiUn
 		UrlUnggah: "/api/dokumen/unggah/berkas/" + idSesi,
 		Fields:    map[string]string{"key": idSesi},
 	}, nil
+}
+
+// TipeSesi mengembalikan tipe berkas yang sudah divalidasi pada tahap "mulai" untuk sesi ini.
+func (s *DokumenService) TipeSesi(idSesi string) (domain.TipeBerkas, error) {
+	val, ok := s.sesi.Load(idSesi)
+	if !ok {
+		return "", ErrSesiUnggahKedaluwarsa
+	}
+	row := val.(*sesiUnggahRow)
+	if time.Now().After(row.Kedaluwarsa) {
+		s.sesi.Delete(idSesi)
+		return "", ErrSesiUnggahKedaluwarsa
+	}
+	return row.TipeBerkas, nil
 }
 
 func (s *DokumenService) SimpanBerkasSesi(idSesi string, pathBerkas string) error {
