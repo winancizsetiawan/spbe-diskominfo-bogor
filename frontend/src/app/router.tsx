@@ -32,6 +32,7 @@ const DasborInstansiPage = halaman(() => import('@/features/dasbor/pages/DasborI
 const BeritaListPage = halaman(() => import('@/features/konten/pages/BeritaListPage'), 'BeritaListPage')
 const TambahTulisanPage = halaman(() => import('@/features/konten/pages/TambahTulisanPage'), 'TambahTulisanPage')
 const BeritaDetailPage = halaman(() => import('@/features/konten/pages/BeritaDetailPage'), 'BeritaDetailPage')
+const VerifikasiKontenPage = halaman(() => import('@/features/konten/pages/VerifikasiKontenPage'), 'VerifikasiKontenPage')
 const BantuanPage = halaman(() => import('@/features/konten/pages/BantuanPage'), 'BantuanPage')
 const KursusListPage = halaman(() => import('@/features/pembelajaran/pages/KursusListPage'), 'KursusListPage')
 const KursusDetailPage = halaman(() => import('@/features/pembelajaran/pages/KursusDetailPage'), 'KursusDetailPage')
@@ -77,13 +78,20 @@ export const router = createBrowserRouter([
           { path: 'beranda', element: <BerandaPage /> },
           { path: 'notifikasi', element: <NotifikasiPage /> },
           { path: 'profil', element: <ProfilPage /> },
-          { path: 'sop', element: <DokumenListPage kelompok="sop" /> },
+          guarded('sop:lihat', [
+            { path: 'sop', element: <DokumenListPage kelompok="sop" /> },
+          ]),
           { path: 'pembelajaran', element: <KursusListPage /> },
           { path: 'pembelajaran/:id', element: <KursusDetailPage /> },
           { path: 'dasbor/analitik', element: <DasborArsitekturPage /> },
           { path: 'forum', element: <ForumListPage /> },
           { path: 'forum/baru', element: <CreateThreadPage /> },
           { path: 'forum/:id', element: <ThreadDetailPage /> },
+
+          // Verifikator Konten & Super Admin
+          guarded('artikel:verifikasi', [
+            { path: 'verifikasi-konten', element: <VerifikasiKontenPage /> },
+          ]),
 
           // Admin OPD (instansi sendiri) dan Super Admin (semua instansi)
           guarded('aplikasi:kelola', [

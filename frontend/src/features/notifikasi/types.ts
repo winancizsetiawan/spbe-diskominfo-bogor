@@ -1,6 +1,6 @@
 import type { Paged } from '@/api/client'
 
-export type KategoriNotifikasi = 'sistem' | 'forum' | 'pembelajaran' | 'dokumen'
+export type KategoriNotifikasi = 'sistem' | 'forum' | 'pembelajaran' | 'dokumen' | 'validasi'
 
 export interface Notifikasi {
   id: number
@@ -31,6 +31,7 @@ export const KATEGORI_LABEL: Record<FilterKategori, string> = {
   forum: 'Forum',
   pembelajaran: 'Pembelajaran',
   dokumen: 'Dokumen',
+  validasi: 'Validasi',
 }
 
-export const URUTAN_KATEGORI: FilterKategori[] = ['semua', 'sistem', 'forum', 'pembelajaran', 'dokumen']
+export const URUTAN_KATEGORI: FilterKategori[] = ['semua', 'sistem', 'forum', 'pembelajaran', 'dokumen', 'validasi']

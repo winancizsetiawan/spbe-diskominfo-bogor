@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { ROLE_LABEL } from '@/auth/types'
+import { ROLE_LABEL, ROLE_MODE_DESKRIPSI } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
 import { Spinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/States'
@@ -9,6 +9,7 @@ import type { Beranda } from './types'
 import { AdminOpdView } from './views/AdminOpdView'
 import { InternalView } from './views/InternalView'
 import { SuperAdminView } from './views/SuperAdminView'
+import { VerifikatorView } from './views/VerifikatorView'
 
 const waktuSalam = () => {
   const jam = new Date().getHours()
@@ -63,6 +64,7 @@ export function BerandaPage() {
             <p className="mt-1 text-sm text-brand-100">
               <span className="rounded-full bg-white/15 px-2.5 py-0.5 font-medium text-white">{ROLE_LABEL[user.role]}</span> {user.instansi.nama}
             </p>
+            <p className="mt-2 text-xs text-brand-100/90 sm:text-sm">{ROLE_MODE_DESKRIPSI[user.role]}</p>
           </div>
         </div>
         {beranda.data && (
@@ -86,6 +88,8 @@ export function BerandaPage() {
         <AdminOpdView data={beranda.data} />
       ) : beranda.data.tipe === 'super_admin' ? (
         <SuperAdminView data={beranda.data} />
+      ) : user.role === 'verifikator' ? (
+        <VerifikatorView data={beranda.data} />
       ) : (
         <InternalView data={beranda.data} />
       )}

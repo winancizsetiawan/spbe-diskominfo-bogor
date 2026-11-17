@@ -1,5 +1,5 @@
 import { Power, PowerOff, Send, Trash2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { ApiError } from '@/api/client'
 import { ROLE_LABEL, type Role } from '@/auth/types'
@@ -35,17 +35,33 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
   const ubah = useUbahPengguna()
   const { register, handleSubmit, reset, setError, watch, formState: { errors } } = useForm<FormValues>()
   const role = watch('role') ?? pengguna?.role ?? 'asn'
+  const [peranTambahan, setPeranTambahan] = useState<Role[]>([])
 
   useEffect(() => {
-    if (pengguna) reset({ role: pengguna.role, idInstansi: String(pengguna.instansi.id) })
+    if (pengguna) {
+      reset({ role: pengguna.role, idInstansi: String(pengguna.instansi.id) })
+      const awal = pengguna.daftarPeran?.length ? pengguna.daftarPeran : [pengguna.role]
+      setPeranTambahan(awal)
+    }
   }, [pengguna, reset])
+
+  const togglePeran = (r: Role) => {
+    if (r === role) return
+    setPeranTambahan((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]))
+  }
 
   const kirim = handleSubmit((v) => {
     if (!pengguna) return
+    const daftarBaru = Array.from(new Set([v.role, ...peranTambahan]))
+    const daftarLama = pengguna.daftarPeran?.length ? pengguna.daftarPeran : [pengguna.role]
+    const daftarBerubah =
+      daftarBaru.length !== daftarLama.length || daftarBaru.some((r) => !daftarLama.includes(r))
+
     // Hanya kirim yang berubah agar server tidak mencatat perubahan palsu.
     const input = {
       id: pengguna.id,
       ...(v.role !== pengguna.role && { role: v.role }),
+      ...(daftarBerubah && { daftarPeran: daftarBaru }),
       ...(Number(v.idInstansi) !== pengguna.instansi.id && { idInstansi: Number(v.idInstansi) }),
     }
     if (Object.keys(input).length === 1) return setError('role', { message: 'Tidak ada perubahan.' })
@@ -75,7 +91,7 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
           </p>
           <h3 className="text-sm font-semibold text-slate-900">Peran dan instansi</h3>
 
-          <Field id="ubah-role" label="Peran" error={errors.role?.message}>
+          <Field id="ubah-role" label="Peran utama" error={errors.role?.message}>
             <select id="ubah-role" className={inputClass} aria-invalid={!!errors.role} {...register('role')}>
               {URUTAN_ROLE.map((r) => (
                 <option key={r} value={r}>
@@ -84,6 +100,36 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
               ))}
             </select>
           </Field>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-slate-700">Akses Multi-Role (Switch Role)</legend>
+            <p className="text-xs text-slate-500">
+              Centang peran tambahan yang dapat diakses pengguna ini lewat fitur Ganti Peran.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {URUTAN_ROLE.map((r) => {
+                const adalahUtama = r === role
+                const dicentang = adalahUtama || peranTambahan.includes(r)
+                return (
+                  <label
+                    key={r}
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                      dicentang ? 'border-brand-300 bg-brand-50 text-brand-900' : 'border-slate-200 bg-white text-slate-600'
+                    } ${adalahUtama ? 'opacity-75' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={dicentang}
+                      disabled={adalahUtama}
+                      onChange={() => togglePeran(r)}
+                      className="rounded border-slate-300 text-brand-700"
+                    />
+                    {ROLE_LABEL[r]} {adalahUtama && '(Utama)'}
+                  </label>
+                )
+              })}
+            </div>
+          </fieldset>
 
           <Field id="ubah-instansi" label="Instansi" error={errors.idInstansi?.message}>
             <InstansiSelect

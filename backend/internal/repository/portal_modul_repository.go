@@ -39,6 +39,22 @@ func (r *PortalModulRepository) CreateArtikel(a *domain.Artikel) error {
 	return r.db.Create(a).Error
 }
 
+func (r *PortalModulRepository) UpdateArtikel(a *domain.Artikel) error {
+	return r.db.Save(a).Error
+}
+
+func (r *PortalModulRepository) FindAllArtikelUntukVerifikasi() ([]domain.Artikel, error) {
+	var list []domain.Artikel
+	err := r.db.Model(&domain.Artikel{}).
+		Order("CASE WHEN status_verifikasi = 'menunggu' THEN 0 WHEN status_verifikasi = 'revisi' THEN 1 ELSE 2 END ASC, tanggal DESC, id DESC").
+		Find(&list).Error
+	return list, err
+}
+
+func (r *PortalModulRepository) CreateNotifikasi(n *domain.Notifikasi) error {
+	return r.db.Create(n).Error
+}
+
 func (r *PortalModulRepository) FindArtikelByID(id uint) (*domain.Artikel, error) {
 	var a domain.Artikel
 	if err := r.db.First(&a, id).Error; err != nil {

@@ -75,13 +75,14 @@ func SeedData(db *gorm.DB) error {
 		log.Println("Mengisi data pengguna demo awal...")
 		users := []domain.User{
 			{
-				ID:          1,
-				KeycloakSub: strPtr("mock-sub-1"),
-				Nama:        "Andi Pratama",
-				Email:       "andi.pratama@example.go.id",
-				Role:        domain.RoleASN,
-				StatusAkun:  domain.StatusAktif,
-				InstansiID:  1,
+				ID:             1,
+				KeycloakSub:    strPtr("mock-sub-1"),
+				Nama:           "Andi Pratama",
+				Email:          "andi.pratama@example.go.id",
+				Role:           domain.RoleASN,
+				DaftarPeranRaw: "asn,akademisi,verifikator",
+				StatusAkun:     domain.StatusAktif,
+				InstansiID:     1,
 			},
 			{
 				ID:          2,

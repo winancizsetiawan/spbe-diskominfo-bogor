@@ -126,11 +126,17 @@ func DataBantuanStatis() domain.BantuanResponse {
 	}
 }
 
-func (s *PortalModulService) ListArtikel(jenis string, page int, sudahLogin bool) (domain.PagedResponse[domain.ArtikelRingkasDTO], error) {
+func (s *PortalModulService) ListArtikel(jenis string, page int, sudahLogin bool, peranOpt ...string) (domain.PagedResponse[domain.ArtikelRingkasDTO], error) {
 	if page < 1 {
 		page = 1
 	}
 	perPage := 6
+
+	peran := ""
+	if len(peranOpt) > 0 {
+		peran = auth.PeranDari(peranOpt[0])
+	}
+	bolehLihatDraft := peran == string(domain.RoleSuperAdmin) || peran == string(domain.RoleVerifikator)
 
 	rows, err := s.repo.FindAllArtikel(jenis, sudahLogin)
 	if err != nil {
@@ -139,18 +145,27 @@ func (s *PortalModulService) ListArtikel(jenis string, page int, sudahLogin bool
 
 	semua := make([]domain.ArtikelRingkasDTO, 0, len(rows))
 	for _, a := range rows {
+		st := a.StatusVerifikasi
+		if st == "" {
+			st = domain.StatusArtikelTerbit
+		}
+		if !bolehLihatDraft && st != domain.StatusArtikelTerbit {
+			continue
+		}
 		semua = append(semua, domain.ArtikelRingkasDTO{
-			ID:        a.ID,
-			Jenis:     a.Jenis,
-			Judul:     a.Judul,
-			Ringkasan: a.Ringkasan,
-			Penulis:   a.Penulis,
-			Tanggal:   a.Tanggal,
-			Views:     a.Views,
-			Format:    a.Format,
-			Kategori:  a.Kategori,
-			Label:     append([]string{}, a.Label...),
-			Unggulan:  a.Unggulan,
+			ID:                a.ID,
+			Jenis:             a.Jenis,
+			Judul:             a.Judul,
+			Ringkasan:         a.Ringkasan,
+			Penulis:           a.Penulis,
+			Tanggal:           a.Tanggal,
+			Views:             a.Views,
+			Format:            a.Format,
+			Kategori:          a.Kategori,
+			Label:             append([]string{}, a.Label...),
+			Unggulan:          a.Unggulan,
+			StatusVerifikasi:  st,
+			CatatanVerifikasi: a.CatatanVerifikasi,
 		})
 	}
 
@@ -1185,22 +1200,211 @@ func (s *PortalModulService) BuatArtikel(in ArtikelInput) (*domain.Artikel, erro
 	}
 
 	a := &domain.Artikel{
-		Jenis:       domain.JenisArtikel(in.Jenis),
-		Judul:       in.Judul,
-		Ringkasan:   in.Ringkasan,
-		Penulis:     strings.Join(penulis, ", "),
-		Konten:      in.Konten,
-		Tanggal:     tanggal,
-		Format:      domain.FormatArtikel(in.Format),
-		UrlSumber:   in.UrlSumber,
-		Kolaborator: kolaborator,
-		Kategori:    in.Kategori,
-		Label:       label,
-		StatusAkses: akses,
-		Unggulan:    in.Unggulan,
+		Jenis:            domain.JenisArtikel(in.Jenis),
+		Judul:            in.Judul,
+		Ringkasan:        in.Ringkasan,
+		Penulis:          strings.Join(penulis, ", "),
+		Konten:           in.Konten,
+		Tanggal:          tanggal,
+		Format:           domain.FormatArtikel(in.Format),
+		UrlSumber:        in.UrlSumber,
+		Kolaborator:      kolaborator,
+		Kategori:         in.Kategori,
+		Label:            label,
+		StatusAkses:      akses,
+		Unggulan:         in.Unggulan,
+		StatusVerifikasi: domain.StatusArtikelMenunggu,
 	}
 	if err := s.repo.CreateArtikel(a); err != nil {
 		return nil, err
 	}
+
+	s.kirimNotifKeVerifikator(
+		"Pengajuan verifikasi berita/artikel baru",
+		fmt.Sprintf("Super Admin mengajukan %s '%s' untuk diverifikasi sebelum diterbitkan.", in.Jenis, in.Judul),
+		"/verifikasi-konten",
+	)
+	return a, nil
+}
+
+func (s *PortalModulService) kirimNotifKeVerifikator(judul, pesan, urlTujuan string) {
+	users, _ := s.repo.FindAllUsers()
+	now := time.Now()
+	for _, u := range users {
+		if u.PunyaPeran(domain.RoleVerifikator) {
+			_ = s.repo.CreateNotifikasi(&domain.Notifikasi{
+				UserID:      u.ID,
+				Kategori:    domain.KategoriNotifValidasi,
+				Judul:       judul,
+				Pesan:       pesan,
+				UrlTujuan:   urlTujuan,
+				SudahDibaca: false,
+				DibuatPada:  now,
+			})
+		}
+	}
+}
+
+func (s *PortalModulService) kirimNotifKeSuperAdmin(judul, pesan, urlTujuan string) {
+	users, _ := s.repo.FindAllUsers()
+	now := time.Now()
+	for _, u := range users {
+		if u.Role == domain.RoleSuperAdmin {
+			_ = s.repo.CreateNotifikasi(&domain.Notifikasi{
+				UserID:      u.ID,
+				Kategori:    domain.KategoriNotifValidasi,
+				Judul:       judul,
+				Pesan:       pesan,
+				UrlTujuan:   urlTujuan,
+				SudahDibaca: false,
+				DibuatPada:  now,
+			})
+		}
+	}
+}
+
+// UbahArtikel memperbarui tulisan (mis. setelah diminta revisi oleh Verifikator) dan mengajukannya kembali.
+func (s *PortalModulService) UbahArtikel(id uint, in ArtikelInput) (*domain.Artikel, error) {
+	existing, err := s.repo.FindArtikelByID(id)
+	if err != nil {
+		return nil, ErrArtikelTidakDitemukan
+	}
+
+	in.Judul = strings.TrimSpace(in.Judul)
+	in.Ringkasan = strings.TrimSpace(in.Ringkasan)
+	in.Konten = strings.TrimSpace(in.Konten)
+	in.UrlSumber = strings.TrimSpace(in.UrlSumber)
+	in.Kategori = strings.TrimSpace(in.Kategori)
+	penulis := bersihkanDaftar(in.Penulis)
+	kolaborator := bersihkanDaftar(in.Kolaborator)
+	label := bersihkanDaftar(in.Label)
+
+	galat := map[string]string{}
+	if in.Jenis != string(domain.JenisArtikelBerita) && in.Jenis != string(domain.JenisArtikelEdukasi) {
+		galat["jenis"] = "Pilih berita atau artikel."
+	}
+	if n := utf8.RuneCountInString(in.Judul); n < 5 || n > 200 {
+		galat["judul"] = "Judul 5 sampai 200 karakter."
+	}
+	if len(penulis) == 0 {
+		galat["penulis"] = "Isi minimal satu penulis."
+	}
+	if n := utf8.RuneCountInString(in.Ringkasan); n < 10 || n > 500 {
+		galat["ringkasan"] = "Ringkasan 10 sampai 500 karakter."
+	}
+	if utf8.RuneCountInString(in.Konten) < 20 {
+		galat["konten"] = "Isi minimal 20 karakter."
+	}
+	if len(galat) > 0 {
+		return nil, &ArtikelInvalidError{Errors: galat}
+	}
+
+	existing.Jenis = domain.JenisArtikel(in.Jenis)
+	existing.Judul = in.Judul
+	existing.Ringkasan = in.Ringkasan
+	existing.Penulis = strings.Join(penulis, ", ")
+	existing.Konten = in.Konten
+	if in.Format != "" {
+		existing.Format = domain.FormatArtikel(in.Format)
+	}
+	existing.UrlSumber = in.UrlSumber
+	existing.Kolaborator = kolaborator
+	if in.Kategori != "" {
+		existing.Kategori = in.Kategori
+	}
+	existing.Label = label
+	if in.StatusAkses != "" {
+		existing.StatusAkses = domain.AksesArtikel(in.StatusAkses)
+	}
+	existing.Unggulan = in.Unggulan
+	existing.StatusVerifikasi = domain.StatusArtikelMenunggu
+	existing.CatatanVerifikasi = nil
+
+	if err := s.repo.UpdateArtikel(existing); err != nil {
+		return nil, err
+	}
+
+	s.kirimNotifKeVerifikator(
+		"Perbaikan berita/artikel diajukan ulang",
+		fmt.Sprintf("Super Admin telah memperbaiki '%s' dan mengajukannya kembali untuk diverifikasi.", existing.Judul),
+		"/verifikasi-konten",
+	)
+	return existing, nil
+}
+
+// ListVerifikasiArtikel mengembalikan daftar seluruh tulisan beserta ringkasan status verifikasinya.
+func (s *PortalModulService) ListVerifikasiArtikel() (domain.DaftarVerifikasiArtikelResponse, error) {
+	rows, err := s.repo.FindAllArtikelUntukVerifikasi()
+	if err != nil {
+		return domain.DaftarVerifikasiArtikelResponse{}, err
+	}
+	var ringkasan domain.RingkasanVerifikasiArtikel
+	for i := range rows {
+		if rows[i].StatusVerifikasi == "" {
+			rows[i].StatusVerifikasi = domain.StatusArtikelTerbit
+		}
+		switch rows[i].StatusVerifikasi {
+		case domain.StatusArtikelMenunggu:
+			ringkasan.Menunggu++
+		case domain.StatusArtikelRevisi:
+			ringkasan.Revisi++
+		default:
+			ringkasan.Terbit++
+		}
+	}
+	return domain.DaftarVerifikasiArtikelResponse{
+		Ringkasan: ringkasan,
+		Items:     rows,
+	}, nil
+}
+
+// VerifikasiArtikel memproses keputusan Verifikator (terbit atau revisi) atas berita/artikel.
+func (s *PortalModulService) VerifikasiArtikel(kunci string, id uint, in domain.VerifikasiArtikelInput) (*domain.Artikel, error) {
+	a, err := s.repo.FindArtikelByID(id)
+	if err != nil {
+		return nil, ErrArtikelTidakDitemukan
+	}
+
+	catatan := strings.TrimSpace(in.Catatan)
+	if in.Keputusan != domain.StatusArtikelTerbit && in.Keputusan != domain.StatusArtikelRevisi {
+		return nil, &ArtikelInvalidError{Errors: map[string]string{"keputusan": "Pilih keputusan: terbit atau revisi."}}
+	}
+	if in.Keputusan == domain.StatusArtikelRevisi && utf8.RuneCountInString(catatan) < 5 {
+		return nil, &ArtikelInvalidError{Errors: map[string]string{"catatan": "Catatan revisi minimal 5 karakter."}}
+	}
+
+	verifikatorNama := "Verifikator"
+	if u, err := s.ambilUser(kunci); err == nil && u != nil {
+		verifikatorNama = u.Nama
+	}
+
+	now := time.Now()
+	a.StatusVerifikasi = in.Keputusan
+	a.DiverifikasiOleh = &verifikatorNama
+	a.DiverifikasiPada = &now
+	if in.Keputusan == domain.StatusArtikelRevisi {
+		a.CatatanVerifikasi = &catatan
+	} else {
+		a.CatatanVerifikasi = nil
+	}
+
+	if err := s.repo.UpdateArtikel(a); err != nil {
+		return nil, err
+	}
+
+	if in.Keputusan == domain.StatusArtikelTerbit {
+		s.kirimNotifKeSuperAdmin(
+			"Berita/Artikel Disetujui & Terbit",
+			fmt.Sprintf("'%s' telah diverifikasi oleh %s dan resmi diterbitkan.", a.Judul, verifikatorNama),
+			fmt.Sprintf("/berita/%d", a.ID),
+		)
+	} else {
+		s.kirimNotifKeSuperAdmin(
+			"Berita/Artikel Perlu Revisi",
+			fmt.Sprintf("'%s' memerlukan perbaikan dari %s: %s", a.Judul, verifikatorNama, catatan),
+			fmt.Sprintf("/berita/%d", a.ID),
+		)
+	}
+
 	return a, nil
 }

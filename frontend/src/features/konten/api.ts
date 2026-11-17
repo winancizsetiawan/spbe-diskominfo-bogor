@@ -1,13 +1,48 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
-import type { ArtikelDetail, ArtikelInput, Bantuan, DaftarArtikel, FilterJenis } from './types'
+import type {
+  ArtikelDetail,
+  ArtikelInput,
+  Bantuan,
+  DaftarArtikel,
+  DaftarVerifikasiArtikel,
+  FilterJenis,
+  StatusVerifikasiArtikel,
+} from './types'
 
 /** Khusus Super Admin; server menolak peran lain dengan 403. */
 export function useBuatArtikel() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: ArtikelInput) => api<ArtikelDetail>('/artikel', { method: 'POST', json: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['konten', 'artikel'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['konten'] }),
+  })
+}
+
+export function useUbahArtikel(id: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ArtikelInput) => api<ArtikelDetail>(`/artikel/${id}`, { method: 'PUT', json: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['konten'] }),
+  })
+}
+
+export function useDaftarVerifikasiArtikel() {
+  return useQuery({
+    queryKey: ['konten', 'verifikasi'],
+    queryFn: () => api<DaftarVerifikasiArtikel>('/artikel/verifikasi'),
+  })
+}
+
+export function useVerifikasiArtikel() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { id: number; keputusan: StatusVerifikasiArtikel; catatan?: string }) =>
+      api<ArtikelDetail>(`/artikel/${input.id}/verifikasi`, {
+        method: 'POST',
+        json: { keputusan: input.keputusan, catatan: input.catatan ?? '' },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['konten'] }),
   })
 }
 

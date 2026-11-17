@@ -19,7 +19,7 @@ export const PUBLIC_NAV: NavItem[] = [
 export const INTERNAL_NAV: NavItem[] = [
   { label: 'Beranda', to: '/beranda' },
   { label: 'Dokumen', to: '/dokumen' },
-  { label: 'SOP', to: '/sop' },
+  { label: 'SOP', to: '/sop', perm: 'sop:lihat' },
   { label: 'Pembelajaran', to: '/pembelajaran' },
   { label: 'Forum', to: '/forum' },
   { label: 'Dasbor', to: '/dasbor/analitik' },
@@ -37,7 +37,7 @@ export const SIDEBAR_NAV: NavGroup[] = [
     items: [
       { label: 'Beranda', to: '/beranda' },
       { label: 'Dokumen', to: '/dokumen' },
-      { label: 'SOP', to: '/sop' },
+      { label: 'SOP', to: '/sop', perm: 'sop:lihat' },
       { label: 'Pembelajaran', to: '/pembelajaran' },
       { label: 'Forum', to: '/forum' },
       { label: 'Dasbor Analitik', to: '/dasbor/analitik' },
@@ -46,6 +46,7 @@ export const SIDEBAR_NAV: NavGroup[] = [
   {
     judul: 'Kelola',
     items: [
+      { label: 'Verifikasi Konten', to: '/verifikasi-konten', perm: 'artikel:verifikasi' },
       { label: 'Data Aplikasi', to: '/katalog/aplikasi', perm: 'aplikasi:kelola' },
       { label: 'Klasifikasi RAA', to: '/katalog/raa', perm: 'aplikasi:kelola' },
       { label: 'Flowchart', to: '/katalog/flowchart', perm: 'aplikasi:kelola' },
@@ -76,6 +77,7 @@ export const SIDEBAR_NAV: NavGroup[] = [
 
 // Admin OPD melihat item katalog untuk instansinya; Super Admin melihat semuanya.
 export const KELOLA_NAV: NavItem[] = [
+  { label: 'Verifikasi Konten', to: '/verifikasi-konten', perm: 'artikel:verifikasi' },
   { label: 'Data Aplikasi', to: '/katalog/aplikasi', perm: 'aplikasi:kelola' },
   { label: 'Klasifikasi RAA', to: '/katalog/raa', perm: 'aplikasi:kelola' },
   { label: 'Flowchart Proses Bisnis', to: '/katalog/flowchart', perm: 'aplikasi:kelola' },

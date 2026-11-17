@@ -25,24 +25,27 @@ var (
 	urutanKategoriNotif = []string{"semua", "dokumen", "forum", "validasi", "sistem", "pembelajaran"}
 
 	roleValidMap = map[domain.Role]string{
-		domain.RoleASN:        "ASN / Pegawai OPD",
-		domain.RoleAkademisi:  "Akademisi",
-		domain.RoleAdminOPD:   "Admin OPD",
-		domain.RoleSuperAdmin: "Super Admin",
+		domain.RoleASN:         "ASN / Pegawai OPD",
+		domain.RoleAkademisi:   "Akademisi",
+		domain.RoleVerifikator: "Verifikator",
+		domain.RoleAdminOPD:    "Admin OPD",
+		domain.RoleSuperAdmin:  "Super Admin",
 	}
 
 	sandiPerRole = map[domain.Role]string{
-		domain.RoleSuperAdmin: "Super@123",
-		domain.RoleAdminOPD:   "Admin@123",
-		domain.RoleASN:        "Asn@123",
-		domain.RoleAkademisi:  "Akademisi@123",
+		domain.RoleSuperAdmin:  "Super@123",
+		domain.RoleAdminOPD:    "Admin@123",
+		domain.RoleVerifikator: "Asn@123",
+		domain.RoleASN:         "Asn@123",
+		domain.RoleAkademisi:   "Akademisi@123",
 	}
 
 	usernameKeRole = map[string]domain.Role{
-		"superadmin": domain.RoleSuperAdmin,
-		"adminopd":   domain.RoleAdminOPD,
-		"asn":        domain.RoleASN,
-		"akademisi":  domain.RoleAkademisi,
+		"superadmin":  domain.RoleSuperAdmin,
+		"adminopd":    domain.RoleAdminOPD,
+		"verifikator": domain.RoleVerifikator,
+		"asn":         domain.RoleASN,
+		"akademisi":   domain.RoleAkademisi,
 	}
 )
 
@@ -103,11 +106,12 @@ func (s *PenggunaModulService) AmbilUserDariRole(role string) (*domain.User, err
 func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 	diubahPada, wajibGanti, sisaHari := hitungStatusSandi(u)
 	return domain.PenggunaDTO{
-		ID:         u.ID,
-		Nama:       u.Nama,
-		Email:      u.Email,
-		Role:       u.Role,
-		StatusAkun: u.StatusAkun,
+		ID:          u.ID,
+		Nama:        u.Nama,
+		Email:       u.Email,
+		Role:        u.Role,
+		DaftarPeran: u.DaftarPeran(),
+		StatusAkun:  u.StatusAkun,
 		Instansi: domain.InstansiRingkas{
 			ID:   u.Instansi.ID,
 			Nama: u.Instansi.Nama,
@@ -136,6 +140,36 @@ func (s *PenggunaModulService) GetMe(role string) (*domain.PenggunaDTO, error) {
 	}
 	dto := kePenggunaDTO(*u)
 	return &dto, nil
+}
+
+// SwitchRole mengubah peran aktif pengguna ke salah satu peran dalam DaftarPeran miliknya.
+func (s *PenggunaModulService) SwitchRole(kunci string, targetRole domain.Role) (*domain.LoginResponse, int, error) {
+	u, err := s.AmbilUserDariRole(kunci)
+	if err != nil {
+		return nil, 401, errors.New("Sesi tidak valid.")
+	}
+	if _, ok := roleValidMap[targetRole]; !ok {
+		return nil, 422, &ValidationError{Errors: map[string]string{"role": "Peran tidak valid."}}
+	}
+	if !u.PunyaPeran(targetRole) {
+		return nil, 403, errors.New("Akun Anda tidak memiliki akses ke peran tersebut.")
+	}
+
+	// Pastikan daftar peran tersimpan utuh sebelum mengganti peran aktif
+	semuaPeran := u.DaftarPeran()
+	u.Role = targetRole
+	u.SetDaftarPeran(semuaPeran)
+	if err := s.repo.UpdateUser(u); err != nil {
+		return nil, 500, errors.New("Gagal mengubah peran aktif.")
+	}
+
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiLogin, fmt.Sprintf("Beralih peran aktif menjadi %s", roleValidMap[targetRole]), domain.HasilBerhasil)
+
+	return &domain.LoginResponse{
+		Role: targetRole,
+		User: kePenggunaDTO(*u),
+	}, 200, nil
 }
 
 // Login menangani autentikasi dengan Brute Force Detection (blokir setelah 5 kali salah kata sandi).
@@ -498,6 +532,8 @@ func (s *PenggunaModulService) ListPengguna(f domain.PenggunaFilter) (domain.Daf
 			hitungan.ASN++
 		case domain.RoleAkademisi:
 			hitungan.Akademisi++
+		case domain.RoleVerifikator:
+			hitungan.Verifikator++
 		case domain.RoleAdminOPD:
 			hitungan.AdminOPD++
 		case domain.RoleSuperAdmin:
@@ -588,6 +624,13 @@ func (s *PenggunaModulService) UndangPengguna(adminRole string, in domain.Undang
 		StatusAkun: domain.StatusDiundang,
 		InstansiID: inst.ID,
 	}
+	if len(in.DaftarPeran) > 0 {
+		baru.SetDaftarPeran(in.DaftarPeran)
+	} else if in.Role == domain.RoleASN {
+		baru.SetDaftarPeran([]domain.Role{domain.RoleASN, domain.RoleAkademisi})
+	} else {
+		baru.SetDaftarPeran([]domain.Role{in.Role})
+	}
 
 	if err := s.repo.CreateUser(baru); err != nil {
 		return nil, err
@@ -614,7 +657,7 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		return nil, &PenggunaKonflikError{Pesan: "Anda tidak dapat mengubah akun Anda sendiri."}
 	}
 
-	if in.Role == nil && in.IdInstansi == nil && in.StatusAkun == nil {
+	if in.Role == nil && len(in.DaftarPeran) == 0 && in.IdInstansi == nil && in.StatusAkun == nil {
 		return nil, &ValidationError{Errors: map[string]string{"role": "Tidak ada perubahan."}}
 	}
 
@@ -624,6 +667,12 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		roleBaru = *in.Role
 		if _, ok := roleValidMap[roleBaru]; !ok {
 			errs["role"] = "Peran tidak valid."
+		}
+	}
+	for _, r := range in.DaftarPeran {
+		if _, ok := roleValidMap[r]; !ok {
+			errs["role"] = "Daftar peran memuat peran yang tidak valid."
+			break
 		}
 	}
 
@@ -654,11 +703,16 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		}
 	}
 
-	roleBerubah := in.Role != nil && *in.Role != target.Role
+	roleBerubah := (in.Role != nil && *in.Role != target.Role) || len(in.DaftarPeran) > 0
 	instBerubah := in.IdInstansi != nil && *in.IdInstansi != target.InstansiID
 
-	if roleBerubah {
+	if in.Role != nil {
 		target.Role = *in.Role
+	}
+	if len(in.DaftarPeran) > 0 {
+		target.SetDaftarPeran(in.DaftarPeran)
+	} else if roleBerubah {
+		target.SetDaftarPeran(append(target.DaftarPeran(), target.Role))
 	}
 	if instBerubah {
 		target.InstansiID = *in.IdInstansi

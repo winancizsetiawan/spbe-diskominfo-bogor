@@ -1,7 +1,7 @@
-import { ChevronDown, LogOut, Search, UserRound } from 'lucide-react'
+import { Check, ChevronDown, LogOut, Search, UserRound } from 'lucide-react'
 import { Link, NavLink } from 'react-router'
 import { INTERNAL_NAV, KELOLA_NAV, PUBLIC_NAV } from '@/app/navigation'
-import { ROLE_LABEL } from '@/auth/types'
+import { daftarPeranPengguna, ROLE_LABEL } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
 import { Dropdown, menuItemClass } from '@/components/ui/Dropdown'
 import { Logo } from './Logo'
@@ -18,9 +18,10 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export function Navbar() {
-  const { user, can, logout } = useAuth()
-  const items = user ? INTERNAL_NAV : PUBLIC_NAV
+  const { user, can, logout, switchRole } = useAuth()
+  const items = (user ? INTERNAL_NAV : PUBLIC_NAV).filter((item) => !item.perm || can(item.perm))
   const kelola = KELOLA_NAV.filter((item) => item.perm && can(item.perm))
+  const daftarPeran = daftarPeranPengguna(user)
 
   return (
     // Outline fokus putih: warna fokus bawaan (biru) tidak terlihat di atas latar biru tua.
@@ -74,6 +75,26 @@ export function Navbar() {
                 }
               >
                 <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">{user.instansi.nama}</div>
+                {daftarPeran.length > 1 && (
+                  <div className="border-b border-slate-100 py-1">
+                    <p className="px-4 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Ganti Peran (Switch Role)</p>
+                    {daftarPeran.map((r) => {
+                      const aktif = user.role === r
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => void switchRole(r)}
+                          className={`${menuItemClass} flex items-center justify-between gap-2 ${aktif ? 'bg-slate-50 font-semibold text-brand-700' : ''}`}
+                        >
+                          <span>{ROLE_LABEL[r]}</span>
+                          {aktif && <Check className="size-4 text-brand-700" aria-hidden />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
                 <Link to="/profil" role="menuitem" className={menuItemClass}>
                   Profil Saya
                 </Link>

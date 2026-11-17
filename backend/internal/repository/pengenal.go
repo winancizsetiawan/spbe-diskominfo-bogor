@@ -23,9 +23,18 @@ func cariPengguna(db *gorm.DB, kunci string, denganInstansi bool) (*domain.User,
 		err = q.Where("LOWER(email) = ?", email).First(&u).Error
 	} else {
 		err = q.Where("role = ?", peran).Order("id ASC").First(&u).Error
+		if err != nil && peran != "" {
+			err = db.Preload("Instansi").Where("daftar_peran LIKE ?", "%"+peran+"%").Order("id ASC").First(&u).Error
+		}
+		if err != nil && peran == string(domain.RoleVerifikator) {
+			err = db.Preload("Instansi").Where("id = 1").First(&u).Error
+		}
 	}
 	if err != nil {
 		return nil, err
+	}
+	if peran != "" && u.PunyaPeran(domain.Role(peran)) {
+		u.Role = domain.Role(peran)
 	}
 	return &u, nil
 }

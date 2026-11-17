@@ -1,12 +1,12 @@
 import {
-  AppWindow, BadgeCheck, CalendarClock, ChartColumn, CircleHelp, ClipboardList, DatabaseBackup, FileText,
+  AppWindow, ArrowLeftRight, BadgeCheck, CalendarClock, ChartColumn, Check, CircleHelp, ClipboardList, DatabaseBackup, FileText,
   FolderOpen, GraduationCap, History, House, LayoutDashboard, LogOut, Menu, MessageSquareText, MessagesSquare,
   Network, Newspaper, Search, ShieldAlert, UserRound, Users, Workflow, X, type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { SIDEBAR_NAV } from '@/app/navigation'
-import { ROLE_LABEL } from '@/auth/types'
+import { daftarPeranPengguna, ROLE_BADGE_CLASS, ROLE_LABEL } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
 import { Dropdown, menuItemClass } from '@/components/ui/Dropdown'
 import { TAHUN_PEMBANGUNAN } from './Hakcipta'
@@ -19,6 +19,7 @@ const IKON: Record<string, LucideIcon> = {
   '/pembelajaran': GraduationCap,
   '/forum': MessagesSquare,
   '/dasbor/analitik': ChartColumn,
+  '/verifikasi-konten': BadgeCheck,
   '/katalog/aplikasi': AppWindow,
   '/katalog/raa': Network,
   '/katalog/flowchart': Workflow,
@@ -80,7 +81,7 @@ function usePosisiTab(nav: RefObject<HTMLElement | null>, pathname: string) {
 }
 
 function IsiMenu() {
-  const { can } = useAuth()
+  const { user, can, switchRole } = useAuth()
   const { pathname } = useLocation()
   const nav = useRef<HTMLElement>(null)
   const posisi = usePosisiTab(nav, pathname)
@@ -92,6 +93,7 @@ function IsiMenu() {
 
   // Notifikasi, Profil, dan Pencarian tidak ada di sini: sudah ada di bilah atas (lonceng, menu akun, kaca pembesar).
   const grup = SIDEBAR_NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.perm || can(i.perm)) })).filter((g) => g.items.length)
+  const daftarPeran = daftarPeranPengguna(user)
 
   return (
     <div className="flex h-full flex-col">
@@ -102,6 +104,32 @@ function IsiMenu() {
           <span className="block text-xs text-brand-100">Pemerintah Kota Bogor</span>
         </span>
       </Link>
+
+      {user && daftarPeran.length > 1 && (
+        <div className="mx-3 mb-2 rounded-xl border border-white/15 bg-white/10 p-2.5">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-brand-100 uppercase">
+            <ArrowLeftRight className="size-3.5" aria-hidden /> Ganti Peran (Switch Role)
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {daftarPeran.map((r) => {
+              const aktif = user.role === r
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => void switchRole(r)}
+                  aria-pressed={aktif}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    aktif ? 'bg-white text-brand-900 shadow-xs' : 'bg-white/10 text-brand-100 hover:bg-white/20 hover:text-white'
+                  }`}
+                >
+                  {ROLE_LABEL[r]}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <nav
         ref={nav}
@@ -148,8 +176,10 @@ function IsiMenu() {
 
 /** Bilah atas area konten: judul ringkas di HP, pencarian, notifikasi, dan menu akun. */
 function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
-  const { user, logout } = useAuth()
+  const { user, logout, switchRole } = useAuth()
   if (!user) return null
+  const daftarPeran = daftarPeranPengguna(user)
+
   return (
     <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-slate-200 bg-white/95 px-4 py-2.5 backdrop-blur lg:px-8">
       <button
@@ -159,7 +189,10 @@ function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
       >
         <Menu className="size-5" aria-hidden /> Menu
       </button>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-2">
+        <span className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-flex ${ROLE_BADGE_CLASS[user.role]}`}>
+          Mode: {ROLE_LABEL[user.role]}
+        </span>
         <Link to="/cari" aria-label="Pencarian" className="inline-flex size-11 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-brand-700">
           <Search className="size-5" aria-hidden />
         </Link>
@@ -178,6 +211,26 @@ function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
           }
         >
           <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">{user.instansi.nama}</div>
+          {daftarPeran.length > 1 && (
+            <div className="border-b border-slate-100 py-1">
+              <p className="px-4 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Ganti Peran (Switch Role)</p>
+              {daftarPeran.map((r) => {
+                const aktif = user.role === r
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void switchRole(r)}
+                    className={`${menuItemClass} flex items-center justify-between gap-2 ${aktif ? 'bg-slate-50 font-semibold text-brand-700' : ''}`}
+                  >
+                    <span>{ROLE_LABEL[r]}</span>
+                    {aktif && <Check className="size-4 text-brand-700" aria-hidden />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           <Link to="/profil" role="menuitem" className={menuItemClass}>
             Profil Saya
           </Link>

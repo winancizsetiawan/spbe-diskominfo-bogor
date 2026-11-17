@@ -69,6 +69,35 @@ func (h *PenggunaModulHandler) GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// SwitchRole menangani POST /api/auth/switch-role (mengganti peran aktif pada akun Multi-Role)
+func (h *PenggunaModulHandler) SwitchRole(c *gin.Context) {
+	kunci, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	var in domain.SwitchRoleInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+
+	res, status, err := h.svc.SwitchRole(kunci, in.Role)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali isian Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		c.JSON(status, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 // UbahSandi menangani POST /api/auth/ubah-sandi
 func (h *PenggunaModulHandler) UbahSandi(c *gin.Context) {
 	role, ok := wajibLogin(c)

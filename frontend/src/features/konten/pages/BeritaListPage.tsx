@@ -12,7 +12,7 @@ import { errorMessage } from '@/lib/errors'
 import { formatTanggalSingkat } from '@/lib/format'
 import { useUrlFilter } from '@/lib/useUrlFilter'
 import { useDaftarArtikel } from '../api'
-import { JENIS_LABEL, type FilterJenis } from '../types'
+import { JENIS_LABEL, STATUS_VERIFIKASI_ARTIKEL_LABEL, type FilterJenis } from '../types'
 
 const JENIS = Object.keys(JENIS_LABEL) as FilterJenis[]
 
@@ -22,6 +22,7 @@ const chipClass = (aktif: boolean) =>
 export function BeritaListPage() {
   const { user } = useAuth()
   const superAdmin = user?.role === 'super_admin'
+  const tampilStatusVerifikasi = superAdmin || user?.role === 'verifikator'
   const navigate = useNavigate()
   const [params, ubahFilter] = useUrlFilter()
   const jenisParam = params.get('jenis') as FilterJenis | null
@@ -76,8 +77,13 @@ export function BeritaListPage() {
             {daftar.data.items.map((a) => (
               <li key={a.id}>
                 <Link to={`/berita/${a.id}`} className="block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-sm">
-                  <div className="mb-1.5 flex items-center gap-2">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
                     <Badge tone={a.jenis === 'berita' ? 'brand' : 'neutral'}>{JENIS_LABEL[a.jenis]}</Badge>
+                    {tampilStatusVerifikasi && a.statusVerifikasi && (
+                      <Badge tone={STATUS_VERIFIKASI_ARTIKEL_LABEL[a.statusVerifikasi].tone}>
+                        {STATUS_VERIFIKASI_ARTIKEL_LABEL[a.statusVerifikasi].label}
+                      </Badge>
+                    )}
                     <span className="text-xs text-slate-500">
                       {formatTanggalSingkat(a.tanggal)} · {a.penulis}
                     </span>
