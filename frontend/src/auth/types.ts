@@ -44,7 +44,7 @@ export const ROLE_BADGE_CLASS: Record<Role, string> = {
 export const ROLE_MODE_DESKRIPSI: Record<Role, string> = {
   asn: 'Akses dokumen dan SOP internal, pembelajaran SPBE, forum diskusi antar-OPD, dan Dasbor Analitik.',
   akademisi: 'Akses dokumen dan regulasi SPBE, Dasbor Analitik arsitektur Kota Bogor, pembelajaran, dan forum diskusi.',
-  verifikator: 'Memeriksa dan menyetujui berita serta artikel SPBE sebelum terbit.',
+  verifikator: 'Peran tambahan ASN dari Super Admin: memeriksa dan menyetujui berita serta artikel SPBE sebelum terbit.',
   admin_opd: 'Mengelola data aplikasi, klasifikasi RAA, flowchart proses bisnis, dan dasbor instansi Anda.',
   super_admin: 'Mengelola seluruh portal: pengguna, validasi data OPD, repositori, moderasi forum, data dasbor, dan backup.',
 }
@@ -52,7 +52,6 @@ export const ROLE_MODE_DESKRIPSI: Record<Role, string> = {
 export function daftarPeranPengguna(user: User | null): Role[] {
   if (!user) return []
   if (user.daftarPeran && user.daftarPeran.length > 0) return user.daftarPeran
-  if (user.id === 1) return ['asn', 'akademisi', 'verifikator']
   if (user.role === 'asn') return ['asn', 'akademisi']
   return [user.role]
 }

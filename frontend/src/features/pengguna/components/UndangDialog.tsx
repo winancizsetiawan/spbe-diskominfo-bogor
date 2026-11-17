@@ -8,7 +8,7 @@ import { Field, inputClass } from '@/components/ui/Field'
 import { toast } from '@/components/ui/toast'
 import { errorMessage } from '@/lib/errors'
 import { useInstansiPengguna, useUndangPengguna } from '../api'
-import { BATAS_PENGGUNA, instansiBolehUntuk, POLA_EMAIL, URUTAN_ROLE } from '../types'
+import { BATAS_PENGGUNA, instansiBolehUntuk, PERAN_UTAMA, POLA_EMAIL } from '../types'
 import { InstansiSelect } from './InstansiSelect'
 
 interface FormValues {
@@ -88,7 +88,7 @@ export function UndangDialog({ open, onClose }: { open: boolean; onClose(): void
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field id="role" label="Peran" error={errors.role?.message}>
             <select id="role" className={inputClass} {...aria('role', errors.role?.message)} {...register('role')}>
-              {URUTAN_ROLE.map((r) => (
+              {PERAN_UTAMA.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABEL[r]}
                 </option>

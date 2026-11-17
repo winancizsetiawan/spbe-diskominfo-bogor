@@ -84,6 +84,11 @@ func main() {
 			} else if n > 0 {
 				log.Printf("%d kata sandi teks biasa diganti hash.", n)
 			}
+			if n, err := service.NormalisasiPeranVerifikator(db); err != nil {
+				log.Printf("[PERINGATAN] Gagal merapikan peran Verifikator: %v", err)
+			} else if n > 0 {
+				log.Printf("%d akun Verifikator lama dijadikan peran tambahan ASN.", n)
+			}
 
 			instansiRepo := repository.NewInstansiRepository(db)
 			referensiHandler := handler.NewReferensiHandler(instansiRepo)

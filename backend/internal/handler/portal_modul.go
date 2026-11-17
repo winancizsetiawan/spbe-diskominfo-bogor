@@ -110,15 +110,30 @@ func (h *PortalModulHandler) UbahArtikel(c *gin.Context) {
 	c.JSON(http.StatusOK, a)
 }
 
+// masihVerifikator: peran aktif di token harus Verifikator DAN hak Verifikator pengguna belum dicabut
+// Super Admin (dibaca dari data pengguna terbaru, bukan hanya dari token yang bisa berumur 8 jam).
+func masihVerifikator(c *gin.Context, kunci, pesan string) bool {
+	if auth.PeranDari(kunci) != string(domain.RoleVerifikator) {
+		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: pesan})
+		return false
+	}
+	if ResolverPengguna != nil {
+		u, err := ResolverPengguna(kunci)
+		if err != nil || u == nil || !u.PunyaPeran(domain.RoleVerifikator) || u.StatusAkun == domain.StatusNonaktif {
+			c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hak Verifikator Anda sudah dicabut. Hubungi Super Admin."})
+			return false
+		}
+	}
+	return true
+}
+
 // ListVerifikasiArtikel menangani GET /api/artikel/verifikasi (khusus Verifikator).
 func (h *PortalModulHandler) ListVerifikasiArtikel(c *gin.Context) {
 	kunci, ok := wajibLogin(c)
 	if !ok {
 		return
 	}
-	peran := auth.PeranDari(kunci)
-	if peran != string(domain.RoleVerifikator) {
-		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator yang dapat mengakses verifikasi konten."})
+	if !masihVerifikator(c, kunci, "Hanya Verifikator yang dapat mengakses verifikasi konten.") {
 		return
 	}
 	res, err := h.svc.ListVerifikasiArtikel()
@@ -135,9 +150,7 @@ func (h *PortalModulHandler) VerifikasiArtikel(c *gin.Context) {
 	if !ok {
 		return
 	}
-	peran := auth.PeranDari(kunci)
-	if peran != string(domain.RoleVerifikator) {
-		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator yang dapat memverifikasi dan menerbitkan berita atau artikel."})
+	if !masihVerifikator(c, kunci, "Hanya Verifikator yang dapat memverifikasi dan menerbitkan berita atau artikel.") {
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))

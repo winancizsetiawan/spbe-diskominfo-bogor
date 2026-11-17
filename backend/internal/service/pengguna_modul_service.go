@@ -55,6 +55,40 @@ const (
 	MasaAktifSandiHari = 365
 )
 
+const pesanVerifikatorBukanUtama = "Verifikator bukan peran utama. Pilih ASN, lalu centang Verifikator sebagai peran tambahan."
+
+// cekDaftarPeran: Verifikator hanya boleh diberikan kepada pengguna yang memiliki peran ASN.
+func cekDaftarPeran(utama domain.Role, daftar []domain.Role) string {
+	adaVerifikator, adaASN := false, utama == domain.RoleASN
+	for _, r := range daftar {
+		switch r {
+		case domain.RoleVerifikator:
+			adaVerifikator = true
+		case domain.RoleASN:
+			adaASN = true
+		}
+	}
+	if adaVerifikator && !adaASN {
+		return "Verifikator hanya dapat diberikan kepada pengguna dengan peran ASN."
+	}
+	return ""
+}
+
+// peranUtamaTerpilih: peran pertama dalam daftar yang bukan Verifikator (ASN bila ada).
+func peranUtamaTerpilih(daftar []domain.Role) domain.Role {
+	for _, r := range daftar {
+		if r == domain.RoleASN {
+			return r
+		}
+	}
+	for _, r := range daftar {
+		if r != domain.RoleVerifikator {
+			return r
+		}
+	}
+	return ""
+}
+
 func hitungStatusSandi(u domain.User) (*time.Time, bool, int) {
 	patokan := time.Now()
 	if u.SandiDiubahPada != nil {
@@ -482,18 +516,27 @@ func (s *PenggunaModulService) ListPengguna(f domain.PenggunaFilter) (domain.Daf
 	}
 
 	hitungan := domain.HitunganRolePengguna{Semua: len(semuaUser)}
+	// Verifikator adalah hak tambahan ASN: dihitung dari daftar peran, sedangkan pengguna yang sedang
+	// aktif sebagai Verifikator tetap dihitung sebagai ASN.
+	peranUtama := func(u domain.User) domain.Role {
+		if u.Role == domain.RoleVerifikator {
+			return domain.RoleASN
+		}
+		return u.Role
+	}
 	for _, u := range semuaUser {
-		switch u.Role {
+		switch peranUtama(u) {
 		case domain.RoleASN:
 			hitungan.ASN++
 		case domain.RoleAkademisi:
 			hitungan.Akademisi++
-		case domain.RoleVerifikator:
-			hitungan.Verifikator++
 		case domain.RoleAdminOPD:
 			hitungan.AdminOPD++
 		case domain.RoleSuperAdmin:
 			hitungan.SuperAdmin++
+		}
+		if u.PunyaPeran(domain.RoleVerifikator) {
+			hitungan.Verifikator++
 		}
 	}
 
@@ -505,7 +548,11 @@ func (s *PenggunaModulService) ListPengguna(f domain.PenggunaFilter) (domain.Daf
 	q := strings.ToLower(strings.TrimSpace(f.Query))
 	cocok := make([]domain.PenggunaDTO, 0)
 	for _, u := range semuaUser {
-		if roleFilter != "semua" && string(u.Role) != roleFilter {
+		if roleFilter == string(domain.RoleVerifikator) {
+			if !u.PunyaPeran(domain.RoleVerifikator) {
+				continue
+			}
+		} else if roleFilter != "semua" && string(peranUtama(u)) != roleFilter {
 			continue
 		}
 		dto := kePenggunaDTO(u)
@@ -560,6 +607,12 @@ func (s *PenggunaModulService) UndangPengguna(adminRole string, in domain.Undang
 	_, roleOk := roleValidMap[in.Role]
 	if !roleOk {
 		errs["role"] = "Peran tidak valid."
+	} else if in.Role == domain.RoleVerifikator {
+		roleOk = false
+		errs["role"] = pesanVerifikatorBukanUtama
+	}
+	if pesan := cekDaftarPeran(in.Role, in.DaftarPeran); pesan != "" {
+		errs["role"] = pesan
 	}
 
 	inst, err := s.repo.FindInstansiByID(in.IdInstansi)
@@ -623,12 +676,19 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		roleBaru = *in.Role
 		if _, ok := roleValidMap[roleBaru]; !ok {
 			errs["role"] = "Peran tidak valid."
+		} else if roleBaru == domain.RoleVerifikator {
+			errs["role"] = pesanVerifikatorBukanUtama
 		}
 	}
 	for _, r := range in.DaftarPeran {
 		if _, ok := roleValidMap[r]; !ok {
 			errs["role"] = "Daftar peran memuat peran yang tidak valid."
 			break
+		}
+	}
+	if errs["role"] == "" && len(in.DaftarPeran) > 0 {
+		if pesan := cekDaftarPeran(roleBaru, in.DaftarPeran); pesan != "" {
+			errs["role"] = pesan
 		}
 	}
 
@@ -666,10 +726,23 @@ func (s *PenggunaModulService) UbahPengguna(adminRole string, targetID uint, in 
 		target.Role = *in.Role
 	}
 	if len(in.DaftarPeran) > 0 {
-		target.SetDaftarPeran(in.DaftarPeran)
+		// Peran aktif yang dicabut (mis. hak Verifikator) diganti lebih dulu ke peran yang masih dimiliki;
+		// SetDaftarPeran selalu menyertakan peran aktif, jadi urutan ini penting.
+		baru := domain.SaringPeran(in.DaftarPeran)
+		masih := false
+		for _, r := range baru {
+			if r == target.Role {
+				masih = true
+			}
+		}
+		if !masih {
+			target.Role = peranUtamaTerpilih(baru)
+		}
+		target.SetDaftarPeran(baru)
 	} else if roleBerubah {
 		target.SetDaftarPeran(append(target.DaftarPeran(), target.Role))
 	}
+	target.SetDaftarPeran(target.DaftarPeran())
 	if instBerubah {
 		target.InstansiID = *in.IdInstansi
 	}

@@ -49,7 +49,14 @@ export interface UbahPenggunaInput {
   statusAkun?: 'aktif' | 'nonaktif'
 }
 
+/** Urutan tab filter daftar pengguna. Tab Verifikator berisi ASN yang diberi hak Verifikator. */
 export const URUTAN_ROLE: Role[] = ['asn', 'akademisi', 'verifikator', 'admin_opd', 'super_admin']
+
+/** Peran utama yang dapat dipilih. Verifikator bukan peran utama: hanya tambahan untuk ASN. */
+export const PERAN_UTAMA: Role[] = ['asn', 'akademisi', 'admin_opd', 'super_admin']
+
+/** Peran aktif "verifikator" adalah ASN yang sedang beralih peran; peran utamanya tetap ASN. */
+export const peranUtamaDari = (r: Role): Role => (r === 'verifikator' ? 'asn' : r)
 
 export const BATAS_PENGGUNA = { namaMin: 3, namaMax: 100 } as const
 

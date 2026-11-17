@@ -47,9 +47,9 @@ type User struct {
 	// Nip terisi untuk ASN yang masuk lewat akun TND Pemkot Bogor.
 	Nip *string `gorm:"size:30;uniqueIndex" json:"-"`
 	// SumberAkun: "lokal" (kata sandi di portal) atau "tnd" (kata sandi dikelola TND, tidak disimpan di portal).
-	SumberAkun string `gorm:"size:20;not null;default:'lokal'" json:"-"`
-	CreatedAt       time.Time  `json:"-"`
-	UpdatedAt       time.Time  `json:"-"`
+	SumberAkun string    `gorm:"size:20;not null;default:'lokal'" json:"-"`
+	CreatedAt  time.Time `json:"-"`
+	UpdatedAt  time.Time `json:"-"`
 }
 
 func (User) TableName() string {
@@ -71,19 +71,36 @@ func (u User) DaftarPeran() []Role {
 		for _, bagian := range strings.Split(u.DaftarPeranRaw, ",") {
 			tambah(Role(strings.TrimSpace(bagian)))
 		}
-	} else if u.ID == 1 && u.Role == RoleASN {
-		// Akun demo ASN bawaan memiliki 3 peran untuk kemudahan pengujian Switch Role (Opsi A).
-		tambah(RoleASN)
-		tambah(RoleAkademisi)
-		tambah(RoleVerifikator)
 	} else if u.Role == RoleASN {
-		// ASN reguler memiliki pilihan peran ASN & Akademisi; Verifikator diberikan oleh Super Admin.
+		// ASN memiliki pilihan peran ASN & Akademisi; Verifikator hanya bila diberikan Super Admin.
 		tambah(RoleASN)
 		tambah(RoleAkademisi)
 	}
 
 	tambah(u.Role)
-	return hasil
+	return SaringPeran(hasil)
+}
+
+// SaringPeran menegakkan aturan: Verifikator bukan peran berdiri sendiri, hanya peran tambahan
+// untuk pengguna yang juga ASN. Daftar tidak pernah kosong.
+func SaringPeran(peran []Role) []Role {
+	adaASN := false
+	for _, r := range peran {
+		if r == RoleASN {
+			adaASN = true
+		}
+	}
+	out := make([]Role, 0, len(peran))
+	for _, r := range peran {
+		if r == RoleVerifikator && !adaASN {
+			continue
+		}
+		out = append(out, r)
+	}
+	if len(out) == 0 {
+		out = append(out, RoleASN)
+	}
+	return out
 }
 
 // SetDaftarPeran menyimpan daftar peran unik ke kolom daftar_peran.

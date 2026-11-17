@@ -10,7 +10,7 @@ import { Field, inputClass } from '@/components/ui/Field'
 import { toast } from '@/components/ui/toast'
 import { errorMessage } from '@/lib/errors'
 import { useInstansiPengguna, useUbahPengguna } from '../api'
-import { instansiBolehUntuk, STATUS_AKUN_LABEL, URUTAN_ROLE, type Pengguna } from '../types'
+import { instansiBolehUntuk, PERAN_UTAMA, peranUtamaDari, STATUS_AKUN_LABEL, type Pengguna } from '../types'
 import { InstansiSelect } from './InstansiSelect'
 import type { TargetStatus } from './StatusAkunDialog'
 
@@ -29,21 +29,32 @@ interface Props {
   kirimUlangBerjalan?: boolean
 }
 
+/** Peran tambahan yang dapat dicentang. Verifikator hanya untuk pengguna dengan peran ASN. */
+const PERAN_TAMBAHAN: Role[] = ['asn', 'akademisi', 'verifikator', 'admin_opd', 'super_admin']
+
 /** Satu pintu untuk mengelola pengguna: peran & instansi, akses akun (aktif/nonaktif/undangan), dan hapus. */
 export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang, kirimUlangBerjalan }: Props) {
   const instansi = useInstansiPengguna()
   const ubah = useUbahPengguna()
   const { register, handleSubmit, reset, setError, watch, formState: { errors } } = useForm<FormValues>()
-  const role = watch('role') ?? pengguna?.role ?? 'asn'
+  const utamaAwal = pengguna ? peranUtamaDari(pengguna.role) : 'asn'
+  const role = watch('role') ?? utamaAwal
   const [peranTambahan, setPeranTambahan] = useState<Role[]>([])
 
   useEffect(() => {
     if (pengguna) {
-      reset({ role: pengguna.role, idInstansi: String(pengguna.instansi.id) })
-      const awal = pengguna.daftarPeran?.length ? pengguna.daftarPeran : [pengguna.role]
-      setPeranTambahan(awal)
+      reset({ role: peranUtamaDari(pengguna.role), idInstansi: String(pengguna.instansi.id) })
+      setPeranTambahan(pengguna.daftarPeran?.length ? pengguna.daftarPeran : [peranUtamaDari(pengguna.role)])
     }
   }, [pengguna, reset])
+
+  const daftarTerpilih = Array.from(new Set([role, ...peranTambahan]))
+  const punyaASN = daftarTerpilih.includes('asn')
+
+  // Bila ASN tidak lagi dimiliki, hak Verifikator ikut dilepas.
+  useEffect(() => {
+    if (!punyaASN) setPeranTambahan((prev) => prev.filter((r) => r !== 'verifikator'))
+  }, [punyaASN])
 
   const togglePeran = (r: Role) => {
     if (r === role) return
@@ -60,7 +71,7 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
     // Hanya kirim yang berubah agar server tidak mencatat perubahan palsu.
     const input = {
       id: pengguna.id,
-      ...(v.role !== pengguna.role && { role: v.role }),
+      ...(v.role !== peranUtamaDari(pengguna.role) && { role: v.role }),
       ...(daftarBerubah && { daftarPeran: daftarBaru }),
       ...(Number(v.idInstansi) !== pengguna.instansi.id && { idInstansi: Number(v.idInstansi) }),
     }
@@ -93,7 +104,7 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
 
           <Field id="ubah-role" label="Peran utama" error={errors.role?.message}>
             <select id="ubah-role" className={inputClass} aria-invalid={!!errors.role} {...register('role')}>
-              {URUTAN_ROLE.map((r) => (
+              {PERAN_UTAMA.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABEL[r]}
                 </option>
@@ -102,29 +113,32 @@ export function UbahDialog({ pengguna, onClose, onStatus, onHapus, onKirimUlang,
           </Field>
 
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-slate-700">Akses Multi-Role (Switch Role)</legend>
+            <legend className="text-sm font-medium text-slate-700">Peran tambahan (Ganti Peran)</legend>
             <p className="text-xs text-slate-500">
-              Centang peran tambahan yang dapat diakses pengguna ini lewat fitur Ganti Peran.
+              Centang peran lain yang boleh dipakai pengguna ini lewat Ganti Peran. Verifikator hanya dapat diberikan kepada ASN.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              {URUTAN_ROLE.map((r) => {
+              {PERAN_TAMBAHAN.map((r) => {
                 const adalahUtama = r === role
-                const dicentang = adalahUtama || peranTambahan.includes(r)
+                const terkunci = r === 'verifikator' && !punyaASN
+                const dicentang = adalahUtama || (peranTambahan.includes(r) && !terkunci)
                 return (
                   <label
                     key={r}
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                    title={terkunci ? 'Centang ASN terlebih dahulu' : undefined}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium ${
                       dicentang ? 'border-brand-300 bg-brand-50 text-brand-900' : 'border-slate-200 bg-white text-slate-600'
-                    } ${adalahUtama ? 'opacity-75' : ''}`}
+                    } ${adalahUtama || terkunci ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                   >
                     <input
                       type="checkbox"
                       checked={dicentang}
-                      disabled={adalahUtama}
+                      disabled={adalahUtama || terkunci}
                       onChange={() => togglePeran(r)}
                       className="rounded border-slate-300 text-brand-700"
                     />
                     {ROLE_LABEL[r]} {adalahUtama && '(Utama)'}
+                    {r === 'verifikator' && !adalahUtama && <span className="font-normal text-slate-500">(khusus ASN)</span>}
                   </label>
                 )
               })}
