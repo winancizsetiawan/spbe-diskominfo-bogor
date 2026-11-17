@@ -6,7 +6,7 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { SIDEBAR_NAV } from '@/app/navigation'
-import { daftarPeranPengguna, ROLE_BADGE_CLASS, ROLE_LABEL } from '@/auth/types'
+import { daftarPeranPengguna, ROLE_LABEL } from '@/auth/types'
 import { useAuth } from '@/auth/useAuth'
 import { Dropdown, menuItemClass } from '@/components/ui/Dropdown'
 import { TAHUN_PEMBANGUNAN } from './Hakcipta'
@@ -190,9 +190,6 @@ function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
         <Menu className="size-5" aria-hidden /> Menu
       </button>
       <div className="ml-auto flex items-center gap-2">
-        <span className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold sm:inline-flex ${ROLE_BADGE_CLASS[user.role]}`}>
-          Mode: {ROLE_LABEL[user.role]}
-        </span>
         <Link to="/cari" aria-label="Pencarian" className="inline-flex size-11 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 hover:text-brand-700">
           <Search className="size-5" aria-hidden />
         </Link>

@@ -13,7 +13,6 @@ export const PUBLIC_NAV: NavItem[] = [
   { label: 'Dokumen', to: '/dokumen' },
   { label: 'Dasbor', to: '/dasbor-publik' },
   { label: 'Kritik & Saran', to: '/kritik-saran' },
-  { label: 'Bantuan', to: '/bantuan' },
 ]
 
 export const INTERNAL_NAV: NavItem[] = [
