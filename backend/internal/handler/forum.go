@@ -87,17 +87,10 @@ func (h *ForumHandler) BuatThread(c *gin.Context) {
 
 	res, err := h.svc.BuatThread(role, in)
 	if err != nil {
-		var valErr *service.ValidationError
-		if errors.As(err, &valErr) {
-			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
-				Message: "Periksa kembali isian Anda.",
-				Errors:  valErr.Errors,
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal membuat thread diskusi."})
+		jawabGalatForum(c, err, "Gagal membuat thread diskusi.")
 		return
 	}
+	tandaiThread(res)
 	c.JSON(http.StatusCreated, res)
 }
 
@@ -120,6 +113,7 @@ func (h *ForumHandler) GetThreadDetail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Thread tidak ditemukan."})
 		return
 	}
+	tandaiThread(res)
 	c.JSON(http.StatusOK, res)
 }
 
@@ -145,27 +139,11 @@ func (h *ForumHandler) BuatBalasan(c *gin.Context) {
 
 	res, err := h.svc.BuatBalasan(uint(id), role, in)
 	if err != nil {
-		if errors.Is(err, service.ErrThreadTidakDitemukan) {
-			c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
-			return
-		}
-		var konflikErr *service.ForumKonflikError
-		if errors.As(err, &konflikErr) {
-			c.JSON(http.StatusConflict, domain.ErrorResponse{Message: konflikErr.Pesan})
-			return
-		}
-		var valErr *service.ValidationError
-		if errors.As(err, &valErr) {
-			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
-				Message: "Periksa kembali isian Anda.",
-				Errors:  valErr.Errors,
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan balasan."})
+		jawabGalatForum(c, err, "Gagal menyimpan balasan.")
 		return
 	}
 
+	tandaiLampiran(res.Lampiran)
 	c.JSON(http.StatusCreated, res)
 }
 
@@ -185,16 +163,7 @@ func (h *ForumHandler) ToggleNilaiBalasan(c *gin.Context) {
 
 	res, err := h.svc.ToggleNilaiBalasan(uint(id), role)
 	if err != nil {
-		if errors.Is(err, service.ErrBalasanTidakDitemukan) {
-			c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
-			return
-		}
-		var konflikErr *service.ForumKonflikError
-		if errors.As(err, &konflikErr) {
-			c.JSON(http.StatusConflict, domain.ErrorResponse{Message: konflikErr.Pesan})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui nilai balasan."})
+		jawabGalatForum(c, err, "Gagal memperbarui nilai balasan.")
 		return
 	}
 

@@ -314,16 +314,7 @@ func (s *PortalModulService) buatBerandaInternal(u domain.User) domain.BerandaIn
 
 	threadPopuler := make([]domain.ThreadRingkas, 0, len(aktifThreads))
 	for _, t := range aktifThreads {
-		threadPopuler = append(threadPopuler, domain.ThreadRingkas{
-			ID:            t.ID,
-			Judul:         t.Judul,
-			Kategori:      t.Kategori,
-			Penulis:       penulisDariUser(t.PenulisUser),
-			DibuatPada:    t.DibuatPada,
-			JumlahBalasan: jmlBalasanMap[t.ID],
-			Dilihat:       t.Dilihat,
-			Status:        t.Status,
-		})
+		threadPopuler = append(threadPopuler, ringkasThread(t, jmlBalasanMap[t.ID]))
 	}
 
 	notif, belum := s.notifikasiTerbaruUser(u.ID)

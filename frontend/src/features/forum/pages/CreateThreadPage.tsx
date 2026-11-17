@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 import { ApiError } from '@/api/client'
@@ -8,7 +9,9 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from '@/components/ui/toast'
 import { errorMessage } from '@/lib/errors'
 import { useBuatThread, useKategoriForum } from '../api'
-import { BATAS } from '../types'
+import { LampiranInput } from '../components/LampiranInput'
+import { PilihPenerima } from '../components/PilihPenerima'
+import { BATAS, type Lampiran, type PenggunaForum } from '../types'
 
 interface FormValues {
   idKategori: string
@@ -25,13 +28,23 @@ export function CreateThreadPage() {
   const navigate = useNavigate()
   const kategori = useKategoriForum()
   const buat = useBuatThread()
+  const [penerima, setPenerima] = useState<PenggunaForum[]>([])
+  const [lampiran, setLampiran] = useState<Lampiran[]>([])
+  const [mengunggah, setMengunggah] = useState(false)
+  const [galatServer, setGalatServer] = useState<{ penerima?: string; lampiran?: string }>({})
   const { register, handleSubmit, setError, watch, formState: { errors } } = useForm<FormValues>({
     defaultValues: { idKategori: '', judul: '', konten: '' },
   })
 
   const kirim = handleSubmit((v) =>
     buat.mutate(
-      { idKategori: Number(v.idKategori), judul: v.judul.trim(), konten: v.konten.trim() },
+      {
+        idKategori: Number(v.idKategori),
+        judul: v.judul.trim(),
+        konten: v.konten.trim(),
+        penerima: penerima.map((p) => p.id),
+        lampiran: lampiran.map((l) => l.id),
+      },
       {
         onSuccess: (thread) => {
           toast.success('Thread berhasil dibuat.')
@@ -40,7 +53,9 @@ export function CreateThreadPage() {
         onError: (err) => {
           // 422: tampilkan error per field dari server; isian tidak dibuang.
           if (err instanceof ApiError && err.status === 422) {
-            for (const [field, message] of Object.entries(err.fieldErrors)) {
+            const { penerima: gp, lampiran: gl, ...lain } = err.fieldErrors
+            setGalatServer({ penerima: gp, lampiran: gl })
+            for (const [field, message] of Object.entries(lain)) {
               setError(field as keyof FormValues, { message })
             }
           } else {
@@ -108,12 +123,29 @@ export function CreateThreadPage() {
             />
           </Field>
 
+          <Field id="lampiran-thread" label="Lampiran (opsional)" error={galatServer.lampiran}>
+            <LampiranInput id="lampiran-thread" value={lampiran} onChange={setLampiran} onSibuk={setMengunggah} />
+          </Field>
+
+          <Field
+            id="penerima"
+            label="Ditujukan kepada (opsional)"
+            error={galatServer.penerima}
+            hint={
+              penerima.length > 0
+                ? 'Hanya penerima dan Anda yang dapat membalas. Pengguna lain tetap dapat membaca diskusi ini.'
+                : `Kosongkan agar semua pengguna dapat membalas. Maksimal ${BATAS.penerimaMax} orang.`
+            }
+          >
+            <PilihPenerima id="penerima" value={penerima} onChange={setPenerima} />
+          </Field>
+
           <div className="flex justify-end gap-2">
             <Link to="/forum" className={buttonClass('secondary')}>
               Batal
             </Link>
-            <Button type="submit" disabled={buat.isPending}>
-              {buat.isPending ? 'Menyimpan…' : 'Terbitkan thread'}
+            <Button type="submit" disabled={buat.isPending || mengunggah}>
+              {buat.isPending ? 'Menyimpan…' : mengunggah ? 'Menunggu unggahan…' : 'Terbitkan thread'}
             </Button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, Flag, Lock } from 'lucide-react'
+import { ArrowLeft, Eye, Flag, Lock, UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Badge } from '@/components/ui/Badge'
@@ -11,6 +11,8 @@ import { formatAngka, formatTanggal } from '@/lib/format'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { useNilaiBalasan, useThread } from '../api'
+import { DaftarLampiran } from '../components/LampiranInput'
+import { PenugasanDialog } from '../components/PenugasanDialog'
 import { ReplyForm } from '../components/ReplyForm'
 import { ReplyItem } from '../components/ReplyItem'
 import { ReportDialog } from '../components/ReportDialog'
@@ -21,6 +23,7 @@ export function ThreadDetailPage() {
   const thread = useThread(id)
   const nilai = useNilaiBalasan(id)
   const [laporan, setLaporan] = useState<Pick<LaporanInput, 'targetTipe' | 'targetId'> | null>(null)
+  const [tugas, setTugas] = useState(false)
 
   if (!Number.isInteger(id) || id <= 0 || isStatus(thread.error, 404)) return <NotFoundPage />
   if (isStatus(thread.error, 403)) return <ForbiddenPage />
@@ -51,6 +54,34 @@ export function ThreadDetailPage() {
           <time dateTime={t.dibuatPada}>{formatTanggal(t.dibuatPada)}</time>
         </p>
         <p className="mt-5 whitespace-pre-line text-slate-700">{t.konten}</p>
+        <DaftarLampiran lampiran={t.lampiran} />
+        {(t.penerima.length > 0 || (t.bisaMenugaskan && aktif)) && (
+          <div className="mt-5 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+            <UserCheck className="size-4 text-brand-700" aria-hidden />
+            {t.penerima.length > 0 ? (
+              <span className="text-slate-700">
+                Ditujukan kepada{' '}
+                {t.penerima.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && ', '}
+                    <span className="font-semibold">{p.nama}</span> <span className="text-slate-500">({p.instansi})</span>
+                  </span>
+                ))}
+              </span>
+            ) : (
+              <span className="text-slate-600">Terbuka untuk semua pengguna.</span>
+            )}
+            {t.bisaMenugaskan && aktif && (
+              <button
+                type="button"
+                onClick={() => setTugas(true)}
+                className="ml-auto rounded-md px-2 py-1 font-medium text-brand-700 hover:bg-brand-50"
+              >
+                {t.penerima.length > 0 ? 'Ubah penugasan' : 'Tugaskan'}
+              </button>
+            )}
+          </div>
+        )}
         <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-sm text-slate-500">
           <span className="flex items-center gap-1.5">
             <Eye className="size-4" aria-hidden /> {formatAngka(t.dilihat)} kali dilihat
@@ -85,6 +116,7 @@ export function ThreadDetailPage() {
                 key={b.id}
                 balasan={b}
                 interaktif={aktif}
+                bolehNilai={t.bisaMembalas}
                 onNilai={() => nilai.mutate(b.id, { onError: (err) => toast.error(errorMessage(err)) })}
                 onLaporkan={() => setLaporan({ targetTipe: 'balasan', targetId: b.id })}
               />
@@ -93,9 +125,17 @@ export function ThreadDetailPage() {
         )}
       </section>
 
-      {aktif && <ReplyForm threadId={t.id} />}
+      {aktif && t.bisaMembalas && <ReplyForm threadId={t.id} />}
+      {aktif && !t.bisaMembalas && (
+        <p role="status" className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <Eye className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
+          Diskusi ini ditujukan kepada {t.penerima.map((p) => p.nama).join(', ')}. Anda dapat membaca thread dan balasannya,
+          tetapi tidak dapat membalas.
+        </p>
+      )}
 
       <ReportDialog target={laporan} onClose={() => setLaporan(null)} />
+      <PenugasanDialog open={tugas} threadId={t.id} penerima={t.penerima} onClose={() => setTugas(false)} />
     </div>
   )
 }

@@ -68,12 +68,60 @@ type ForumThread struct {
 	PenulisUser User          `gorm:"foreignKey:PenulisID" json:"-"`
 	Dilihat     int           `gorm:"not null;default:0" json:"dilihat"`
 	Status      StatusThread  `gorm:"size:20;not null;default:'aktif';index" json:"status"`
+	Penerima    []ForumPenerima `gorm:"foreignKey:ThreadID;constraint:OnDelete:CASCADE" json:"-"`
 	DibuatPada  time.Time     `gorm:"autoCreateTime;index" json:"dibuatPada"`
 	UpdatedAt   time.Time     `json:"-"`
 }
 
 func (ForumThread) TableName() string {
 	return "forum_thread"
+}
+
+// ForumPenerima adalah pengguna yang ditugaskan menjawab thread. Bila sebuah thread punya penerima,
+// hanya penerima dan pembuat thread yang boleh membalas; pengguna lain hanya dapat membaca.
+type ForumPenerima struct {
+	ThreadID  uint      `gorm:"primaryKey" json:"-"`
+	UserID    uint      `gorm:"primaryKey;index" json:"-"`
+	User      User      `gorm:"foreignKey:UserID" json:"-"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"-"`
+}
+
+func (ForumPenerima) TableName() string {
+	return "forum_thread_penerima"
+}
+
+// ForumLampiran adalah gambar atau PDF yang dilampirkan pada thread atau balasan.
+// Berkas diunggah lebih dulu (ThreadID dan BalasanID kosong), lalu ditautkan saat thread/balasan dikirim.
+type ForumLampiran struct {
+	ID           uint      `gorm:"primaryKey" json:"-"`
+	NamaBerkas   string    `gorm:"size:64;not null;uniqueIndex" json:"-"`
+	NamaAsli     string    `gorm:"size:255;not null" json:"-"`
+	Tipe         string    `gorm:"size:50;not null" json:"-"`
+	Ukuran       int64     `gorm:"not null" json:"-"`
+	PengunggahID uint      `gorm:"not null;index" json:"-"`
+	ThreadID     *uint     `gorm:"index" json:"-"`
+	BalasanID    *uint     `gorm:"index" json:"-"`
+	DibuatPada   time.Time `gorm:"autoCreateTime" json:"-"`
+}
+
+func (ForumLampiran) TableName() string {
+	return "forum_lampiran"
+}
+
+// PenggunaForum adalah ringkasan pengguna untuk pilihan penerima dan tampilan penugasan.
+type PenggunaForum struct {
+	ID       uint   `json:"id"`
+	Nama     string `json:"nama"`
+	Instansi string `json:"instansi"`
+}
+
+// LampiranDTO dikirim ke FE. Url berupa tautan bertanda yang berlaku sementara.
+type LampiranDTO struct {
+	ID     string `json:"id"`
+	Nama   string `json:"nama"`
+	Tipe   string `json:"tipe"`
+	Ukuran int64  `json:"ukuran"`
+	Url    string `json:"url"`
 }
 
 // ForumBalasan merepresentasikan komentar/balasan pada sebuah thread forum.
@@ -132,21 +180,33 @@ type ThreadRingkas struct {
 	JumlahBalasan int           `json:"jumlahBalasan"`
 	Dilihat       int           `json:"dilihat"`
 	Status        StatusThread  `json:"status"`
+	// Penerima kosong berarti thread terbuka untuk semua pengguna; berisi berarti hanya penerima dan pembuat yang membalas.
+	Penerima []PenggunaForum `json:"penerima"`
 }
 
 type BalasanResponse struct {
-	ID           uint         `json:"id"`
-	Konten       string       `json:"konten"`
-	Penulis      PenulisForum `json:"penulis"`
-	DibuatPada   time.Time    `json:"dibuatPada"`
-	JumlahNilai  int          `json:"jumlahNilai"`
-	SudahDinilai bool         `json:"sudahDinilai"`
+	ID           uint          `json:"id"`
+	Konten       string        `json:"konten"`
+	Penulis      PenulisForum  `json:"penulis"`
+	DibuatPada   time.Time     `json:"dibuatPada"`
+	JumlahNilai  int           `json:"jumlahNilai"`
+	SudahDinilai bool          `json:"sudahDinilai"`
+	Lampiran     []LampiranDTO `json:"lampiran"`
 }
 
 type ThreadDetailResponse struct {
 	ThreadRingkas
-	Konten  string            `json:"konten"`
-	Balasan []BalasanResponse `json:"balasan"`
+	Konten   string            `json:"konten"`
+	Lampiran []LampiranDTO     `json:"lampiran"`
+	Balasan  []BalasanResponse `json:"balasan"`
+	// BisaMembalas false bila thread ditujukan ke orang lain (hanya baca).
+	BisaMembalas bool `json:"bisaMembalas"`
+	// BisaMenugaskan true untuk pembuat thread dan Super Admin (boleh mengubah penerima).
+	BisaMenugaskan bool `json:"bisaMenugaskan"`
+}
+
+type UbahPenerimaInput struct {
+	Penerima []uint `json:"penerima"`
 }
 
 type ThreadFilter struct {
@@ -158,12 +218,15 @@ type ThreadFilter struct {
 
 type BuatThreadInput struct {
 	IdKategori uint   `json:"idKategori"`
-	Judul      string `json:"judul"`
-	Konten     string `json:"konten"`
+	Judul      string   `json:"judul"`
+	Konten     string   `json:"konten"`
+	Penerima   []uint   `json:"penerima"`
+	Lampiran   []string `json:"lampiran"`
 }
 
 type BuatBalasanInput struct {
-	Konten string `json:"konten"`
+	Konten   string   `json:"konten"`
+	Lampiran []string `json:"lampiran"`
 }
 
 type NilaiBalasanResponse struct {

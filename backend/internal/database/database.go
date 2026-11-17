@@ -54,6 +54,8 @@ func Connect(dsn string, isDevelopment bool, isiDataContoh bool) (*gorm.DB, erro
 		&domain.ForumBalasan{},
 		&domain.ForumNilai{},
 		&domain.ForumLaporan{},
+		&domain.ForumPenerima{},
+		&domain.ForumLampiran{},
 		&domain.AuditLog{},
 		&domain.RiwayatBackup{},
 		&domain.PeriodePembaruan{},

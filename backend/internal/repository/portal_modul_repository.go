@@ -63,7 +63,7 @@ func (r *PortalModulRepository) FindAllDokumen() ([]domain.Dokumen, error) {
 
 func (r *PortalModulRepository) FindAllThreads() ([]domain.ForumThread, error) {
 	var list []domain.ForumThread
-	err := r.db.Preload("Kategori").Preload("PenulisUser.Instansi").Order("dibuat_pada DESC, id DESC").Find(&list).Error
+	err := r.db.Preload("Kategori").Preload("PenulisUser.Instansi").Preload("Penerima.User.Instansi").Order("dibuat_pada DESC, id DESC").Find(&list).Error
 	return list, err
 }
 

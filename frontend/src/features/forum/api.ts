@@ -1,10 +1,15 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError, type Paged } from '@/api/client'
+import { authAdapter } from '@/auth/adapter'
+import { authReady } from '@/auth/ready'
 import type {
   Balasan,
+  BalasInput,
   BuatThreadInput,
   KategoriForum,
   LaporanInput,
+  Lampiran,
+  PenggunaForum,
   ThreadDetail,
   ThreadFilter,
   ThreadRingkas,
@@ -59,11 +64,52 @@ export function useBuatThread() {
   })
 }
 
+export function useCariPengguna(q: string) {
+  return useQuery({
+    queryKey: ['forum', 'pengguna', q] as const,
+    queryFn: () => api<PenggunaForum[]>(`/forum/pengguna?q=${encodeURIComponent(q)}`),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  })
+}
+
+/** Penugasan ulang: ganti daftar penerima thread. */
+export function useUbahPenerima(threadId: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (penerima: number[]) =>
+      api<{ penerima: PenggunaForum[] }>(`/forum/thread/${threadId}/penerima`, { method: 'PUT', json: { penerima } }),
+    onSuccess: ({ penerima }) => {
+      qc.setQueryData<ThreadDetail>(forumKeys.detail(threadId), (t) => t && { ...t, penerima })
+      void qc.invalidateQueries({ queryKey: forumKeys.semuaDaftar })
+    },
+  })
+}
+
+/** Unggah satu lampiran (gambar/PDF). Server memeriksa isi berkas dan memberi nama acak. */
+export async function unggahLampiran(file: File, signal?: AbortSignal): Promise<Lampiran> {
+  await authReady
+  const form = new FormData()
+  form.append('file', file)
+  const token = await authAdapter.getToken()
+  const res = await fetch('/api/forum/lampiran', {
+    method: 'POST',
+    body: form,
+    signal,
+    headers: token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' },
+  })
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string }
+    throw new ApiError(res.status, res.status >= 500 || !body.message ? 'Lampiran gagal diunggah. Silakan coba lagi.' : body.message)
+  }
+  return (await res.json()) as Lampiran
+}
+
 export function useBalas(threadId: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (konten: string) =>
-      api<Balasan>(`/forum/thread/${threadId}/balasan`, { method: 'POST', json: { konten } }),
+    mutationFn: (input: BalasInput) =>
+      api<Balasan>(`/forum/thread/${threadId}/balasan`, { method: 'POST', json: input }),
     onSuccess: (balasan) => {
       qc.setQueryData<ThreadDetail>(forumKeys.detail(threadId), (t) =>
         t && { ...t, balasan: [...t.balasan, balasan], jumlahBalasan: t.jumlahBalasan + 1 },

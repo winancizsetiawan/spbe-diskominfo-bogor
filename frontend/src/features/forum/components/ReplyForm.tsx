@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/Button'
@@ -5,27 +6,34 @@ import { Field, inputClass } from '@/components/ui/Field'
 import { toast } from '@/components/ui/toast'
 import { errorMessage } from '@/lib/errors'
 import { useBalas } from '../api'
-import { BATAS } from '../types'
+import { BATAS, type Lampiran } from '../types'
+import { LampiranInput } from './LampiranInput'
 
 export function ReplyForm({ threadId }: { threadId: number }) {
   const balas = useBalas(threadId)
+  const [lampiran, setLampiran] = useState<Lampiran[]>([])
+  const [mengunggah, setMengunggah] = useState(false)
   const { register, handleSubmit, reset, setError, watch, formState: { errors } } = useForm<{ konten: string }>({
     defaultValues: { konten: '' },
   })
   const panjang = watch('konten').length
 
   const kirim = handleSubmit(({ konten }) =>
-    balas.mutate(konten.trim(), {
-      onSuccess: () => {
-        reset()
-        toast.success('Balasan terkirim.')
+    balas.mutate(
+      { konten: konten.trim(), lampiran: lampiran.map((l) => l.id) },
+      {
+        onSuccess: () => {
+          reset()
+          setLampiran([])
+          toast.success('Balasan terkirim.')
+        },
+        onError: (err) => {
+          if (err instanceof ApiError && err.status === 409) toast.error('Thread ini baru saja dikunci, balasan tidak terkirim.')
+          else if (err instanceof ApiError && err.fieldErrors.konten) setError('konten', { message: err.fieldErrors.konten })
+          else toast.error(err instanceof ApiError && err.fieldErrors.lampiran ? err.fieldErrors.lampiran : errorMessage(err))
+        },
       },
-      onError: (err) => {
-        if (err instanceof ApiError && err.status === 409) toast.error('Thread ini baru saja dikunci, balasan tidak terkirim.')
-        else if (err instanceof ApiError && err.fieldErrors.konten) setError('konten', { message: err.fieldErrors.konten })
-        else toast.error(errorMessage(err))
-      },
-    }),
+    ),
   )
 
   return (
@@ -38,13 +46,15 @@ export function ReplyForm({ threadId }: { threadId: number }) {
           aria-invalid={!!errors.konten}
           aria-describedby={errors.konten ? 'balasan-error' : undefined}
           {...register('konten', {
-            validate: (v) => v.trim().length > 0 || 'Balasan tidak boleh kosong.',
+            // Teks boleh kosong bila ada lampiran.
+            validate: (v) => v.trim().length > 0 || lampiran.length > 0 || 'Balasan tidak boleh kosong.',
             maxLength: { value: BATAS.balasanMax, message: `Balasan maksimal ${BATAS.balasanMax} karakter.` },
           })}
         />
       </Field>
+      <LampiranInput id="lampiran-balasan" value={lampiran} onChange={setLampiran} onSibuk={setMengunggah} />
       <div className="flex justify-end">
-        <Button type="submit" disabled={balas.isPending}>
+        <Button type="submit" disabled={balas.isPending || mengunggah}>
           {balas.isPending ? 'Mengirim…' : 'Kirim balasan'}
         </Button>
       </div>

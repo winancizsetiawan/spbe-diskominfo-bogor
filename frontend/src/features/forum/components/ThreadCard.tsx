@@ -1,10 +1,12 @@
-import { Eye, Lock, MessageSquare } from 'lucide-react'
+import { Eye, Lock, MessageSquare, UserCheck } from 'lucide-react'
 import { Link } from 'react-router'
 import { Badge } from '@/components/ui/Badge'
 import { formatAngka, waktuRelatif } from '@/lib/format'
 import type { ThreadRingkas } from '../types'
 
 export function ThreadCard({ thread }: { thread: ThreadRingkas }) {
+  // Bawaan [] agar data thread dari endpoint lain (tanpa field penerima) tidak membuat halaman error.
+  const penerima = thread.penerima ?? []
   return (
     <li>
       <Link
@@ -17,6 +19,12 @@ export function ThreadCard({ thread }: { thread: ThreadRingkas }) {
             {thread.status === 'terkunci' && (
               <Badge tone="warning">
                 <Lock className="size-3" aria-hidden /> Terkunci
+              </Badge>
+            )}
+            {penerima.length > 0 && (
+              <Badge tone="neutral">
+                <UserCheck className="size-3" aria-hidden /> Untuk{' '}
+                {penerima.length === 1 ? penerima[0].nama : `${penerima.length} orang`}
               </Badge>
             )}
           </div>

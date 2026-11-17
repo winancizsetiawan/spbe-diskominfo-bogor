@@ -1,16 +1,19 @@
 import { Flag, ThumbsUp } from 'lucide-react'
 import { formatTanggal, waktuRelatif } from '@/lib/format'
 import type { Balasan } from '../types'
+import { DaftarLampiran } from './LampiranInput'
 
 interface Props {
   balasan: Balasan
   /** false bila thread terkunci/tersembunyi: tombol nilai dan laporkan dinonaktifkan. */
   interaktif: boolean
+  /** false bila thread ditujukan ke orang lain: hanya tombol nilai yang dinonaktifkan. */
+  bolehNilai?: boolean
   onNilai(): void
   onLaporkan(): void
 }
 
-export function ReplyItem({ balasan, interaktif, onNilai, onLaporkan }: Props) {
+export function ReplyItem({ balasan, interaktif, bolehNilai = true, onNilai, onLaporkan }: Props) {
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-5">
       <p className="text-sm text-slate-500">
@@ -20,12 +23,13 @@ export function ReplyItem({ balasan, interaktif, onNilai, onLaporkan }: Props) {
         </time>
       </p>
       {/* Konten pengguna dirender sebagai teks biasa (di-escape React), bukan HTML. */}
-      <p className="mt-3 text-sm whitespace-pre-line text-slate-700">{balasan.konten}</p>
+      {balasan.konten && <p className="mt-3 text-sm whitespace-pre-line text-slate-700">{balasan.konten}</p>}
+      <DaftarLampiran lampiran={balasan.lampiran} />
       <div className="mt-4 flex items-center gap-2">
         <button
           type="button"
           onClick={onNilai}
-          disabled={!interaktif}
+          disabled={!interaktif || !bolehNilai}
           aria-pressed={balasan.sudahDinilai}
           aria-label={`${balasan.sudahDinilai ? 'Batalkan nilai' : 'Beri nilai'} balasan (${balasan.jumlahNilai})`}
           className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:bg-brand-50 aria-pressed:text-brand-700"

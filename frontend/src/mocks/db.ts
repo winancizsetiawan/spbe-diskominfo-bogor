@@ -57,6 +57,9 @@ export interface ThreadRow {
   dibuatPada: string
   dilihat: number
   status: StatusThread
+  /** Id pengguna (dbPengguna) yang ditugaskan menjawab; kosong = terbuka untuk semua. */
+  penerima?: number[]
+  lampiran?: string[]
 }
 
 export interface BalasanRow {
@@ -66,6 +69,7 @@ export interface BalasanRow {
   penulis: Penulis
   dibuatPada: string
   penilai: Set<number>
+  lampiran?: string[]
   /** Disembunyikan moderator; tidak tampil di forum. */
   tersembunyi?: boolean
 }
@@ -95,7 +99,7 @@ export const threads: ThreadRow[] = [
   { id: 3, idKategori: 3, judul: 'Rekomendasi tools open source untuk arsitektur domain', konten: 'Sesuai arahan Peta Rencana SPBE ke open source, tools apa yang teman-teman pakai untuk memodelkan proses bisnis (BPMN)?', penulis: P.siti, dibuatPada: jamLalu(30), dilihat: 310, status: 'aktif' },
   { id: 4, idKategori: 4, judul: 'Tafsir Permen PANRB 59/2020 untuk klasifikasi RAA', konten: 'Apakah aplikasi internal kepegawaian masuk domain Manajemen atau Pendukung? Mohon pencerahan rekan-rekan yang sudah mengklasifikasi.', penulis: P.budi, dibuatPada: jamLalu(50), dilihat: 198, status: 'terkunci' },
   { id: 5, idKategori: 1, judul: 'Tantangan literasi digital ASN di kelurahan', konten: 'Banyak rekan di kelurahan yang belum terbiasa memakai aplikasi. Ada ide program pendampingan yang efektif?', penulis: P.andi, dibuatPada: jamLalu(72), dilihat: 87, status: 'aktif' },
-  { id: 6, idKategori: 2, judul: 'Checklist sebelum asesmen standardisasi aplikasi', konten: 'Dokumen apa saja yang biasanya diminta Tim Asesmen Diskominfo sebelum aplikasi mendapat subdomain kotabogor.go.id?', penulis: P.budi, dibuatPada: jamLalu(96), dilihat: 264, status: 'aktif' },
+  { id: 6, idKategori: 2, judul: 'Checklist sebelum asesmen standardisasi aplikasi', konten: 'Dokumen apa saja yang biasanya diminta Tim Asesmen Diskominfo sebelum aplikasi mendapat subdomain kotabogor.go.id?', penulis: P.budi, dibuatPada: jamLalu(96), dilihat: 264, status: 'aktif', penerima: [2, 9] },
   { id: 7, idKategori: 3, judul: 'Konfigurasi backup harian untuk aplikasi OPD', konten: 'Buku panduan meminta backup harian dan menyimpan 7 hari terakhir. Bagaimana praktik yang sudah berjalan, termasuk untuk berkas unggahan?', penulis: P.rina, dibuatPada: jamLalu(120), dilihat: 143, status: 'aktif' },
 ]
 
@@ -113,6 +117,18 @@ export const laporan: LaporanRow[] = [
   { id: 4, targetTipe: 'thread', targetId: 5, pelapor: 'Rina Oktaviani', alasan: 'Di luar topik forum SPBE.', dibuatPada: jamLalu(40), status: 'ditolak' },
   { id: 5, targetTipe: 'thread', targetId: 4, pelapor: 'Ahmad Fauzi', alasan: 'Menyebut merek vendor tertentu sebagai rekomendasi.', dibuatPada: jamLalu(60), status: 'ditindak' },
 ]
+
+/** Lampiran forum mode mock: berkas disimpan sebagai blob URL di memori peramban. */
+export interface LampiranRow {
+  id: string
+  nama: string
+  tipe: string
+  ukuran: number
+  url: string
+  idPengunggah: number
+  dipakai: boolean
+}
+export const lampiranForum = new Map<string, LampiranRow>()
 
 let seqThread = threads.length
 let seqBalasan = balasan.length
