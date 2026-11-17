@@ -1,5 +1,6 @@
-import { BarChart3, FileText, ListChecks, MessagesSquare } from 'lucide-react'
+import { BarChart3, FileText, GraduationCap, ListChecks, MessagesSquare } from 'lucide-react'
 import { Link } from 'react-router'
+import { useAuth } from '@/auth/useAuth'
 import { DokumenRow } from '@/features/dokumen/components/DokumenRow'
 import { ThreadCard } from '@/features/forum/components/ThreadCard'
 import { AksesCepat } from '../components/AksesCepat'
@@ -8,12 +9,17 @@ import { Panel } from '../components/Panel'
 import type { BerandaInternal } from '../types'
 
 export function InternalView({ data }: { data: BerandaInternal }) {
+  const { can } = useAuth()
+  const bolehSop = can('sop:lihat')
+
   return (
     <div className="space-y-8">
       <AksesCepat
         item={[
           { ikon: FileText, label: 'Cari Dokumen', to: '/dokumen' },
-          { ikon: ListChecks, label: 'Lihat SOP', to: '/sop' },
+          bolehSop
+            ? { ikon: ListChecks, label: 'Lihat SOP', to: '/sop' }
+            : { ikon: GraduationCap, label: 'Pembelajaran SPBE', to: '/pembelajaran' },
           { ikon: MessagesSquare, label: 'Forum Diskusi', to: '/forum' },
           { ikon: BarChart3, label: 'Dasbor Analitik', to: '/dasbor/analitik' },
         ]}

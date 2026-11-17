@@ -26,8 +26,8 @@ func NewPortalModulHandler(svc *service.PortalModulService) *PortalModulHandler 
 func (h *PortalModulHandler) ListArtikel(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	jenis := c.Query("jenis")
-	sudahLogin, _ := ekstrakRoleLogin(c)
-	res, err := h.svc.ListArtikel(jenis, page, sudahLogin)
+	sudahLogin, kunci := ekstrakRoleLogin(c)
+	res, err := h.svc.ListArtikel(jenis, page, sudahLogin, kunci)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat daftar artikel."})
 		return
@@ -76,6 +76,95 @@ func (h *PortalModulHandler) BuatArtikel(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, a)
+}
+
+// UbahArtikel menangani PUT /api/artikel/:id (Super Admin memperbaiki tulisan & mengajukan ulang).
+func (h *PortalModulHandler) UbahArtikel(c *gin.Context) {
+	if _, ok := wajibSuperAdmin(c, "Hanya Super Admin yang dapat mengubah berita atau artikel."); !ok {
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id < 1 {
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Artikel tidak ditemukan."})
+		return
+	}
+	var in service.ArtikelInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Permintaan tidak valid."})
+		return
+	}
+	a, err := h.svc.UbahArtikel(uint(id), in)
+	if err != nil {
+		if errors.Is(err, service.ErrArtikelTidakDitemukan) {
+			c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+			return
+		}
+		var invalid *service.ArtikelInvalidError
+		if errors.As(err, &invalid) {
+			c.JSON(http.StatusUnprocessableEntity, domain.NewErrorResponse(service.ErrArtikelTidakValid.Error(), invalid.Errors))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui tulisan."})
+		return
+	}
+	c.JSON(http.StatusOK, a)
+}
+
+// ListVerifikasiArtikel menangani GET /api/artikel/verifikasi (Verifikator & Super Admin).
+func (h *PortalModulHandler) ListVerifikasiArtikel(c *gin.Context) {
+	kunci, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	peran := auth.PeranDari(kunci)
+	if peran != string(domain.RoleVerifikator) && peran != string(domain.RoleSuperAdmin) {
+		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator atau Super Admin yang dapat mengakses verifikasi konten."})
+		return
+	}
+	res, err := h.svc.ListVerifikasiArtikel()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat daftar verifikasi konten."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// VerifikasiArtikel menangani POST /api/artikel/:id/verifikasi (Verifikator & Super Admin).
+func (h *PortalModulHandler) VerifikasiArtikel(c *gin.Context) {
+	kunci, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	peran := auth.PeranDari(kunci)
+	if peran != string(domain.RoleVerifikator) && peran != string(domain.RoleSuperAdmin) {
+		c.JSON(http.StatusForbidden, domain.ErrorResponse{Message: "Hanya Verifikator atau Super Admin yang dapat memverifikasi berita atau artikel."})
+		return
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id < 1 {
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Artikel tidak ditemukan."})
+		return
+	}
+	var in domain.VerifikasiArtikelInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+	a, err := h.svc.VerifikasiArtikel(kunci, uint(id), in)
+	if err != nil {
+		if errors.Is(err, service.ErrArtikelTidakDitemukan) {
+			c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+			return
+		}
+		var invalid *service.ArtikelInvalidError
+		if errors.As(err, &invalid) {
+			c.JSON(http.StatusUnprocessableEntity, domain.NewErrorResponse(service.ErrArtikelTidakValid.Error(), invalid.Errors))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan keputusan verifikasi."})
+		return
+	}
+	c.JSON(http.StatusOK, a)
 }
 
 // GetBantuan menangani GET /api/bantuan

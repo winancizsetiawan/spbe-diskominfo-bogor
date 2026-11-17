@@ -14,6 +14,7 @@ export interface Pengguna {
   nama: string
   email: string
   role: Role
+  daftarPeran?: Role[]
   statusAkun: StatusAkun
   instansi: InstansiPengguna
   /** Kosong selama pengguna yang diundang belum pernah masuk. */
@@ -43,11 +44,12 @@ export interface UndangInput {
 /** `aktif` berarti "aktifkan kembali"; server memilih diundang atau aktif sesuai riwayat login. */
 export interface UbahPenggunaInput {
   role?: Role
+  daftarPeran?: Role[]
   idInstansi?: number
   statusAkun?: 'aktif' | 'nonaktif'
 }
 
-export const URUTAN_ROLE: Role[] = ['asn', 'akademisi', 'admin_opd', 'super_admin']
+export const URUTAN_ROLE: Role[] = ['asn', 'akademisi', 'verifikator', 'admin_opd', 'super_admin']
 
 export const BATAS_PENGGUNA = { namaMin: 3, namaMax: 100 } as const
 

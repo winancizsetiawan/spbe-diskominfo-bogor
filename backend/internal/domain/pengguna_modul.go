@@ -69,6 +69,10 @@ type UbahSandiInput struct {
 	KonfirmasiSandi string `json:"konfirmasiSandi"`
 }
 
+type SwitchRoleInput struct {
+	Role Role `json:"role"`
+}
+
 // ---- 2. Manajemen Pengguna (Admin) ----
 
 type PenggunaDTO struct {
@@ -76,6 +80,7 @@ type PenggunaDTO struct {
 	Nama            string          `json:"nama"`
 	Email           string          `json:"email"`
 	Role            Role            `json:"role"`
+	DaftarPeran     []Role          `json:"daftarPeran"`
 	StatusAkun      StatusAkun      `json:"statusAkun"`
 	Instansi        InstansiRingkas `json:"instansi"`
 	LoginTerakhir   *time.Time      `json:"loginTerakhir,omitempty"`
@@ -85,11 +90,12 @@ type PenggunaDTO struct {
 }
 
 type HitunganRolePengguna struct {
-	Semua      int `json:"semua"`
-	ASN        int `json:"asn"`
-	Akademisi  int `json:"akademisi"`
-	AdminOPD   int `json:"admin_opd"`
-	SuperAdmin int `json:"super_admin"`
+	Semua       int `json:"semua"`
+	ASN         int `json:"asn"`
+	Akademisi   int `json:"akademisi"`
+	Verifikator int `json:"verifikator"`
+	AdminOPD    int `json:"admin_opd"`
+	SuperAdmin  int `json:"super_admin"`
 }
 
 type DaftarPenggunaResponse struct {
@@ -108,16 +114,18 @@ type PenggunaFilter struct {
 }
 
 type UndangInput struct {
-	Nama       string `json:"nama"`
-	Email      string `json:"email"`
-	Role       Role   `json:"role"`
-	IdInstansi uint   `json:"idInstansi"`
+	Nama        string `json:"nama"`
+	Email       string `json:"email"`
+	Role        Role   `json:"role"`
+	DaftarPeran []Role `json:"daftarPeran,omitempty"`
+	IdInstansi  uint   `json:"idInstansi"`
 }
 
 type UbahPenggunaInput struct {
-	Role       *Role       `json:"role"`
-	IdInstansi *uint       `json:"idInstansi"`
-	StatusAkun *StatusAkun `json:"statusAkun"`
+	Role        *Role       `json:"role"`
+	DaftarPeran []Role      `json:"daftarPeran,omitempty"`
+	IdInstansi  *uint       `json:"idInstansi"`
+	StatusAkun  *StatusAkun `json:"statusAkun"`
 }
 
 // ---- 3. Notifikasi ----

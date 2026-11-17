@@ -27,14 +27,15 @@ const (
 	ModeDemo     = "demo"
 	ModeKeycloak = "keycloak"
 
-	RoleSuperAdmin = "super_admin"
-	RoleAdminOPD   = "admin_opd"
-	RoleAkademisi  = "akademisi"
-	RoleASN        = "asn"
+	RoleSuperAdmin  = "super_admin"
+	RoleAdminOPD    = "admin_opd"
+	RoleVerifikator = "verifikator"
+	RoleAkademisi   = "akademisi"
+	RoleASN         = "asn"
 )
 
 // urutan hak akses dari yang tertinggi; bila token memuat beberapa peran, yang tertinggi dipakai.
-var urutanPeran = []string{RoleSuperAdmin, RoleAdminOPD, RoleAkademisi, RoleASN}
+var urutanPeran = []string{RoleSuperAdmin, RoleAdminOPD, RoleVerifikator, RoleAkademisi, RoleASN}
 
 // Config mengatur pemeriksaan token.
 type Config struct {

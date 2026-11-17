@@ -150,7 +150,16 @@ export function PenggunaPage() {
                     </Td>
                     <Td className="text-slate-600">{p.instansi.nama}</Td>
                     <Td>
-                      <Badge tone="brand">{ROLE_LABEL[p.role]}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge tone="brand">{ROLE_LABEL[p.role]}</Badge>
+                        {p.daftarPeran
+                          ?.filter((r) => r !== p.role)
+                          .map((r) => (
+                            <Badge key={r} tone="neutral">
+                              +{ROLE_LABEL[r]}
+                            </Badge>
+                          ))}
+                      </div>
                     </Td>
                     <Td>
                       <Badge tone={st.tone}>{st.label}</Badge>

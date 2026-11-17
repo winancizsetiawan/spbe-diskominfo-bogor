@@ -10,8 +10,8 @@ export interface AuthAdapter {
   getToken(forceRefresh?: boolean): Promise<string | null>
   login(returnTo?: string): void
   logout(): void
-  /** Khusus mode demo. */
-  loginAs?(role: Role): void
+  /** Khusus mode demo: menyimpan peran aktif dan email akun. */
+  loginAs?(role: Role, email?: string): void
 }
 
 // SSO adalah bawaan: build tanpa konfigurasi tidak boleh membuka login demo.

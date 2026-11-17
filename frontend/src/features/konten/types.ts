@@ -5,6 +5,7 @@ export type FilterJenis = 'semua' | JenisArtikel
 export type FormatArtikel = 'gambar' | 'video' | 'audio' | 'teks'
 /** Publik dibaca siapa saja; internal hanya oleh yang sudah masuk. */
 export type AksesArtikel = 'publik' | 'internal'
+export type StatusVerifikasiArtikel = 'terbit' | 'menunggu' | 'revisi'
 
 export interface Artikel {
   id: number
@@ -18,6 +19,8 @@ export interface Artikel {
   kategori: string
   label: string[]
   unggulan: boolean
+  statusVerifikasi?: StatusVerifikasiArtikel
+  catatanVerifikasi?: string | null
 }
 
 /** Isi berupa teks polos; paragraf dipisah baris kosong dan dirender sebagai teks (bukan HTML). */
@@ -27,6 +30,26 @@ export interface ArtikelDetail extends Artikel {
   urlSumber: string
   kolaborator: string[]
   statusAkses: AksesArtikel
+  diverifikasiOleh?: string | null
+  diverifikasiPada?: string | null
+}
+
+export interface DaftarVerifikasiArtikel {
+  ringkasan: {
+    menunggu: number
+    terbit: number
+    revisi: number
+  }
+  items: ArtikelDetail[]
+}
+
+export const STATUS_VERIFIKASI_ARTIKEL_LABEL: Record<
+  StatusVerifikasiArtikel,
+  { label: string; tone: 'success' | 'warning' | 'danger' }
+> = {
+  terbit: { label: 'Diterbitkan', tone: 'success' },
+  menunggu: { label: 'Menunggu Verifikasi', tone: 'warning' },
+  revisi: { label: 'Perlu Revisi', tone: 'danger' },
 }
 
 export interface ArtikelInput {

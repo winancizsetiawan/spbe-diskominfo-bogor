@@ -187,6 +187,7 @@ func main() {
 
 			// Rute Auth, Profil, Manajemen Pengguna, Notifikasi, & Pembelajaran (LMS)
 			api.POST("/auth/login", pmHandler.Login)
+			api.POST("/auth/switch-role", pmHandler.SwitchRole)
 			api.POST("/auth/ubah-sandi", pmHandler.UbahSandi)
 			// Alat uji kebijakan sandi tahunan: tidak boleh ada di produksi.
 			if cfg.AppEnv == "development" {
@@ -217,8 +218,11 @@ func main() {
 
 			// Rute Beranda, Artikel/Berita, Bantuan, Dasbor, & Pencarian Global
 			api.GET("/artikel", portalHandler.ListArtikel)
+			api.GET("/artikel/verifikasi", portalHandler.ListVerifikasiArtikel)
 			api.GET("/artikel/:id", portalHandler.GetArtikelDetail)
 			api.POST("/artikel", portalHandler.BuatArtikel)
+			api.PUT("/artikel/:id", portalHandler.UbahArtikel)
+			api.POST("/artikel/:id/verifikasi", portalHandler.VerifikasiArtikel)
 			api.GET("/bantuan", portalHandler.GetBantuan)
 
 			api.GET("/beranda/publik", portalHandler.GetBerandaPublik)

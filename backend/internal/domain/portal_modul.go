@@ -71,22 +71,34 @@ const (
 	AksesInternal AksesArtikel = "internal"
 )
 
+type StatusVerifikasiArtikel string
+
+const (
+	StatusArtikelTerbit   StatusVerifikasiArtikel = "terbit"
+	StatusArtikelMenunggu StatusVerifikasiArtikel = "menunggu"
+	StatusArtikelRevisi   StatusVerifikasiArtikel = "revisi"
+)
+
 type Artikel struct {
-	ID          uint          `gorm:"primaryKey" json:"id"`
-	Jenis       JenisArtikel  `gorm:"size:20;not null;index" json:"jenis"`
-	Judul       string        `gorm:"size:200;not null" json:"judul"`
-	Ringkasan   string        `gorm:"size:500;not null" json:"ringkasan"`
-	Penulis     string        `gorm:"size:300;not null" json:"penulis"`
-	Tanggal     time.Time     `gorm:"autoCreateTime;index" json:"tanggal"`
-	Views       int           `gorm:"not null;default:0" json:"views"`
-	Konten      string        `gorm:"type:text;not null" json:"konten"`
-	Format      FormatArtikel `gorm:"size:10;not null;default:'teks'" json:"format"`
-	UrlSumber   string        `gorm:"size:500;not null;default:''" json:"urlSumber"`
-	Kolaborator DaftarTeks    `gorm:"type:jsonb;not null;default:'[]'" json:"kolaborator"`
-	Kategori    string        `gorm:"size:80;not null;default:''" json:"kategori"`
-	Label       DaftarTeks    `gorm:"type:jsonb;not null;default:'[]'" json:"label"`
-	StatusAkses AksesArtikel  `gorm:"size:10;not null;default:'publik';index" json:"statusAkses"`
-	Unggulan    bool          `gorm:"not null;default:false" json:"unggulan"`
+	ID                uint                    `gorm:"primaryKey" json:"id"`
+	Jenis             JenisArtikel            `gorm:"size:20;not null;index" json:"jenis"`
+	Judul             string                  `gorm:"size:200;not null" json:"judul"`
+	Ringkasan         string                  `gorm:"size:500;not null" json:"ringkasan"`
+	Penulis           string                  `gorm:"size:300;not null" json:"penulis"`
+	Tanggal           time.Time               `gorm:"autoCreateTime;index" json:"tanggal"`
+	Views             int                     `gorm:"not null;default:0" json:"views"`
+	Konten            string                  `gorm:"type:text;not null" json:"konten"`
+	Format            FormatArtikel           `gorm:"size:10;not null;default:'teks'" json:"format"`
+	UrlSumber         string                  `gorm:"size:500;not null;default:''" json:"urlSumber"`
+	Kolaborator       DaftarTeks              `gorm:"type:jsonb;not null;default:'[]'" json:"kolaborator"`
+	Kategori          string                  `gorm:"size:80;not null;default:''" json:"kategori"`
+	Label             DaftarTeks              `gorm:"type:jsonb;not null;default:'[]'" json:"label"`
+	StatusAkses       AksesArtikel            `gorm:"size:10;not null;default:'publik';index" json:"statusAkses"`
+	Unggulan          bool                    `gorm:"not null;default:false" json:"unggulan"`
+	StatusVerifikasi  StatusVerifikasiArtikel `gorm:"size:20;not null;default:'terbit';index" json:"statusVerifikasi"`
+	CatatanVerifikasi *string                 `gorm:"size:500" json:"catatanVerifikasi,omitempty"`
+	DiverifikasiOleh  *string                 `gorm:"size:120" json:"diverifikasiOleh,omitempty"`
+	DiverifikasiPada  *time.Time              `json:"diverifikasiPada,omitempty"`
 }
 
 func (Artikel) TableName() string {
@@ -94,17 +106,35 @@ func (Artikel) TableName() string {
 }
 
 type ArtikelRingkasDTO struct {
-	ID        uint         `json:"id"`
-	Jenis     JenisArtikel `json:"jenis"`
-	Judul     string       `json:"judul"`
-	Ringkasan string       `json:"ringkasan"`
-	Penulis   string       `json:"penulis"`
-	Tanggal   time.Time    `json:"tanggal"`
-	Views     int          `json:"views"`
-	Format    FormatArtikel `json:"format"`
-	Kategori  string       `json:"kategori"`
-	Label     []string     `json:"label"`
-	Unggulan  bool         `json:"unggulan"`
+	ID                uint                    `json:"id"`
+	Jenis             JenisArtikel            `json:"jenis"`
+	Judul             string                  `json:"judul"`
+	Ringkasan         string                  `json:"ringkasan"`
+	Penulis           string                  `json:"penulis"`
+	Tanggal           time.Time               `json:"tanggal"`
+	Views             int                     `json:"views"`
+	Format            FormatArtikel           `json:"format"`
+	Kategori          string                  `json:"kategori"`
+	Label             []string                `json:"label"`
+	Unggulan          bool                    `gorm:"not null;default:false" json:"unggulan"`
+	StatusVerifikasi  StatusVerifikasiArtikel `json:"statusVerifikasi"`
+	CatatanVerifikasi *string                 `json:"catatanVerifikasi,omitempty"`
+}
+
+type VerifikasiArtikelInput struct {
+	Keputusan StatusVerifikasiArtikel `json:"keputusan"`
+	Catatan   string                  `json:"catatan"`
+}
+
+type RingkasanVerifikasiArtikel struct {
+	Menunggu int `json:"menunggu"`
+	Terbit   int `json:"terbit"`
+	Revisi   int `json:"revisi"`
+}
+
+type DaftarVerifikasiArtikelResponse struct {
+	Ringkasan RingkasanVerifikasiArtikel `json:"ringkasan"`
+	Items     []Artikel                  `json:"items"`
 }
 
 type FAQItemDTO struct {

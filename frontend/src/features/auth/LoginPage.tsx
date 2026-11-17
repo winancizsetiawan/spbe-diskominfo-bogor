@@ -102,12 +102,12 @@ export function LoginPage() {
 
     setMemuat(true)
     try {
-      const res = await api<{ role: Role }>('/auth/login', {
+      const res = await api<{ role: Role; user?: { email?: string } }>('/auth/login', {
         method: 'POST',
         json: { username: userTrim, sandi },
       })
       simpanBruteForce(userTrim, { gagal: 0, terkunciHingga: null })
-      authAdapter.loginAs?.(res.role)
+      authAdapter.loginAs?.(res.role, res.user?.email)
       window.location.assign(kembali)
       return
     } catch (err) {

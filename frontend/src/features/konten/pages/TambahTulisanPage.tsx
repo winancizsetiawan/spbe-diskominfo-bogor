@@ -93,7 +93,7 @@ export function TambahTulisanPage() {
       },
       {
         onSuccess: (a) => {
-          toast.success(`${label} berhasil diterbitkan.`)
+          toast.success(`${label} disimpan dan diajukan ke Verifikator untuk ditinjau sebelum terbit.`)
           navigate(`/berita/${a.id}`)
         },
         onError: (err) => {
