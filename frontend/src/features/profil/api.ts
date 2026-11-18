@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type Paged } from '@/api/client'
+import { ApiError, api, type Paged } from '@/api/client'
+import { authAdapter } from '@/auth/adapter'
+import { authReady } from '@/auth/ready'
 import { useSession } from '@/auth/session'
 import type { User } from '@/auth/types'
 import type { Aktivitas, PreferensiNotifikasi, ProfilSaya } from './types'
@@ -22,6 +24,47 @@ export function useUbahProfil() {
     onSuccess: (profil) => {
       qc.setQueryData(profilKeys.data, profil)
       // Perubahan tercatat di riwayat aktivitas.
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}
+
+export function useUnggahFotoProfil() {
+  const qc = useQueryClient()
+  const { user, setUser } = useSession()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      await authReady
+      const form = new FormData()
+      form.append('file', file)
+      const token = await authAdapter.getToken()
+      const res = await fetch('/api/profil/foto', {
+        method: 'POST',
+        body: form,
+        headers: token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' },
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string }
+        throw new ApiError(res.status, res.status >= 500 || !body.message ? 'Foto profil gagal diunggah. Silakan coba lagi.' : body.message)
+      }
+      return (await res.json()) as ProfilSaya
+    },
+    onSuccess: (profil) => {
+      qc.setQueryData(profilKeys.data, profil)
+      if (user) setUser({ ...user, fotoProfil: profil.fotoProfil ?? null })
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}
+
+export function useHapusFotoProfil() {
+  const qc = useQueryClient()
+  const { user, setUser } = useSession()
+  return useMutation({
+    mutationFn: () => api<ProfilSaya>('/profil/foto', { method: 'DELETE' }),
+    onSuccess: (profil) => {
+      qc.setQueryData(profilKeys.data, profil)
+      if (user) setUser({ ...user, fotoProfil: null })
       void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
     },
   })

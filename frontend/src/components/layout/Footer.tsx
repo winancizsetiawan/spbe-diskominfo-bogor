@@ -17,7 +17,7 @@ export function Footer() {
           { label: 'Pembelajaran', to: '/pembelajaran' },
         ]
       : [{ label: 'Kritik & Saran', to: '/kritik-saran' }]),
-    { label: 'FAQ & Panduan', to: '/bantuan' },
+    { label: 'Tanya Jawab & Panduan', to: '/bantuan' },
   ]
 
   return (
@@ -26,9 +26,9 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-3">
             <img src="/logo bogor.png" alt="Logo Pemerintah Kota Bogor" className="h-10 w-10" />
-            <p className="text-lg font-bold text-white">SPBE Kota Bogor</p>
+            <p className="text-lg font-bold text-white">Arsitektur Digital Kota Bogor</p>
           </div>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed">Portal Manajemen Pengetahuan dan Repositori Arsitektur SPBE</p>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed">Portal Manajemen Pengetahuan dan Pusat Dokumen Arsitektur Digital</p>
         </div>
 
         <nav aria-labelledby="footer-tautan">

@@ -54,7 +54,7 @@ export function AuditPage() {
   return (
     <>
       <PageHeader
-        title="Audit Trail"
+        title="Catatan Aktivitas"
         description="Catatan aktivitas dan kejadian keamanan seluruh pengguna. Hanya dapat dibaca; data sensitif seperti kata sandi tidak pernah dicatat."
       />
 

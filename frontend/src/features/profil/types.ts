@@ -9,6 +9,7 @@ export interface ProfilSaya {
   satkerInduk: string
   /** Opsional; satu-satunya data profil yang dapat diubah di portal. */
   noTelepon: string | null
+  fotoProfil?: string | null
   instansi: { id: number; nama: string }
   role: Role
   statistik: { dokumenDiunduh: number; diskusiForum: number }

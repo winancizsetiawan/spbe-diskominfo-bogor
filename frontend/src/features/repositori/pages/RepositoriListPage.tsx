@@ -45,7 +45,7 @@ export function RepositoriListPage() {
   return (
     <>
       <PageHeader
-        title="Repositori"
+        title="Pusat Dokumen"
         description="Kelola dokumen dan SOP: unggah berkas, atur status, dan terbitkan. Pengelolaan artikel menyusul."
         actions={
           <Link to="/admin/repositori/baru" className={buttonClass('primary')}>

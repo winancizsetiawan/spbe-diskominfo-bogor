@@ -13,7 +13,7 @@ import { StatistikPublikSection } from './StatistikPublik'
 const FITUR = [
   { icon: FileText, judul: 'Dokumen & SOP', isi: 'Regulasi, pedoman, dan SOP TIK dalam satu repositori.', to: '/dokumen' },
   { icon: MessagesSquare, judul: 'Forum Diskusi', isi: 'Konsultasi teknis antar-OPD dan akademisi.', to: '/forum' },
-  { icon: BookOpen, judul: 'Pembelajaran', isi: 'Modul pembelajaran mandiri seputar SPBE.', to: '/pembelajaran' },
+  { icon: BookOpen, judul: 'Pembelajaran', isi: 'Modul pembelajaran mandiri seputar Arsitektur Digital.', to: '/pembelajaran' },
 ]
 
 export function LandingPage() {
@@ -37,7 +37,7 @@ export function LandingPage() {
         <div aria-hidden className="absolute inset-0 bg-white/85 sm:hidden" />
         <div className="relative max-w-xl px-6 py-14 sm:px-12 sm:py-16">
           <p className="text-sm font-semibold tracking-wide text-brand-700 uppercase">Portal resmi</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-brand-900 sm:text-5xl">Sistem Pemerintahan Berbasis Elektronik</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-brand-900 sm:text-5xl">Arsitektur Digital</h1>
           <p className="mt-3 text-slate-700">
             Satu portal untuk mengakses informasi, dokumen, pembelajaran, dan kolaborasi dalam mendukung transformasi digital pemerintahan.
           </p>

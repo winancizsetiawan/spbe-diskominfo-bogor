@@ -1,9 +1,15 @@
 package handler
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 
 	"spbe-backend/internal/auth"
@@ -213,6 +219,125 @@ func (h *PenggunaModulHandler) UbahProfil(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+const batasFotoProfil = 2 << 20 // 2 MB
+
+var (
+	ekstensiFotoProfil = map[string]string{
+		"image/png":  "png",
+		"image/jpeg": "jpg",
+		"image/webp": "webp",
+	}
+	polaNamaFotoProfil = regexp.MustCompile(`^[a-f0-9]{32}\.(png|jpg|webp)$`)
+)
+
+func folderFotoProfil() string { return filepath.Join("uploads", "profil") }
+
+// UnggahFotoProfil menangani POST /api/profil/foto (multipart field "file"). Semua role dapat mengunggah foto profil.
+func (h *PenggunaModulHandler) UnggahFotoProfil(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, batasFotoProfil+(1<<20))
+	fh, err := c.FormFile("file")
+	if err != nil {
+		var terlalu *http.MaxBytesError
+		if errors.As(err, &terlalu) {
+			c.JSON(http.StatusRequestEntityTooLarge, domain.ErrorResponse{Message: "Ukuran foto profil maksimal 2 MB."})
+			return
+		}
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Berkas foto tidak ditemukan."})
+		return
+	}
+	if fh.Size <= 0 {
+		c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{Message: "Berkas foto kosong."})
+		return
+	}
+	if fh.Size > batasFotoProfil {
+		c.JSON(http.StatusRequestEntityTooLarge, domain.ErrorResponse{Message: "Ukuran foto profil maksimal 2 MB."})
+		return
+	}
+
+	f, err := fh.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Berkas foto tidak dapat dibaca."})
+		return
+	}
+	awal := make([]byte, 512)
+	n, _ := io.ReadFull(f, awal)
+	_ = f.Close()
+	tipe := http.DetectContentType(awal[:n])
+	ext, ok := ekstensiFotoProfil[tipe]
+	if !ok {
+		c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{Message: "Foto profil harus berupa gambar PNG, JPG, atau WEBP."})
+		return
+	}
+
+	acak := make([]byte, 16)
+	if _, err := rand.Read(acak); err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan foto profil."})
+		return
+	}
+	nama := hex.EncodeToString(acak) + "." + ext
+	if err := os.MkdirAll(folderFotoProfil(), 0o750); err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyiapkan ruang penyimpanan."})
+		return
+	}
+	lokal := filepath.Join(folderFotoProfil(), nama)
+	if err := c.SaveUploadedFile(fh, lokal); err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan foto profil."})
+		return
+	}
+
+	res, err := h.svc.SimpanFotoProfil(role, nama)
+	if err != nil {
+		_ = os.Remove(lokal)
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui foto profil."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// HapusFotoProfil menangani DELETE /api/profil/foto
+func (h *PenggunaModulHandler) HapusFotoProfil(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	res, err := h.svc.HapusFotoProfil(role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menghapus foto profil."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// FotoProfil menangani GET /api/profil/foto/:nama
+func (h *PenggunaModulHandler) FotoProfil(c *gin.Context) {
+	nama := c.Param("nama")
+	if !polaNamaFotoProfil.MatchString(nama) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	lokal := filepath.Join(folderFotoProfil(), nama)
+	if _, err := os.Stat(lokal); err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	switch filepath.Ext(nama) {
+	case ".png":
+		c.Header("Content-Type", "image/png")
+	case ".webp":
+		c.Header("Content-Type", "image/webp")
+	default:
+		c.Header("Content-Type", "image/jpeg")
+	}
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.File(lokal)
 }
 
 // GetPreferensi menangani GET /api/profil/preferensi

@@ -100,7 +100,7 @@ function IsiMenu() {
       <Link to="/beranda" className="flex items-center gap-2.5 px-5 py-5" aria-label="Ke beranda">
         <img src="/logo bogor.png" alt="Logo Pemerintah Kota Bogor" className="h-10 w-10" />
         <span className="leading-tight">
-          <span className="block text-lg font-bold text-white">SPBE</span>
+          <span className="block text-lg font-bold text-white">Arsitektur Digital</span>
           <span className="block text-xs text-brand-100">Pemerintah Kota Bogor</span>
         </span>
       </Link>
@@ -108,7 +108,7 @@ function IsiMenu() {
       {user && daftarPeran.length > 1 && (
         <div className="mx-3 mb-2 rounded-xl border border-white/15 bg-white/10 p-2.5">
           <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-brand-100 uppercase">
-            <ArrowLeftRight className="size-3.5" aria-hidden /> Ganti Peran (Switch Role)
+            <ArrowLeftRight className="size-3.5" aria-hidden /> Ganti Peran
           </p>
           <div className="flex flex-wrap gap-1">
             {daftarPeran.map((r) => {
@@ -199,7 +199,11 @@ function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
           ariaLabel="Menu akun"
           label={
             <span className="flex items-center gap-2 text-left">
-              <UserRound className="size-8 rounded-full bg-slate-100 p-1.5 text-slate-500" aria-hidden />
+              {user.fotoProfil ? (
+                <img src={user.fotoProfil} alt={user.nama} className="size-8 rounded-full object-cover ring-1 ring-slate-200" />
+              ) : (
+                <UserRound className="size-8 rounded-full bg-slate-100 p-1.5 text-slate-500" aria-hidden />
+              )}
               <span className="hidden leading-tight sm:block">
                 <span className="block text-sm font-semibold text-slate-800">{user.nama}</span>
                 <span className="block text-xs text-slate-500">{ROLE_LABEL[user.role]}</span>
@@ -210,7 +214,7 @@ function BilahAtas({ onBukaMenu }: { onBukaMenu(): void }) {
           <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">{user.instansi.nama}</div>
           {daftarPeran.length > 1 && (
             <div className="border-b border-slate-100 py-1">
-              <p className="px-4 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Ganti Peran (Switch Role)</p>
+              <p className="px-4 py-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Ganti Peran</p>
               {daftarPeran.map((r) => {
                 const aktif = user.role === r
                 return (

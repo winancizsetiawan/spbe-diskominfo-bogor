@@ -36,6 +36,7 @@ type ProfilSayaResponse struct {
 	Golongan    string          `json:"golongan"`
 	SatkerInduk string          `json:"satkerInduk"`
 	NoTelepon   *string         `json:"noTelepon"`
+	FotoProfil  *string         `json:"fotoProfil,omitempty"`
 	Instansi    InstansiRingkas `json:"instansi"`
 	Role        Role            `json:"role"`
 	Statistik   StatistikProfil `json:"statistik"`
@@ -91,7 +92,8 @@ type PenggunaDTO struct {
 	WajibGantiSandi bool            `json:"wajibGantiSandi"`
 	SisaHariSandi   int             `json:"sisaHariSandi"`
 	// "lokal" atau "tnd". Akun TND tidak dapat mengganti kata sandi di portal.
-	SumberAkun string `json:"sumberAkun"`
+	SumberAkun string  `json:"sumberAkun"`
+	FotoProfil *string `json:"fotoProfil,omitempty"`
 }
 
 type HitunganRolePengguna struct {

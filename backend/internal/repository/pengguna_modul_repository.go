@@ -69,6 +69,10 @@ func (r *PenggunaModulRepository) UpdateNoTelepon(userID uint, noTelp *string) e
 	return r.db.Model(&domain.ProfilPengguna{}).Where("user_id = ?", userID).Update("no_telepon", noTelp).Error
 }
 
+func (r *PenggunaModulRepository) UpdateFotoProfil(userID uint, foto *string) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("foto_profil", foto).Error
+}
+
 func (r *PenggunaModulRepository) UpdateKanalEmail(userID uint, aktif bool) error {
 	_, _ = r.FindOrCreateProfil(userID)
 	return r.db.Model(&domain.ProfilPengguna{}).Where("user_id = ?", userID).Update("kanal_email", aktif).Error

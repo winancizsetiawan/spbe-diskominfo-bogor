@@ -15,6 +15,7 @@ export interface User {
   sisaHariSandi?: number
   /** "tnd": ASN masuk dengan NIP dan kata sandi TND; kata sandinya tidak dapat diganti dari portal. */
   sumberAkun?: 'lokal' | 'tnd'
+  fotoProfil?: string | null
 }
 
 /** Jawaban POST /api/auth/login dan /api/auth/switch-role. Mode mock (MSW) tidak mengirim token. */

@@ -44,7 +44,7 @@ export function FlowchartListPage() {
   return (
     <>
       <PageHeader
-        title="Flowchart Proses Bisnis"
+        title="Diagram Alur Proses"
         description={adalahAdminOpd ? `Dokumentasi proses bisnis ${user?.instansi.nama}.` : 'Dokumentasi proses bisnis seluruh instansi.'}
         actions={
           adalahAdminOpd && (

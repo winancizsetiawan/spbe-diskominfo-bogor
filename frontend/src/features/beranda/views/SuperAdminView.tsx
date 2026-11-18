@@ -75,7 +75,7 @@ export function SuperAdminView({ data }: { data: BerandaSuperAdmin }) {
             item={[
               { ikon: ClipboardCheck, label: 'Validasi Data', to: '/admin/validasi' },
               { ikon: ShieldAlert, label: 'Moderasi Forum', to: '/admin/moderasi' },
-              { ikon: FileUp, label: 'Repositori & Artikel', to: '/admin/repositori' },
+              { ikon: FileUp, label: 'Pusat Dokumen', to: '/admin/repositori' },
               { ikon: Users, label: 'Manajemen Pengguna', to: '/admin/pengguna' },
             ]}
           />

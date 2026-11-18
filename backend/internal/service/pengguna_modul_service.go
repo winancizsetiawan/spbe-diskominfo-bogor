@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -138,6 +140,14 @@ func (s *PenggunaModulService) AmbilUserDariRole(role string) (*domain.User, err
 	return u, nil
 }
 
+func urlFotoProfil(foto *string) *string {
+	if foto == nil || strings.TrimSpace(*foto) == "" {
+		return nil
+	}
+	u := "/api/profil/foto/" + strings.TrimSpace(*foto)
+	return &u
+}
+
 func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 	diubahPada, wajibGanti, sisaHari := hitungStatusSandi(u)
 	sumber := u.SumberAkun
@@ -150,6 +160,7 @@ func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 	}
 	return domain.PenggunaDTO{
 		SumberAkun:  sumber,
+		FotoProfil:  urlFotoProfil(u.FotoProfil),
 		ID:          u.ID,
 		Nama:        u.Nama,
 		Email:       u.Email,
@@ -354,6 +365,7 @@ func (s *PenggunaModulService) GetProfil(role string) (*domain.ProfilSayaRespons
 		Golongan:    p.Golongan,
 		SatkerInduk: p.SatkerInduk,
 		NoTelepon:   p.NoTelepon,
+		FotoProfil:  urlFotoProfil(u.FotoProfil),
 		Instansi: domain.InstansiRingkas{
 			ID:   u.Instansi.ID,
 			Nama: u.Instansi.Nama,
@@ -396,6 +408,46 @@ func (s *PenggunaModulService) UbahTelepon(role string, in domain.UbahTeleponInp
 
 	uid := u.ID
 	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, deskripsi, domain.HasilBerhasil)
+	return s.GetProfil(role)
+}
+
+func (s *PenggunaModulService) SimpanFotoProfil(role string, namaFile string) (*domain.ProfilSayaResponse, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	var lama string
+	if u.FotoProfil != nil {
+		lama = *u.FotoProfil
+	}
+	if err := s.repo.UpdateFotoProfil(u.ID, &namaFile); err != nil {
+		return nil, err
+	}
+	if lama != "" && lama != namaFile {
+		_ = os.Remove(filepath.Join("uploads", "profil", filepath.Base(lama)))
+	}
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Memperbarui foto profil", domain.HasilBerhasil)
+	return s.GetProfil(role)
+}
+
+func (s *PenggunaModulService) HapusFotoProfil(role string) (*domain.ProfilSayaResponse, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	var lama string
+	if u.FotoProfil != nil {
+		lama = *u.FotoProfil
+	}
+	if err := s.repo.UpdateFotoProfil(u.ID, nil); err != nil {
+		return nil, err
+	}
+	if lama != "" {
+		_ = os.Remove(filepath.Join("uploads", "profil", filepath.Base(lama)))
+	}
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Menghapus foto profil", domain.HasilBerhasil)
 	return s.GetProfil(role)
 }
 

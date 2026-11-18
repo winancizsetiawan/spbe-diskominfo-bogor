@@ -120,7 +120,7 @@ export function AdminOpdView({ data }: { data: BerandaAdminOpd }) {
             item={[
               { ikon: FolderKanban, label: 'Kelola Data Aplikasi', to: '/katalog/aplikasi' },
               { ikon: ListChecks, label: 'Klasifikasi RAA', to: '/katalog/raa' },
-              { ikon: Workflow, label: 'Flowchart Proses Bisnis', to: '/katalog/flowchart' },
+              { ikon: Workflow, label: 'Diagram Alur Proses', to: '/katalog/flowchart' },
               { ikon: BarChart3, label: 'Dasbor Instansi', to: '/katalog/dasbor' },
             ]}
           />

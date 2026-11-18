@@ -19,7 +19,7 @@ export function InternalView({ data }: { data: BerandaInternal }) {
           { ikon: FileText, label: 'Cari Dokumen', to: '/dokumen' },
           bolehSop
             ? { ikon: ListChecks, label: 'Lihat SOP', to: '/sop' }
-            : { ikon: GraduationCap, label: 'Pembelajaran SPBE', to: '/pembelajaran' },
+            : { ikon: GraduationCap, label: 'Pembelajaran Arsitektur Digital', to: '/pembelajaran' },
           { ikon: MessagesSquare, label: 'Forum Diskusi', to: '/forum' },
           { ikon: BarChart3, label: 'Dasbor Analitik', to: '/dasbor/analitik' },
         ]}
