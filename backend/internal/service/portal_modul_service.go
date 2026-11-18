@@ -117,7 +117,7 @@ func DataBantuanStatis() domain.BantuanResponse {
 		Panduan: []domain.PanduanItemDTO{
 			{ID: 1, Judul: "Memulai", Isi: "Masuk dengan akun SSO, lalu buka Beranda untuk melihat ringkasan sesuai peran Anda."},
 			{ID: 2, Judul: "Mencari dokumen", Isi: "Gunakan menu Pencarian atau halaman Dokumen. Filter jenis membantu mempersempit hasil."},
-			{ID: 3, Judul: "Berdiskusi di forum", Isi: "Buat thread pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas."},
+			{ID: 3, Judul: "Berdiskusi di forum", Isi: "Buat diskusi pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas."},
 		},
 		Video: []domain.VideoBantuanDTO{
 			{ID: 1, Judul: "Pengenalan Portal SPBE", URL: "https://www.youtube.com/"},
@@ -672,7 +672,7 @@ func (s *PortalModulService) GetDasborInstansi(role string, paramIdInstansi uint
 		buatIndikator("kepatuhanRaa", "Kepatuhan RAA", "Aplikasi berstatus RAA Sesuai.", hitungSesuai(milikApl), len(milikApl), hitungSesuai(semuaApl), len(semuaApl)),
 		buatIndikator("klasifikasi", "Aplikasi terklasifikasi", "Aplikasi yang sudah memiliki klasifikasi RAA.", hitungKlasifikasi(milikApl), len(milikApl), hitungKlasifikasi(semuaApl), len(semuaApl)),
 		buatIndikator("tervalidasi", "Data tervalidasi", "Aplikasi yang sudah disetujui Super Admin.", hitungDisetujui(milikApl), len(milikApl), hitungDisetujui(semuaApl), len(semuaApl)),
-		buatIndikator("flowchart", "Flowchart dipublikasikan", "Diagram proses bisnis yang sudah dipublikasikan.", hitungFlowchartTerbit(milikAlur), len(milikAlur), hitungFlowchartTerbit(semuaAlur), len(semuaAlur)),
+		buatIndikator("flowchart", "Diagram alur dipublikasikan", "Diagram proses bisnis yang sudah dipublikasikan.", hitungFlowchartTerbit(milikAlur), len(milikAlur), hitungFlowchartTerbit(semuaAlur), len(semuaAlur)),
 	}
 
 	var layananPtr, dataPtr *int
@@ -1159,7 +1159,7 @@ func (s *PortalModulService) BuatArtikel(in ArtikelInput) (*domain.Artikel, erro
 	if in.UrlSumber != "" {
 		u, err := url.Parse(in.UrlSumber)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || utf8.RuneCountInString(in.UrlSumber) > 500 {
-			galat["urlSumber"] = "Isi URL lengkap yang diawali http:// atau https://."
+			galat["urlSumber"] = "Isi alamat tautan lengkap yang diawali http:// atau https://."
 		}
 	}
 	if len(penulis) == 0 {

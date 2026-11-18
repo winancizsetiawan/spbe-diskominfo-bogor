@@ -210,7 +210,7 @@ func (h *ForumHandler) UbahPenerima(c *gin.Context) {
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Thread tidak ditemukan."})
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Diskusi tidak ditemukan."})
 		return
 	}
 	var in domain.UbahPenerimaInput

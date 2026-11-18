@@ -226,7 +226,7 @@ func Konversi(r io.ReaderAt, ukuran int64, hariIni time.Time) (hasil *Hasil, err
 				return
 			}
 			log.Printf("[dasbor] konversi gagal: %v", p)
-			err = galatFormat("Excel tidak sesuai format Matriks Evaluasi SPBE Architecture.")
+			err = galatFormat("Excel tidak sesuai format Matriks Evaluasi Arsitektur SPBE.")
 		}
 	}()
 

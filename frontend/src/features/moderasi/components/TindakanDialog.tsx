@@ -21,7 +21,7 @@ interface Props {
 
 const SELESAI: Record<Tindakan, string> = {
   abaikan: 'Laporan diabaikan.',
-  kunci: 'Thread dikunci.',
+  kunci: 'Diskusi dikunci.',
   sembunyikan: 'Konten disembunyikan.',
 }
 
@@ -53,7 +53,7 @@ export function TindakanDialog({ target, onClose }: Props) {
         },
         onError: (err) => {
           if (err instanceof ApiError && err.status === 409) {
-            toast.error('Item ini sudah ditindak. Daftar dimuat ulang.')
+            toast.error('Konten ini sudah ditindak. Daftar dimuat ulang.')
             onClose()
           } else if (err instanceof ApiError && err.status === 422 && err.fieldErrors.alasan) {
             setError('alasan', { message: err.fieldErrors.alasan })

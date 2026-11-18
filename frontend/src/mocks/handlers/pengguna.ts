@@ -164,7 +164,7 @@ export const penggunaHandlers = [
     const row = pengguna[idx]
     if (row.id === user.id) return conflict('Anda tidak dapat menghapus akun Anda sendiri.')
     const punyaForum = threads.some((t) => t.penulis.nama === row.nama) || balasan.some((b) => b.penulis.nama === row.nama)
-    if (punyaForum) return conflict(`${row.nama} memiliki thread atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.`)
+    if (punyaForum) return conflict(`${row.nama} memiliki diskusi atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.`)
     // Khusus mode demo: akun login demo tidak dihapus agar tetap bisa dipakai masuk.
     if (akunDemo.some((a) => a.id === row.id)) return conflict('Akun demo tidak dapat dihapus di mode demo. Nonaktifkan akunnya saja.')
     pengguna.splice(idx, 1)

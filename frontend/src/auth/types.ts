@@ -46,8 +46,8 @@ export const ROLE_MODE_DESKRIPSI: Record<Role, string> = {
   asn: 'Akses dokumen dan SOP internal, pembelajaran SPBE, forum diskusi antar-OPD, dan Dasbor Analitik.',
   akademisi: 'Akses dokumen dan regulasi SPBE, Dasbor Analitik arsitektur Kota Bogor, pembelajaran, dan forum diskusi.',
   verifikator: 'Peran tambahan ASN dari Super Admin: memeriksa dan menyetujui berita serta artikel SPBE sebelum terbit.',
-  admin_opd: 'Mengelola data aplikasi, klasifikasi RAA, flowchart proses bisnis, dan dasbor instansi Anda.',
-  super_admin: 'Mengelola seluruh portal: pengguna, validasi data OPD, repositori, moderasi forum, data dasbor, dan backup.',
+  admin_opd: 'Mengelola data aplikasi, klasifikasi RAA, diagram alur proses bisnis, dan dasbor instansi Anda.',
+  super_admin: 'Mengelola seluruh portal: pengguna, validasi data OPD, repositori, moderasi forum, data dasbor, dan cadangan data.',
 }
 
 export function daftarPeranPengguna(user: User | null): Role[] {

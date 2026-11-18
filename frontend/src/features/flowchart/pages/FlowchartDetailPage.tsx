@@ -56,7 +56,7 @@ export function FlowchartDetailPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <Link to="/katalog/flowchart" className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-brand-700">
-        <ArrowLeft className="size-4" aria-hidden /> Kembali ke daftar flowchart
+        <ArrowLeft className="size-4" aria-hidden /> Kembali ke daftar diagram alur
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -76,7 +76,7 @@ export function FlowchartDetailPage() {
           </Button>
           {bisaUbah && (
             <Link to={`/katalog/flowchart/${f.id}/ubah`} className={buttonClass('secondary')}>
-              <Pencil className="size-4" aria-hidden /> Edit
+              <Pencil className="size-4" aria-hidden /> Ubah
             </Link>
           )}
           {bisaAjukan && (
@@ -97,7 +97,7 @@ export function FlowchartDetailPage() {
       )}
       {menunggu && (
         <p role="status" className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800">
-          Flowchart ini sedang menunggu keputusan Super Admin dan tidak dapat diubah.
+          Diagram alur ini sedang menunggu keputusan Super Admin dan tidak dapat diubah.
         </p>
       )}
 
@@ -109,7 +109,7 @@ export function FlowchartDetailPage() {
         <Card className="lg:col-span-2">
           <h2 className="font-semibold text-slate-900">Informasi proses</h2>
           <dl className="mt-2 divide-y divide-slate-100">
-            <Baris label="Penanggung jawab (PIC)">{f.pic}</Baris>
+            <Baris label="Penanggung jawab">{f.pic}</Baris>
             <Baris label="Instansi">{f.instansi.nama}</Baris>
             <Baris label="Jenis">{JENIS_LABEL[f.jenis]}</Baris>
             <Baris label="Diperbarui">{formatTanggal(f.diperbaruiPada)}</Baris>

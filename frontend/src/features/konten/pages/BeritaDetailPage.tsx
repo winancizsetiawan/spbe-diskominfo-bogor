@@ -174,7 +174,7 @@ export function BeritaDetailPage() {
       {adalahSuperAdmin && (
         <div className="flex justify-end">
           <Button variant="secondary" onClick={bukaEdit}>
-            <Pencil className="size-4" aria-hidden /> Edit & Ajukan Ulang Verifikasi
+            <Pencil className="size-4" aria-hidden /> Ubah & Ajukan Ulang Verifikasi
           </Button>
         </div>
       )}

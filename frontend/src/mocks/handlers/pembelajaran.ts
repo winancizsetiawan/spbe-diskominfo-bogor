@@ -20,7 +20,7 @@ const m = (id: number, judul: string, tipe: TipeMedia = 'video') => ({ id, judul
 export const kursus: KursusRow[] = [
   { id: 1, judul: 'Pengantar SPBE', deskripsi: 'Dasar-dasar Sistem Pemerintahan Berbasis Elektronik dan kerangka regulasinya.', kategori: 'Dasar SPBE', tingkat: 'dasar', durasiJam: 2, adaSertifikat: true, materi: [m(1, 'Apa itu SPBE'), m(2, 'Regulasi SPBE', 'tautan'), m(3, 'Domain dan aspek SPBE')] },
   { id: 2, judul: 'Arsitektur SPBE dan RAA', deskripsi: 'Menyusun dan mengklasifikasikan aplikasi sesuai Referensi Arsitektur Aplikasi.', kategori: 'Arsitektur', tingkat: 'menengah', durasiJam: 4, adaSertifikat: true, materi: [m(1, 'Konsep arsitektur'), m(2, 'Klasifikasi RAA'), m(3, 'Studi kasus aplikasi OPD', 'tautan'), m(4, 'Evaluasi kesesuaian')] },
-  { id: 3, judul: 'Keamanan Informasi Pemerintah', deskripsi: 'Praktik keamanan informasi, manajemen akses, dan penanganan insiden.', kategori: 'Keamanan', tingkat: 'menengah', durasiJam: 3, adaSertifikat: true, materi: [m(1, 'Prinsip keamanan'), m(2, 'Penanganan insiden', 'audio'), m(3, 'Backup dan pemulihan')] },
+  { id: 3, judul: 'Keamanan Informasi Pemerintah', deskripsi: 'Praktik keamanan informasi, manajemen akses, dan penanganan insiden.', kategori: 'Keamanan', tingkat: 'menengah', durasiJam: 3, adaSertifikat: true, materi: [m(1, 'Prinsip keamanan'), m(2, 'Penanganan insiden', 'audio'), m(3, 'Pencadangan dan pemulihan')] },
   { id: 4, judul: 'Integrasi Data Antar-OPD', deskripsi: 'Pertukaran data lewat SPLP dan tata kelola interoperabilitas.', kategori: 'Data', tingkat: 'lanjutan', durasiJam: 5, adaSertifikat: false, materi: [m(1, 'Interoperabilitas'), m(2, 'SPLP', 'tautan'), m(3, 'Tata kelola data'), m(4, 'Praktik integrasi')] },
 ]
 

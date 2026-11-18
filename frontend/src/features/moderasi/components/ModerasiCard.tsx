@@ -27,7 +27,7 @@ export function ModerasiCard({ item, onTindak }: Props) {
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <Badge tone="brand">{adalahThread ? 'Thread' : 'Balasan'}</Badge>
+        <Badge tone="brand">{adalahThread ? 'Diskusi' : 'Balasan'}</Badge>
         <Badge>{item.kategori}</Badge>
         {item.status === 'terkunci' && (
           <Badge tone="warning">
@@ -101,7 +101,7 @@ export function ModerasiCard({ item, onTindak }: Props) {
             )}
             {bisaDikunci && (
               <Button variant="secondary" onClick={() => onTindak('kunci')} aria-label={`Kunci ${nama}`}>
-                <Lock className="size-4" aria-hidden /> Kunci thread
+                <Lock className="size-4" aria-hidden /> Kunci diskusi
               </Button>
             )}
             <Button variant="danger" onClick={() => onTindak('sembunyikan')} aria-label={`Sembunyikan ${nama}`}>

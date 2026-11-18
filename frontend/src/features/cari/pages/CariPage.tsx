@@ -86,7 +86,7 @@ export function CariPage() {
             value={input}
             maxLength={BATAS_CARI.max}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Contoh: bagaimana cara backup data aplikasi?"
+            placeholder="Contoh: bagaimana cara mencadangkan data aplikasi?"
             className={`${inputClass} pl-9`}
           />
         </div>
@@ -127,7 +127,7 @@ export function CariPage() {
             </p>
           )}
 
-          <div role="group" aria-label="Filter jenis" className="mb-4 flex flex-wrap gap-2">
+          <div role="group" aria-label="Saring jenis" className="mb-4 flex flex-wrap gap-2">
             {TIPE.filter((t) => (user || TIPE_PUBLIK.includes(t)) && (t === 'semua' || t === filter.tipe || cari.data.hitungan[t] > 0)).map((t) => (
               <button key={t} type="button" aria-pressed={filter.tipe === t} className={chipClass(filter.tipe === t)} onClick={() => ubahFilter({ tipe: t === 'semua' ? undefined : t, page: undefined })}>
                 {TIPE_LABEL[t]}

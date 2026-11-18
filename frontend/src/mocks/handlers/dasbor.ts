@@ -31,7 +31,7 @@ function indikator(idInstansi: number): IndikatorPerbandingan[] {
     satu('kepatuhanRaa', 'Kepatuhan RAA', 'Aplikasi berstatus RAA Sesuai.', sesuai(milik), milik.length, sesuai(aplikasi), aplikasi.length),
     satu('klasifikasi', 'Aplikasi terklasifikasi', 'Aplikasi yang sudah memiliki klasifikasi RAA.', terklasifikasi(milik), milik.length, terklasifikasi(aplikasi), aplikasi.length),
     satu('tervalidasi', 'Data tervalidasi', 'Aplikasi yang sudah disetujui Super Admin.', disetujui(milik), milik.length, disetujui(aplikasi), aplikasi.length),
-    satu('flowchart', 'Flowchart dipublikasikan', 'Diagram proses bisnis yang sudah dipublikasikan.', terbit(alurMilik), alurMilik.length, terbit(flowchart), flowchart.length),
+    satu('flowchart', 'Diagram alur dipublikasikan', 'Diagram proses bisnis yang sudah dipublikasikan.', terbit(alurMilik), alurMilik.length, terbit(flowchart), flowchart.length),
   ]
 }
 

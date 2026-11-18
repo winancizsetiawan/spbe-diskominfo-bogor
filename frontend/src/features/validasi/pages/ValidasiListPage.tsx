@@ -53,7 +53,7 @@ export function ValidasiListPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter status pengajuan" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring status pengajuan" className="flex flex-wrap gap-2">
           {TAB.map((t) => (
             <button
               key={t.key}
@@ -88,7 +88,7 @@ export function ValidasiListPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
-        <EmptyState title={tab === 'menunggu' && !filter.q ? 'Tidak ada pengajuan yang menunggu.' : 'Tidak ada pengajuan pada filter ini.'}>
+        <EmptyState title={tab === 'menunggu' && !filter.q ? 'Tidak ada pengajuan yang menunggu.' : 'Tidak ada pengajuan pada pilihan ini.'}>
           {tab === 'menunggu' && !filter.q && 'Antrean kosong. Pengajuan baru dari Admin OPD akan muncul di sini.'}
         </EmptyState>
       ) : (

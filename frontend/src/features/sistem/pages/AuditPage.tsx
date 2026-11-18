@@ -60,7 +60,7 @@ export function AuditPage() {
 
       <div className="mb-4 space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label="Filter kategori" className="flex flex-wrap gap-2">
+          <div role="group" aria-label="Saring kategori" className="flex flex-wrap gap-2">
             {KATEGORI.map((k) => (
               <button
                 key={k}
@@ -134,7 +134,7 @@ export function AuditPage() {
         )}
         {adaFilter && (
           <Button variant="secondary" onClick={reset}>
-            Atur ulang filter
+            Atur ulang pilihan
           </Button>
         )}
       </div>
@@ -144,10 +144,10 @@ export function AuditPage() {
       ) : audit.isError ? (
         <ErrorState message={errorMessage(audit.error)} onRetry={() => void audit.refetch()} />
       ) : audit.data.items.length === 0 ? (
-        <EmptyState title="Tidak ada catatan yang cocok.">Ubah filter atau rentang tanggal.</EmptyState>
+        <EmptyState title="Tidak ada catatan yang cocok.">Ubah pilihan atau rentang tanggal.</EmptyState>
       ) : (
         <div className={audit.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <Table caption={`Audit trail, ${audit.data.total} catatan`}>
+          <Table caption={`Catatan aktivitas, ${audit.data.total} entri`}>
             <thead>
               <tr>
                 <Th>Waktu</Th>

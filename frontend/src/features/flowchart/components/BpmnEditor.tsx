@@ -54,7 +54,7 @@ export default function BpmnEditor({ xmlAwal, ref, disabled = false, namaBerkas 
   useImperativeHandle(ref, () => ({
     async ambilXml() {
       const m = modeler.current
-      if (!m) throw new Error('Editor belum siap.')
+      if (!m) throw new Error('Lembar gambar belum siap.')
       const { xml } = await m.saveXML({ format: true })
       const registri = m.get<RegistriApi>('elementRegistry')
       return {

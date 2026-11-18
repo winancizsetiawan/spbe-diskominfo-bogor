@@ -83,8 +83,8 @@ export const KATEGORI_LABEL: Record<KategoriProses, string> = {
 }
 
 export const JENIS_LABEL: Record<JenisProses, string> = {
-  as_is: 'As-Is (kondisi saat ini)',
-  to_be: 'To-Be (target)',
+  as_is: 'Kondisi saat ini (As-Is)',
+  to_be: 'Kondisi target (To-Be)',
 }
 
 export const BATAS_FLOWCHART = {
@@ -100,7 +100,7 @@ export const BATAS_FLOWCHART = {
 
 /** Judul dan pemicu tombol disesuaikan dengan K6: setelah disetujui, berkas "Dipublikasikan". */
 export const STATUS_FLOWCHART_LABEL: Record<StatusValidasi, string> = {
-  draft: 'Draft',
+  draft: 'Draf',
   menunggu: 'Menunggu Validasi',
   disetujui: 'Dipublikasikan',
   perlu_revisi: 'Perlu Revisi',

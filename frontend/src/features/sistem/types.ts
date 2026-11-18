@@ -146,7 +146,7 @@ export const BARIS_RINGKASAN: { kunci: keyof Omit<RingkasanDasbor, 'judul' | 'di
   { kunci: 'aplikasi', label: 'Aplikasi' },
   { kunci: 'pusatData', label: 'Pusat data' },
   { kunci: 'server', label: 'Server (internal)' },
-  { kunci: 'itemKeamanan', label: 'Item keamanan (internal)' },
+  { kunci: 'itemKeamanan', label: 'Kegiatan keamanan (internal)' },
   { kunci: 'kegiatanPetaRencana', label: 'Kegiatan peta rencana' },
 ]
 

@@ -83,8 +83,8 @@ export const TRANSISI_STATUS: Record<StatusDokumen, StatusDokumen[]> = {
 }
 
 export const AKSI_STATUS: Record<StatusDokumen, { label: string; keterangan: string }> = {
-  draft: { label: 'Kembalikan ke Draft', keterangan: 'Tidak tampil bagi pengguna; hanya terlihat oleh Super Admin.' },
-  review: { label: 'Masukkan ke siklus review', keterangan: 'Tampil bagi pengguna internal dengan penanda Dalam review.' },
+  draft: { label: 'Kembalikan ke Draf', keterangan: 'Tidak tampil bagi pengguna; hanya terlihat oleh Super Admin.' },
+  review: { label: 'Masukkan ke tahap peninjauan', keterangan: 'Tampil bagi pengguna internal dengan penanda Sedang ditinjau.' },
   berlaku: { label: 'Terbitkan (Berlaku)', keterangan: 'Tampil sesuai visibilitasnya dan dapat diunduh.' },
   arsip: { label: 'Arsipkan', keterangan: 'Tidak tampil lagi bagi pengguna; dokumen tetap tersimpan.' },
 }

@@ -110,7 +110,7 @@ export function AplikasiFormPage() {
   const kirim = handleSubmit((v) =>
     simpan.mutate(keInput(v, pilihInstansi), {
       onSuccess: (a) => {
-        toast.success(editId ? `Perubahan ${a.nama} disimpan sebagai Draft.` : `${a.nama} ditambahkan sebagai Draft.`)
+        toast.success(editId ? `Perubahan ${a.nama} disimpan sebagai Draf.` : `${a.nama} ditambahkan sebagai Draf.`)
         navigate('/katalog/aplikasi')
       },
       onError: (err) => {
@@ -149,7 +149,7 @@ export function AplikasiFormPage() {
         </p>
       )}
       {status && status !== 'draft' && !terkunci && (
-        <p className="mb-4 text-sm text-slate-600">Menyimpan perubahan akan mengembalikan status data ini ke Draft.</p>
+        <p className="mb-4 text-sm text-slate-600">Menyimpan perubahan akan mengembalikan status data ini ke Draf.</p>
       )}
 
       <Card>
@@ -278,7 +278,7 @@ export function AplikasiFormPage() {
                 Batal
               </Link>
               <Button type="submit" disabled={simpan.isPending || terkunci}>
-                {simpan.isPending ? 'Menyimpan…' : 'Simpan sebagai Draft'}
+                {simpan.isPending ? 'Menyimpan…' : 'Simpan sebagai Draf'}
               </Button>
             </div>
           </fieldset>

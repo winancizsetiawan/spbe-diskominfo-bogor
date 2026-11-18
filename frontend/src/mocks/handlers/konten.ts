@@ -14,8 +14,8 @@ const benih: BenihArtikel[] = [
   { id: 2, jenis: 'berita', judul: 'Pelatihan Arsitektur SPBE Diikuti 40 Admin OPD', ringkasan: 'Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.', penulis: P, tanggal: hariLalu(9), views: 268, konten: 'Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi.' },
   { id: 3, jenis: 'berita', judul: 'Batas Waktu Pembaruan Data Aplikasi Triwulan Berjalan', ringkasan: 'Admin OPD diminta melengkapi data sebelum tenggat.', penulis: P, tanggal: hariLalu(14), views: 190, konten: 'Admin OPD diingatkan melengkapi dan mengajukan validasi data aplikasi sebelum tenggat periode berjalan.\n\nPengingat otomatis dikirim pada H-7, H-3, dan H-1.' },
   { id: 4, jenis: 'artikel', judul: 'Mengenal Referensi Arsitektur Aplikasi (RAA)', ringkasan: 'Penjelasan singkat RAA dan manfaatnya bagi perencanaan aplikasi pemerintah.', penulis: 'Tim Arsitektur SPBE', tanggal: hariLalu(20), views: 530, konten: 'RAA adalah acuan klasifikasi aplikasi pemerintah agar selaras dengan arsitektur SPBE.\n\nAplikasi yang klasifikasinya sesuai dianggap patuh; yang belum perlu disesuaikan.' },
-  { id: 5, jenis: 'artikel', judul: 'Praktik Baik Backup Data Aplikasi Pemerintah', ringkasan: 'Backup harian dengan retensi tujuh hari dan uji pemulihan berkala.', penulis: 'Tim Keamanan Informasi', tanggal: hariLalu(33), views: 345, konten: 'Backup harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh backup terakhir dan uji pemulihan secara berkala.' },
-  { id: 6, jenis: 'artikel', judul: 'Panduan Menulis Thread Forum yang Efektif', ringkasan: 'Cara merumuskan pertanyaan agar cepat dijawab komunitas.', penulis: 'Moderator Forum', tanggal: hariLalu(41), views: 121, konten: 'Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial.' },
+  { id: 5, jenis: 'artikel', judul: 'Praktik Baik Pencadangan Data Aplikasi Pemerintah', ringkasan: 'Pencadangan harian dengan retensi tujuh hari dan uji pemulihan berkala.', penulis: 'Tim Keamanan Informasi', tanggal: hariLalu(33), views: 345, konten: 'Pencadangan harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh cadangan terakhir dan uji pemulihan secara berkala.' },
+  { id: 6, jenis: 'artikel', judul: 'Panduan Menulis Topik Diskusi yang Efektif', ringkasan: 'Cara merumuskan pertanyaan agar cepat dijawab komunitas.', penulis: 'Moderator Forum', tanggal: hariLalu(41), views: 121, konten: 'Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial.' },
 ]
 
 const KATEGORI_BENIH: Record<JenisArtikel, string> = { berita: 'Layanan Digital', artikel: 'Arsitektur SPBE' }
@@ -42,7 +42,7 @@ export const bantuan: Bantuan = {
   panduan: [
     { id: 1, judul: 'Memulai', isi: 'Masuk dengan akun SSO, lalu buka Beranda untuk melihat ringkasan sesuai peran Anda.' },
     { id: 2, judul: 'Mencari dokumen', isi: 'Gunakan menu Pencarian atau halaman Dokumen. Filter jenis membantu mempersempit hasil.' },
-    { id: 3, judul: 'Berdiskusi di forum', isi: 'Buat thread pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas.' },
+    { id: 3, judul: 'Berdiskusi di forum', isi: 'Buat diskusi pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas.' },
   ],
   video: [
     { id: 1, judul: 'Pengenalan Portal SPBE', url: 'https://www.youtube.com/' },
@@ -105,7 +105,7 @@ export const kontenHandlers = [
     if (b.jenis !== 'berita' && b.jenis !== 'artikel') galat.jenis = 'Pilih berita atau artikel.'
     if (judul.length < 5 || judul.length > 200) galat.judul = 'Judul 5 sampai 200 karakter.'
     if (!['gambar', 'video', 'audio', 'teks'].includes(b.format ?? '')) galat.format = 'Pilih format: gambar, video, audio, atau teks.'
-    if (urlSumber && !/^https?:\/\/\S+$/i.test(urlSumber)) galat.urlSumber = 'Isi URL lengkap yang diawali http:// atau https://.'
+    if (urlSumber && !/^https?:\/\/\S+$/i.test(urlSumber)) galat.urlSumber = 'Isi alamat tautan lengkap yang diawali http:// atau https://.'
     if (penulis.length === 0) galat.penulis = 'Isi minimal satu penulis.'
     else if (penulis.length > 5 || penulis.some((x) => x.length > 100)) galat.penulis = 'Maksimal 5 penulis, tiap nama maksimal 100 karakter.'
     if (kolaborator.length > 10 || kolaborator.some((x) => x.length > 100)) galat.kolaborator = 'Maksimal 10 kolaborator, tiap nama maksimal 100 karakter.'

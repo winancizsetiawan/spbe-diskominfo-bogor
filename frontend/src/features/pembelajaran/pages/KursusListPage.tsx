@@ -55,7 +55,7 @@ export function KursusListPage() {
 
           <section aria-labelledby="daftar-kursus">
             <h2 id="daftar-kursus" className="sr-only">Daftar kursus</h2>
-            <div role="group" aria-label="Filter tingkat" className="mb-4 flex flex-wrap gap-2">
+            <div role="group" aria-label="Saring tingkat" className="mb-4 flex flex-wrap gap-2">
               {TINGKAT.map((t) => (
                 <button key={t} type="button" aria-pressed={tingkat === t} className={chipClass(tingkat === t)} onClick={() => ubahFilter({ tingkat: t === 'semua' ? undefined : t })}>
                   {TINGKAT_LABEL[t]}

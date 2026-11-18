@@ -208,7 +208,7 @@ export const validasiHandlers = [
     kirimNotifikasi(adminPemilik, {
       kategori: 'sistem',
       judul: `Validasi ${KEPUTUSAN_INFO[body.keputusan].label.toLowerCase()}: ${t.nama}`,
-      pesan: catatan || (p.idProses ? 'Flowchart Anda telah dipublikasikan.' : 'Data Anda telah disetujui dan masuk basis data terpusat.'),
+      pesan: catatan || (p.idProses ? 'Diagram alur Anda telah dipublikasikan.' : 'Data Anda telah disetujui dan masuk basis data terpusat.'),
       urlTujuan,
     })
 

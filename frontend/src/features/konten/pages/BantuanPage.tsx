@@ -15,7 +15,7 @@ export function BantuanPage() {
 
   return (
     <>
-      <PageHeader title="Bantuan" description="Pertanyaan umum, panduan penggunaan, dan video tutorial." />
+      <PageHeader title="Bantuan" description="Pertanyaan umum, panduan penggunaan, dan video panduan." />
       {bantuan.isPending ? (
         <Spinner className="py-16" />
       ) : bantuan.isError ? (
@@ -47,7 +47,7 @@ export function BantuanPage() {
           </section>
 
           <section aria-labelledby="video">
-            <h2 id="video" className={judul}>Video tutorial</h2>
+            <h2 id="video" className={judul}>Video panduan</h2>
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {bantuan.data.video.map((v) => (
                 <li key={v.id}>

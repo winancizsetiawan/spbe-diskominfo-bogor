@@ -46,7 +46,7 @@ export function InternalView({ data }: { data: BerandaInternal }) {
       <section aria-labelledby="thread-populer">
         <div className="mb-3 flex items-center justify-between">
           <h2 id="thread-populer" className="text-lg font-semibold text-slate-900">
-            Thread populer
+            Diskusi populer
           </h2>
           <Link to="/forum" className="text-sm font-medium text-brand-700 hover:underline">
             Buka forum

@@ -79,7 +79,7 @@ export function RaaPage() {
       </section>
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter status RAA" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring status RAA" className="flex flex-wrap gap-2">
           {TAB.map((t) => {
             const aktif = filter.statusRaa === t.value
             const jumlah = jumlahTab[t.value ?? 'semua']
@@ -118,7 +118,7 @@ export function RaaPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
-        <EmptyState title="Tidak ada aplikasi pada filter ini." />
+        <EmptyState title="Tidak ada aplikasi pada pilihan ini." />
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
           <Table caption={`Klasifikasi RAA, ${daftar.data.total} aplikasi`}>

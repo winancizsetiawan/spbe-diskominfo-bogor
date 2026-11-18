@@ -60,7 +60,7 @@ func (s *PenggunaModulService) catatGagalLogin(u *domain.User, now time.Time) (i
 				UserID:      adm.ID,
 				Kategori:    domain.KategoriNotifSistem,
 				Judul:       "Peringatan Keamanan: Akun Diblokir",
-				Pesan:       fmt.Sprintf("Akun %s (%s) diblokir otomatis karena %d kali gagal login berturut-turut.", u.Nama, roleValidMap[u.Role], MaksGagalLogin),
+				Pesan:       fmt.Sprintf("Akun %s (%s) diblokir otomatis karena %d kali gagal masuk berturut-turut.", u.Nama, roleValidMap[u.Role], MaksGagalLogin),
 				UrlTujuan:   "/admin/pengguna",
 				SudahDibaca: false,
 				DibuatPada:  now,
@@ -164,7 +164,7 @@ func (s *PenggunaModulService) loginTND(nip, sandi string) (*domain.LoginRespons
 			return nil, 500, errors.New("Gagal membuat akun portal Anda.")
 		}
 		uid := u.ID
-		s.sistemSvc.CatatAktivitas(&uid, domain.AksiKelolaPengguna, "Akun ASN dibuat otomatis dari login TND ("+ins.Nama+")", domain.HasilBerhasil)
+		s.sistemSvc.CatatAktivitas(&uid, domain.AksiKelolaPengguna, "Akun ASN dibuat otomatis saat masuk lewat TND ("+ins.Nama+")", domain.HasilBerhasil)
 	} else {
 		// Perbarui data yang memang bersumber dari TND. Peran dan status tetap diatur di portal.
 		u.Nip = &nipSalin
@@ -176,7 +176,7 @@ func (s *PenggunaModulService) loginTND(nip, sandi string) (*domain.LoginRespons
 		u.Instansi = *ins
 	}
 	_ = s.repo.SimpanProfilTND(u.ID, nip, p.Jabatan, ins.Nama)
-	return s.loginBerhasil(u, now, "Login portal lewat TND berhasil"), 200, nil
+	return s.loginBerhasil(u, now, "Berhasil masuk portal lewat TND"), 200, nil
 }
 
 func idDari(u *domain.User) *uint {

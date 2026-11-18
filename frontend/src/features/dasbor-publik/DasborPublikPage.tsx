@@ -243,8 +243,8 @@ function Infrastruktur({ d, internal }: { d: DasborPublik['infrastruktur']; inte
           <Panel judul="Kepemilikan pusat data">
             <ProporsiBar label="Sebaran kepemilikan pusat data" satuan="pusat data" data={d.pusatDataPerKepemilikan} />
           </Panel>
-          <Panel judul="Klasifikasi tier pusat data">
-            <BatangDatar label="Jumlah pusat data per klasifikasi tier" data={d.pusatDataPerTier} />
+          <Panel judul="Klasifikasi tingkat (Tier) pusat data">
+            <BatangDatar label="Jumlah pusat data per klasifikasi tingkat (Tier)" data={d.pusatDataPerTier} />
           </Panel>
         </div>
       </div>
@@ -256,8 +256,8 @@ function Infrastruktur({ d, internal }: { d: DasborPublik['infrastruktur']; inte
           kolom={[
             { kunci: 'nama', label: 'Nama', utama: true },
             { kunci: 'lokasi', label: 'Lokasi' },
-            { kunci: 'bandwidthIntranet', label: 'Bandwidth intranet', kelas: 'whitespace-nowrap' },
-            { kunci: 'bandwidthInternet', label: 'Bandwidth internet', kelas: 'whitespace-nowrap' },
+            { kunci: 'bandwidthIntranet', label: 'Kapasitas jaringan internal', kelas: 'whitespace-nowrap' },
+            { kunci: 'bandwidthInternet', label: 'Kapasitas internet', kelas: 'whitespace-nowrap' },
             { kunci: 'tier', label: 'Tier' },
             { kunci: 'pengamanan', label: 'Pengamanan' },
             { kunci: 'kepemilikan', label: 'Kepemilikan' },
@@ -318,8 +318,8 @@ function Keamanan({ d, internal }: { d: DasborPublik['keamanan']; internal: bool
       {internal && d.katalog && (
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <Panel judul="Kegiatan per subdomain">
-              <BatangDatar label="Jumlah kegiatan keamanan per subdomain" data={d.perSubdomain ?? []} />
+            <Panel judul="Kegiatan per bidang keamanan">
+              <BatangDatar label="Jumlah kegiatan per bidang keamanan" data={d.perSubdomain ?? []} />
             </Panel>
             <Panel judul="Hasil audit keamanan">
               <BatangDatar label="Jumlah kegiatan per hasil audit" data={d.perHasilAudit ?? []} />
@@ -373,7 +373,7 @@ function PetaRencana({ d, internal }: { d: DasborPublik['petaRencana']; internal
           <BatangDatar label="Jumlah kegiatan per tahun pelaksanaan" data={d.perTahun} />
         </Panel>
       </div>
-      <Panel judul="Kurva rencana vs pelaksanaan per tahun">
+      <Panel judul="Kurva rencana dibandingkan pelaksanaan per tahun">
         <KurvaRencana data={d.trenTahunan} />
       </Panel>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

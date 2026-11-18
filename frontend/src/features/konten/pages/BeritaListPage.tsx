@@ -57,7 +57,7 @@ export function BeritaListPage() {
           )
         }
       />
-      <div role="group" aria-label="Filter jenis" className="mb-4 flex gap-2">
+      <div role="group" aria-label="Saring jenis" className="mb-4 flex gap-2">
         {JENIS.map((j) => (
           <button key={j} type="button" aria-pressed={jenis === j} className={chipClass(jenis === j)} onClick={() => ubahFilter({ jenis: j === 'semua' ? undefined : j, page: undefined })}>
             {JENIS_LABEL[j]}

@@ -87,7 +87,7 @@ export function PanelDataDasbor({ onTutup }: { onTutup(): void }) {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Perbarui data dasbor</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Unggah Excel Matriks Evaluasi SPBE Architecture dengan format yang sama. Data diperiksa dulu dan baru dipakai setelah Anda menekan
+            Unggah Excel Matriks Evaluasi Arsitektur SPBE dengan format yang sama. Data diperiksa dulu dan baru dipakai setelah Anda menekan
             Terapkan. Data publik dibatasi otomatis; rincian sensitif hanya tampil di Dasbor Analitik.
           </p>
         </div>

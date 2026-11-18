@@ -20,7 +20,7 @@ export function BackupPage() {
 
   const mulai = () =>
     jalankan.mutate(undefined, {
-      onSuccess: () => toast.success('Backup dimulai. Hasilnya muncul di riwayat setelah selesai.'),
+      onSuccess: () => toast.success('Pencadangan dimulai. Hasilnya muncul di riwayat setelah selesai.'),
       onError: (err) => toast.error(errorMessage(err)),
     })
 
@@ -30,11 +30,11 @@ export function BackupPage() {
   return (
     <>
       <PageHeader
-        title="Backup"
-        description="Backup database dan berkas unggahan berjalan otomatis setiap hari. Super Admin juga dapat menjalankannya secara manual."
+        title="Cadangan Data"
+        description="Pencadangan basis data dan berkas unggahan berjalan otomatis setiap hari. Super Admin juga dapat menjalankannya secara manual."
         actions={
           <Button onClick={mulai} disabled={berjalan || jalankan.isPending || !backup.data}>
-            <DatabaseBackup className="size-4" aria-hidden /> {berjalan ? 'Backup berjalan…' : 'Backup Sekarang'}
+            <DatabaseBackup className="size-4" aria-hidden /> {berjalan ? 'Pencadangan berjalan…' : 'Cadangkan Sekarang'}
           </Button>
         }
       />
@@ -50,21 +50,21 @@ export function BackupPage() {
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
               <p>
                 {terakhir
-                  ? `Backup berhasil terakhir sudah lebih dari ${BATAS_BACKUP_TERLAMBAT_JAM} jam lalu.`
-                  : 'Belum ada backup yang berhasil.'}{' '}
-                Jalankan backup manual dan periksa penjadwal di server.
+                  ? `Pencadangan berhasil terakhir sudah lebih dari ${BATAS_BACKUP_TERLAMBAT_JAM} jam lalu.`
+                  : 'Belum ada pencadangan yang berhasil.'}{' '}
+                Jalankan pencadangan manual dan periksa penjadwal di server.
               </p>
             </div>
           )}
 
-          <section aria-label="Ringkasan backup" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <section aria-label="Ringkasan pencadangan" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Card>
               <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Jadwal otomatis</p>
               <p className="mt-1 font-semibold text-slate-900">{backup.data.jadwal}</p>
             </Card>
             <Card>
               <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Retensi</p>
-              <p className="mt-1 font-semibold text-slate-900">{backup.data.retensi} backup terakhir</p>
+              <p className="mt-1 font-semibold text-slate-900">{backup.data.retensi} cadangan terakhir</p>
               <p className="text-xs text-slate-500">Yang lebih lama dihapus otomatis.</p>
             </Card>
             <Card>
@@ -76,12 +76,12 @@ export function BackupPage() {
 
           <section aria-labelledby="riwayat-backup">
             <h2 id="riwayat-backup" className="mb-3 text-lg font-semibold text-slate-900">
-              Riwayat backup
+              Riwayat pencadangan
             </h2>
             {backup.data.items.length === 0 ? (
-              <EmptyState title="Belum ada riwayat backup." />
+              <EmptyState title="Belum ada riwayat pencadangan." />
             ) : (
-              <Table caption={`Riwayat ${backup.data.items.length} backup terakhir`}>
+              <Table caption={`Riwayat ${backup.data.items.length} cadangan terakhir`}>
                 <thead>
                   <tr>
                     <Th>Waktu</Th>
@@ -113,7 +113,7 @@ export function BackupPage() {
               </Table>
             )}
             <p className="mt-3 text-xs text-slate-600">
-              Berkas backup disimpan di lokasi aman pada server dan tidak dapat diunduh dari portal. Pemulihan data dilakukan oleh administrator infrastruktur.
+              Berkas cadangan disimpan di lokasi aman pada server dan tidak dapat diunduh dari portal. Pemulihan data dilakukan oleh administrator infrastruktur.
             </p>
           </section>
         </div>

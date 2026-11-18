@@ -36,7 +36,7 @@ export function HapusDialog({ pengguna, onClose }: { pengguna: Pengguna | null; 
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
             <div className="space-y-1">
               <p className="font-semibold">Penghapusan bersifat permanen dan tidak dapat dibatalkan.</p>
-              <p>Profil, notifikasi, dan progres pembelajaran pengguna ikut terhapus. Riwayat aktivitasnya tetap tercatat di Audit Trail.</p>
+              <p>Profil, notifikasi, dan progres pembelajaran pengguna ikut terhapus. Riwayat aktivitasnya tetap tercatat di Catatan Aktivitas.</p>
               <p>Bila hanya ingin mencabut akses sementara, gunakan Nonaktifkan.</p>
             </div>
           </div>

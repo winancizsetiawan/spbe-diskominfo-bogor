@@ -69,7 +69,7 @@ func (h *SistemHandler) GetBackup(c *gin.Context) {
 
 	res, err := h.svc.GetBackup()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat riwayat backup."})
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat riwayat pencadangan."})
 		return
 	}
 	c.JSON(http.StatusOK, res)
@@ -89,7 +89,7 @@ func (h *SistemHandler) MulaiBackup(c *gin.Context) {
 			c.JSON(http.StatusConflict, domain.ErrorResponse{Message: konflikErr.Pesan})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memulai backup manual."})
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memulai pencadangan manual."})
 		return
 	}
 	c.JSON(http.StatusCreated, res)

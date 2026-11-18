@@ -36,10 +36,10 @@ type Hasil struct {
 // Siap memeriksa pengaturan dasar dan bahwa pg_dump dapat ditemukan.
 func (r *Runner) Siap() error {
 	if r == nil {
-		return errors.New("backup belum dikonfigurasi")
+		return errors.New("pencadangan belum dikonfigurasi")
 	}
 	if r.Dir == "" || r.DBName == "" {
-		return errors.New("folder backup atau nama database belum diatur")
+		return errors.New("folder cadangan atau nama basis data belum diatur")
 	}
 	if _, err := exec.LookPath(r.pgdump()); err != nil {
 		return fmt.Errorf("pg_dump tidak ditemukan (%s); atur PG_DUMP_PATH", r.pgdump())
@@ -60,7 +60,7 @@ func (r *Runner) Jalankan(ctx context.Context) (*Hasil, error) {
 		return nil, err
 	}
 	if err := os.MkdirAll(r.Dir, 0o700); err != nil {
-		return nil, fmt.Errorf("gagal membuat folder backup: %w", err)
+		return nil, fmt.Errorf("gagal membuat folder cadangan: %w", err)
 	}
 
 	ts := time.Now().Format("20060102-150405")

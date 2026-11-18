@@ -173,7 +173,7 @@ export const forumHandlers = [
       pesan: row.judul,
       urlTujuan: `/forum/${row.id}`,
     }, user.id)
-    catatAktivitas(user.id, 'thread', `Membuat thread: ${row.judul}`)
+    catatAktivitas(user.id, 'thread', `Membuat diskusi: ${row.judul}`)
     return HttpResponse.json(detail(row, user), { status: 201 })
   }),
 
@@ -182,7 +182,7 @@ export const forumHandlers = [
     if (!user) return unauthorized()
     await delay(250)
     const t = threads.find((x) => x.id === Number(params.id) && x.status !== 'tersembunyi')
-    if (!t) return notFound('Thread tidak ditemukan.')
+    if (!t) return notFound('Diskusi tidak ditemukan.')
     t.dilihat += 1
     return HttpResponse.json(detail(t, user))
   }),
@@ -192,10 +192,10 @@ export const forumHandlers = [
     if (!user) return unauthorized()
     await delay(300)
     const t = threads.find((x) => x.id === Number(params.id) && x.status !== 'tersembunyi')
-    if (!t) return notFound('Thread tidak ditemukan.')
-    if (t.status !== 'aktif') return conflict('Thread sudah dikunci.')
+    if (!t) return notFound('Diskusi tidak ditemukan.')
+    if (t.status !== 'aktif') return conflict('Diskusi sudah dikunci.')
     if (!bolehMembalas(t, user))
-      return HttpResponse.json({ message: 'Thread ini ditujukan kepada pengguna tertentu. Anda hanya dapat membaca diskusinya.' }, { status: 403 })
+      return HttpResponse.json({ message: 'Diskusi ini ditujukan kepada pengguna tertentu. Anda hanya dapat membaca diskusinya.' }, { status: 403 })
     const { konten, lampiran: idLampiran } = (await request.json()) as Partial<BalasInput>
     const adaLampiran = Array.isArray(idLampiran) && idLampiran.length > 0
     if ((panjang(konten) === 0 && !adaLampiran) || panjang(konten) > BATAS.balasanMax)
@@ -214,11 +214,11 @@ export const forumHandlers = [
     }
     pakaiLampiran(lamp)
     balasan.push(row)
-    catatAktivitas(user.id, 'balasan', `Membalas thread: ${t.judul}`)
+    catatAktivitas(user.id, 'balasan', `Membalas diskusi: ${t.judul}`)
     // Pembuat thread diberi tahu; membalas thread sendiri tidak memicu notifikasi.
     kirimNotifikasi([idUserDariNama(t.penulis.nama), ...(t.penerima ?? [])], {
       kategori: 'forum',
-      judul: 'Balasan untuk thread Anda',
+      judul: 'Balasan untuk diskusi Anda',
       pesan: t.judul,
       urlTujuan: `/forum/${t.id}`,
     }, user.id)
@@ -230,10 +230,10 @@ export const forumHandlers = [
     if (!user) return unauthorized()
     await delay(300)
     const t = threads.find((x) => x.id === Number(params.id) && x.status !== 'tersembunyi')
-    if (!t) return notFound('Thread tidak ditemukan.')
+    if (!t) return notFound('Diskusi tidak ditemukan.')
     if (!pembuat(t, user) && user.role !== 'super_admin')
-      return HttpResponse.json({ message: 'Hanya pembuat thread atau Super Admin yang dapat mengubah penugasan.' }, { status: 403 })
-    if (t.status !== 'aktif') return conflict('Thread sudah dikunci.')
+      return HttpResponse.json({ message: 'Hanya pembuat diskusi atau Super Admin yang dapat mengubah penugasan.' }, { status: 403 })
+    if (t.status !== 'aktif') return conflict('Diskusi sudah dikunci.')
     const body = (await request.json()) as { penerima?: unknown }
     const idPembuat = idUserDariNama(t.penulis.nama) ?? -1
     const penerima = rapikanPenerima(body.penerima, { ...user, id: idPembuat })
@@ -285,7 +285,7 @@ export const forumHandlers = [
     const b = balasan.find((x) => x.id === Number(params.id) && !x.tersembunyi)
     if (!b) return notFound('Balasan tidak ditemukan.')
     const tb = threads.find((t) => t.id === b.threadId)
-    if (tb?.status !== 'aktif') return conflict('Thread sudah dikunci.')
+    if (tb?.status !== 'aktif') return conflict('Diskusi sudah dikunci.')
     if (!bolehMembalas(tb, user)) return HttpResponse.json({ message: 'Anda hanya dapat membaca diskusi ini.' }, { status: 403 })
     if (b.penilai.has(user.id)) b.penilai.delete(user.id)
     else b.penilai.add(user.id)
@@ -316,11 +316,11 @@ export const forumHandlers = [
       dibuatPada: new Date().toISOString(),
       status: 'baru',
     })
-    catatAktivitas(user.id, 'laporan', `Melaporkan ${body.targetTipe === 'thread' ? 'thread' : 'balasan'}`)
+    catatAktivitas(user.id, 'laporan', `Melaporkan ${body.targetTipe === 'thread' ? 'diskusi' : 'balasan'}`)
     kirimNotifikasi(idUserPerRole('super_admin'), {
       kategori: 'forum',
       judul: 'Laporan konten forum baru',
-      pesan: `${user.nama} melaporkan ${body.targetTipe === 'thread' ? 'sebuah thread' : 'sebuah balasan'}.`,
+      pesan: `${user.nama} melaporkan ${body.targetTipe === 'thread' ? 'sebuah diskusi' : 'sebuah balasan'}.`,
       urlTujuan: '/admin/moderasi',
     })
     return new HttpResponse(null, { status: 201 })

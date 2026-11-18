@@ -118,7 +118,7 @@ export function AplikasiListPage() {
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
         <EmptyState title="Tidak ada aplikasi yang cocok.">
-          {filter.q || filter.statusRaa || filter.statusValidasi ? 'Ubah kata kunci atau filter.' : 'Tambahkan aplikasi pertama instansi Anda.'}
+          {filter.q || filter.statusRaa || filter.statusValidasi ? 'Ubah kata kunci atau pilihan.' : 'Tambahkan aplikasi pertama instansi Anda.'}
         </EmptyState>
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
@@ -194,7 +194,7 @@ export function AplikasiListPage() {
 
       <p className="mt-6 flex items-start gap-2 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-        Mengubah data yang sudah Disetujui, Perlu Revisi, atau Ditolak mengembalikan statusnya ke Draft. Data yang
+        Mengubah data yang sudah Disetujui, Perlu Revisi, atau Ditolak mengembalikan statusnya ke Draf. Data yang
         sedang Menunggu tidak dapat diubah sampai Super Admin memutuskan.
       </p>
 

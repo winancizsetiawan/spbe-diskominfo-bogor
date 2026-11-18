@@ -122,7 +122,7 @@ export const moderasiHandlers = [
     const { targetTipe, targetId, tindakan } = body
     if ((targetTipe !== 'thread' && targetTipe !== 'balasan') || !targetId) return invalid({ targetTipe: 'Target tidak valid.' })
     if (!tindakan || !(tindakan in TINDAKAN_INFO)) return invalid({ tindakan: 'Tindakan tidak valid.' })
-    if (tindakan === 'kunci' && targetTipe !== 'thread') return invalid({ tindakan: 'Hanya thread yang dapat dikunci.' })
+    if (tindakan === 'kunci' && targetTipe !== 'thread') return invalid({ tindakan: 'Hanya diskusi yang dapat dikunci.' })
 
     const target = cariTarget(targetTipe, targetId)
     if (!target) return notFound('Konten tidak ditemukan.')
@@ -136,8 +136,8 @@ export const moderasiHandlers = [
     const tersembunyi = thread ? thread.status === 'tersembunyi' : !!(target as BalasanRow).tersembunyi
 
     // Konflik: item sudah ditindak moderator lain.
-    if (tindakan === 'abaikan' && terbuka.length === 0) return conflict('Tidak ada laporan yang menunggu untuk item ini.')
-    if (tindakan === 'kunci' && thread?.status !== 'aktif') return conflict('Thread ini sudah dikunci atau disembunyikan.')
+    if (tindakan === 'abaikan' && terbuka.length === 0) return conflict('Tidak ada laporan yang menunggu untuk konten ini.')
+    if (tindakan === 'kunci' && thread?.status !== 'aktif') return conflict('Diskusi ini sudah dikunci atau disembunyikan.')
     if (tindakan === 'sembunyikan' && tersembunyi) return conflict('Konten ini sudah disembunyikan.')
 
     if (tindakan === 'kunci') thread!.status = 'terkunci'
@@ -146,7 +146,7 @@ export const moderasiHandlers = [
       else (target as BalasanRow).tersembunyi = true
     }
     for (const l of terbuka) l.status = tindakan === 'abaikan' ? 'ditolak' : 'ditindak'
-    catatAktivitas(user.id, 'moderasi', `${TINDAKAN_INFO[tindakan].judul} ${targetTipe === 'thread' ? 'thread' : 'balasan'}${thread ? `: ${thread.judul}` : ''}`)
+    catatAktivitas(user.id, 'moderasi', `${TINDAKAN_INFO[tindakan].judul} ${targetTipe === 'thread' ? 'diskusi' : 'balasan'}${thread ? `: ${thread.judul}` : ''}`)
 
     // Pembuat konten diberi tahu beserta alasan moderator (kunci dan sembunyikan).
     if (tindakan !== 'abaikan') {
@@ -154,7 +154,7 @@ export const moderasiHandlers = [
       const judul = thread ? thread.judul : (threads.find((t) => t.id === (target as BalasanRow).threadId)?.judul ?? 'thread')
       kirimNotifikasi([idUserDariNama(penulis.nama)], {
         kategori: 'forum',
-        judul: tindakan === 'kunci' ? 'Thread Anda dikunci moderator' : 'Konten Anda disembunyikan moderator',
+        judul: tindakan === 'kunci' ? 'Diskusi Anda dikunci moderator' : 'Konten Anda disembunyikan moderator',
         pesan: `${judul}. Alasan: ${alasan}`,
         urlTujuan: tindakan === 'kunci' ? `/forum/${thread!.id}` : '/forum',
       })

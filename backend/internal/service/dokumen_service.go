@@ -61,7 +61,7 @@ var (
 	}
 
 	statusLabel = map[domain.StatusDokumen]string{
-		domain.StatusDokDraft:   "Draft",
+		domain.StatusDokDraft:   "Draf",
 		domain.StatusDokReview:  "Review",
 		domain.StatusDokBerlaku: "Berlaku",
 		domain.StatusDokArsip:   "Arsip",

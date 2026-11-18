@@ -21,7 +21,7 @@ var (
 	// ErrTNDDitolak: TND menolak NIP/kata sandi (atau jawaban tidak menyatakan berhasil).
 	ErrTNDDitolak = errors.New("NIP atau kata sandi TND salah.")
 	// ErrTNDTidakTersedia: TND tidak dapat dihubungi atau menjawab galat server.
-	ErrTNDTidakTersedia = errors.New("Layanan login TND sedang tidak dapat dihubungi. Coba lagi beberapa saat lagi.")
+	ErrTNDTidakTersedia = errors.New("Layanan masuk TND sedang tidak dapat dihubungi. Coba lagi beberapa saat lagi.")
 	// ErrTNDTidakAktif: login TND berhasil tetapi status pegawai/aparatur tidak aktif.
 	ErrTNDTidakAktif = errors.New("Status kepegawaian Anda di TND tidak aktif. Hubungi pengelola kepegawaian.")
 

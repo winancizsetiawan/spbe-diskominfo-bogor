@@ -28,7 +28,7 @@ export function ReplyForm({ threadId }: { threadId: number }) {
           toast.success('Balasan terkirim.')
         },
         onError: (err) => {
-          if (err instanceof ApiError && err.status === 409) toast.error('Thread ini baru saja dikunci, balasan tidak terkirim.')
+          if (err instanceof ApiError && err.status === 409) toast.error('Diskusi ini baru saja dikunci, balasan tidak terkirim.')
           else if (err instanceof ApiError && err.fieldErrors.konten) setError('konten', { message: err.fieldErrors.konten })
           else toast.error(err instanceof ApiError && err.fieldErrors.lampiran ? err.fieldErrors.lampiran : errorMessage(err))
         },

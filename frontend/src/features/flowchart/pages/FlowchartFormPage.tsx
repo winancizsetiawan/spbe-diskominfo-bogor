@@ -93,8 +93,8 @@ export function FlowchartFormPage() {
   if (detail.data?.status === 'menunggu') {
     return (
       <div className="mx-auto max-w-xl py-16 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Flowchart sedang divalidasi</h1>
-        <p className="mt-2 text-sm text-slate-600">Flowchart yang menunggu keputusan Super Admin tidak dapat diubah.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Diagram alur sedang divalidasi</h1>
+        <p className="mt-2 text-sm text-slate-600">Diagram alur yang menunggu keputusan Super Admin tidak dapat diubah.</p>
         <Link to={`/katalog/flowchart/${detail.data.id}`} className={buttonClass('secondary', 'mt-6')}>
           Kembali ke detail
         </Link>
@@ -106,7 +106,7 @@ export function FlowchartFormPage() {
     setErrorDiagram(undefined)
     setErrorTerkait({})
     const hasil = await editor.current?.ambilXml().catch(() => null)
-    if (!hasil) return setErrorDiagram('Editor diagram belum siap. Tunggu sebentar lalu coba lagi.')
+    if (!hasil) return setErrorDiagram('Lembar gambar diagram belum siap. Tunggu sebentar lalu coba lagi.')
     // Pemeriksaan klien hanya kenyamanan; server memeriksa ulang isi dan ukuran diagram.
     if (!hasil.adaMulai || !hasil.adaAkhir) return setErrorDiagram('Diagram harus memuat peristiwa awal dan peristiwa akhir.')
     if (ukuranBytes(hasil.xml) > BATAS_FLOWCHART.maksBytes) return setErrorDiagram('Ukuran diagram melebihi 10 MB.')
@@ -125,7 +125,7 @@ export function FlowchartFormPage() {
       },
       {
         onSuccess: (f) => {
-          toast.success(editId ? `Versi ${f.versi} disimpan sebagai Draft.` : `${f.nama} dibuat sebagai Draft.`)
+          toast.success(editId ? `Versi ${f.versi} disimpan sebagai Draf.` : `${f.nama} dibuat sebagai Draf.`)
           navigate(`/katalog/flowchart/${f.id}`)
         },
         onError: (err) => {
@@ -137,7 +137,7 @@ export function FlowchartFormPage() {
               else setError(field as keyof FormValues, { message })
             }
           } else if (err instanceof ApiError && err.status === 409) {
-            toast.error('Flowchart sedang menunggu validasi sehingga tidak dapat diubah.')
+            toast.error('Diagram alur sedang menunggu validasi sehingga tidak dapat diubah.')
           } else {
             toast.error(errorMessage(err))
           }
@@ -152,8 +152,8 @@ export function FlowchartFormPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        title={editId ? `Edit ${detail.data?.nama ?? 'flowchart'}` : 'Buat Flowchart'}
-        description={editId ? 'Perubahan disimpan sebagai versi baru dan status kembali ke Draft.' : 'Gambar diagram di editor atau impor berkas BPMN 2.0. Disimpan sebagai Draft.'}
+        title={editId ? `Ubah ${detail.data?.nama ?? 'diagram alur'}` : 'Buat Diagram Alur'}
+        description={editId ? 'Perubahan disimpan sebagai versi baru dan status kembali ke Draf.' : 'Gambar diagram di lembar gambar atau impor berkas BPMN 2.0. Disimpan sebagai Draf.'}
       />
 
       <form onSubmit={kirim} noValidate className="space-y-6">
@@ -194,14 +194,14 @@ export function FlowchartFormPage() {
             </Field>
           </div>
 
-          <Field id="pic" label="Penanggung jawab (PIC)" error={errors.pic?.message} hint="Bidang atau unit yang bertanggung jawab atas proses.">
+          <Field id="pic" label="Penanggung jawab" error={errors.pic?.message} hint="Bidang atau unit yang bertanggung jawab atas proses.">
             <input
               id="pic"
               className={inputClass}
               {...aria('pic', errors.pic?.message)}
               {...register('pic', {
-                validate: (v) => v.trim().length >= BATAS_FLOWCHART.picMin || `PIC minimal ${BATAS_FLOWCHART.picMin} karakter.`,
-                maxLength: { value: BATAS_FLOWCHART.picMax, message: `PIC maksimal ${BATAS_FLOWCHART.picMax} karakter.` },
+                validate: (v) => v.trim().length >= BATAS_FLOWCHART.picMin || `Penanggung jawab minimal ${BATAS_FLOWCHART.picMin} karakter.`,
+                maxLength: { value: BATAS_FLOWCHART.picMax, message: `Penanggung jawab maksimal ${BATAS_FLOWCHART.picMax} karakter.` },
               })}
             />
           </Field>
@@ -252,7 +252,7 @@ export function FlowchartFormPage() {
         <Card className="space-y-3">
           <h2 className="font-semibold text-slate-900">Diagram BPMN</h2>
           {siapDiagram ? (
-            <Suspense fallback={<Spinner className="py-24" label="Memuat editor diagram…" />}>
+            <Suspense fallback={<Spinner className="py-24" label="Memuat lembar gambar diagram…" />}>
               <BpmnEditor ref={editor} xmlAwal={detail.data?.bpmnXml ?? BPMN_KOSONG} namaBerkas={detail.data?.kode ?? 'flowchart-baru'} disabled={simpan.isPending} />
             </Suspense>
           ) : (
@@ -270,7 +270,7 @@ export function FlowchartFormPage() {
             Batal
           </Link>
           <Button type="submit" disabled={simpan.isPending}>
-            {simpan.isPending ? 'Menyimpan…' : 'Simpan sebagai Draft'}
+            {simpan.isPending ? 'Menyimpan…' : 'Simpan sebagai Draf'}
           </Button>
         </div>
       </form>

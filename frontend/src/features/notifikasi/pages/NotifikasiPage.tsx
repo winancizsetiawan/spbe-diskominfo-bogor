@@ -45,7 +45,7 @@ export function NotifikasiPage() {
         }
       />
 
-      <div role="group" aria-label="Filter kategori notifikasi" className="mb-5 flex flex-wrap gap-2">
+      <div role="group" aria-label="Saring kategori notifikasi" className="mb-5 flex flex-wrap gap-2">
         {URUTAN_KATEGORI.map((k) => {
           const baru = daftar.data?.belumDibaca[k] ?? 0
           return (

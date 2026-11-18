@@ -151,8 +151,8 @@ export const flowchartHandlers = [
     if (!scope) return forbidden()
     await delay(250)
     const row = flowchart.find((r) => r.id === Number(params.id))
-    if (!row) return notFound('Flowchart tidak ditemukan.')
-    if (!terlihat(row, scope)) return forbidden('Flowchart ini milik instansi lain.')
+    if (!row) return notFound('Diagram alur tidak ditemukan.')
+    if (!terlihat(row, scope)) return forbidden('Diagram alur ini milik instansi lain.')
     return HttpResponse.json(keDetail(row))
   }),
 
@@ -160,7 +160,7 @@ export const flowchartHandlers = [
     const user = currentUser(request)
     if (!user) return unauthorized()
     // Super Admin tidak punya instansi pemilik; pembuatan dilakukan Admin OPD.
-    if (user.role !== 'admin_opd') return forbidden('Flowchart baru dibuat oleh Admin OPD untuk instansinya.')
+    if (user.role !== 'admin_opd') return forbidden('Diagram alur baru dibuat oleh Admin OPD untuk instansinya.')
     await delay(500)
     const body = (await request.json()) as Partial<FlowchartInput>
     const errors = validasi(body, user.instansi.id)
@@ -186,7 +186,7 @@ export const flowchartHandlers = [
       riwayat: [{ versi: '1.0', catatan: 'Versi awal', oleh: user.nama, tanggal: sekarang }],
     }
     flowchart.push(row)
-    catatAktivitas(user.id, 'flowchart', `Membuat flowchart ${row.nama}`)
+    catatAktivitas(user.id, 'flowchart', `Membuat diagram alur ${row.nama}`)
     return HttpResponse.json(keDetail(row), { status: 201 })
   }),
 
@@ -197,9 +197,9 @@ export const flowchartHandlers = [
     if (!scope) return forbidden()
     await delay(500)
     const row = flowchart.find((r) => r.id === Number(params.id))
-    if (!row) return notFound('Flowchart tidak ditemukan.')
-    if (!terlihat(row, scope)) return forbidden('Flowchart ini milik instansi lain.')
-    if (row.status === 'menunggu') return conflict('Flowchart sedang menunggu validasi dan tidak dapat diubah.')
+    if (!row) return notFound('Diagram alur tidak ditemukan.')
+    if (!terlihat(row, scope)) return forbidden('Diagram alur ini milik instansi lain.')
+    if (row.status === 'menunggu') return conflict('Diagram alur sedang menunggu validasi dan tidak dapat diubah.')
     const body = (await request.json()) as Partial<FlowchartInput>
     const errors = validasi(body, row.idInstansi)
     if (Object.keys(errors).length > 0) return invalid(errors)
@@ -219,7 +219,7 @@ export const flowchartHandlers = [
     row.catatanValidasi = null
     row.diperbaruiPada = sekarang
     row.riwayat.push({ versi: row.versi, catatan: (body.catatanRevisi ?? '').trim() || 'Perubahan diagram', oleh: user.nama, tanggal: sekarang })
-    catatAktivitas(user.id, 'flowchart', `Mengubah flowchart ${row.nama} menjadi versi ${row.versi}`)
+    catatAktivitas(user.id, 'flowchart', `Mengubah diagram alur ${row.nama} menjadi versi ${row.versi}`)
     return HttpResponse.json(keDetail(row))
   }),
 ]

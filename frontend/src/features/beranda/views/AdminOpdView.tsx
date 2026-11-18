@@ -20,18 +20,18 @@ export function AdminOpdView({ data }: { data: BerandaAdminOpd }) {
       <section aria-label="Ringkasan instansi" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total aplikasi" value={r.totalAplikasi} />
         <StatCard label="Sudah diklasifikasi" value={r.sudahDiklasifikasi} hint={`dari ${r.totalAplikasi} aplikasi`} tone="success" />
-        <StatCard label="Flowchart dipublikasikan" value={r.flowchartDipublikasikan} hint={`dari ${r.totalFlowchart} diagram`} />
+        <StatCard label="Diagram alur dipublikasikan" value={r.flowchartDipublikasikan} hint={`dari ${r.totalFlowchart} diagram`} />
         <StatCard label="Kepatuhan RAA" value={`${r.kepatuhanRaa}%`} hint="aplikasi berstatus Sesuai" tone={r.kepatuhanRaa >= 80 ? 'success' : r.kepatuhanRaa >= 50 ? 'warning' : 'danger'} />
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Panel judul="Pembaruan data 8 minggu terakhir" className="lg:col-span-2">
           <BarChart
-            label="Jumlah aplikasi dan flowchart yang diperbarui per minggu"
+            label="Jumlah aplikasi dan diagram alur yang diperbarui per minggu"
             data={data.tren.map((t) => ({ label: formatHariBulan(t.minggu), aplikasi: t.aplikasiDiperbarui, flowchart: t.flowchartDiperbarui }))}
             series={[
               { kunci: 'aplikasi', label: 'Aplikasi diperbarui', warna: WARNA.brand },
-              { kunci: 'flowchart', label: 'Flowchart diperbarui', warna: WARNA.kuning },
+              { kunci: 'flowchart', label: 'Diagram alur diperbarui', warna: WARNA.kuning },
             ]}
           />
         </Panel>
@@ -85,7 +85,7 @@ export function AdminOpdView({ data }: { data: BerandaAdminOpd }) {
           )}
         </Panel>
 
-        <Panel judul="Progres flowchart" tautan={{ to: '/katalog/flowchart', label: 'Kelola' }}>
+        <Panel judul="Progres diagram alur" tautan={{ to: '/katalog/flowchart', label: 'Kelola' }}>
           <ul className="space-y-4">
             {data.progresFlowchart.map((p) => {
               const persen = p.total > 0 ? Math.round((p.dipublikasikan / p.total) * 100) : 0
@@ -99,7 +99,7 @@ export function AdminOpdView({ data }: { data: BerandaAdminOpd }) {
                   </div>
                   <div
                     role="meter"
-                    aria-label={`Flowchart ${KATEGORI_LABEL[p.kategori]} dipublikasikan`}
+                    aria-label={`Diagram alur ${KATEGORI_LABEL[p.kategori]} dipublikasikan`}
                     aria-valuemin={0}
                     aria-valuemax={p.total}
                     aria-valuenow={p.dipublikasikan}

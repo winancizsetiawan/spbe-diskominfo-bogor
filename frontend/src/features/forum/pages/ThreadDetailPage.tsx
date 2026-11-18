@@ -92,14 +92,14 @@ export function ThreadDetailPage() {
             onClick={() => setLaporan({ targetTipe: 'thread', targetId: t.id })}
             className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Flag className="size-4" aria-hidden /> Laporkan thread
+            <Flag className="size-4" aria-hidden /> Laporkan diskusi
           </button>
         </div>
       </Card>
 
       {!aktif && (
         <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Thread ini telah dikunci oleh moderator. Balasan, penilaian, dan laporan baru tidak dapat dikirim.
+          Diskusi ini telah dikunci oleh moderator. Balasan, penilaian, dan laporan baru tidak dapat dikirim.
         </p>
       )}
 

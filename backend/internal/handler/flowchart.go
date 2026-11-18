@@ -109,7 +109,7 @@ func (h *FlowchartHandler) GetDaftar(c *gin.Context) {
 	}
 	res, err := h.flowchartService.GetDaftar(filter)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil data flowchart", nil))
+		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil data diagram alur", nil))
 		return
 	}
 
@@ -124,7 +124,7 @@ func (h *FlowchartHandler) GetDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("ID flowchart tidak valid", nil))
+		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("ID diagram alur tidak valid", nil))
 		return
 	}
 
@@ -134,7 +134,7 @@ func (h *FlowchartHandler) GetDetail(c *gin.Context) {
 	}
 	fc, err := h.flowchartService.GetDetail(uint(id))
 	if err != nil || (terbatas && fc.InstansiID != p.InstansiID) {
-		c.JSON(http.StatusNotFound, domain.NewErrorResponse("Flowchart tidak ditemukan", nil))
+		c.JSON(http.StatusNotFound, domain.NewErrorResponse("Diagram alur tidak ditemukan", nil))
 		return
 	}
 
@@ -162,7 +162,7 @@ func (h *FlowchartHandler) Create(c *gin.Context) {
 	}
 	fc, err := h.flowchartService.Create(input, p.InstansiID, p.Nama)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal menyimpan flowchart", nil))
+		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal menyimpan diagram alur", nil))
 		return
 	}
 
@@ -177,7 +177,7 @@ func (h *FlowchartHandler) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("ID flowchart tidak valid", nil))
+		c.JSON(http.StatusBadRequest, domain.NewErrorResponse("ID diagram alur tidak valid", nil))
 		return
 	}
 
@@ -196,7 +196,7 @@ func (h *FlowchartHandler) Update(c *gin.Context) {
 	if terbatas {
 		ada, errD := h.flowchartService.GetDetail(uint(id))
 		if errD != nil || ada.InstansiID != p.InstansiID {
-			c.JSON(http.StatusNotFound, domain.NewErrorResponse("Flowchart tidak ditemukan", nil))
+			c.JSON(http.StatusNotFound, domain.NewErrorResponse("Diagram alur tidak ditemukan", nil))
 			return
 		}
 	}

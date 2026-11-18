@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	ErrThreadTidakDitemukan  = errors.New("Thread tidak ditemukan.")
+	ErrThreadTidakDitemukan  = errors.New("Diskusi tidak ditemukan.")
 	ErrBalasanTidakDitemukan = errors.New("Balasan tidak ditemukan.")
 	ErrKontenTidakDitemukan  = errors.New("Konten yang dilaporkan tidak ditemukan.")
 	ErrModerasiTargetKosong  = errors.New("Konten tidak ditemukan.")
-	ErrForumBukanPenerima    = errors.New("Thread ini ditujukan kepada pengguna tertentu. Anda hanya dapat membaca diskusinya.")
-	ErrForumBukanPembuat     = errors.New("Hanya pembuat thread atau Super Admin yang dapat mengubah penugasan.")
+	ErrForumBukanPenerima    = errors.New("Diskusi ini ditujukan kepada pengguna tertentu. Anda hanya dapat membaca diskusinya.")
+	ErrForumBukanPembuat     = errors.New("Hanya pembuat diskusi atau Super Admin yang dapat mengubah penugasan.")
 )
 
 const (
@@ -289,7 +289,7 @@ func (s *ForumService) UbahPenerima(threadID uint, role string, in domain.UbahPe
 		return nil, ErrForumBukanPembuat
 	}
 	if t.Status != domain.StatusThreadAktif {
-		return nil, &ForumKonflikError{Pesan: "Thread sudah dikunci."}
+		return nil, &ForumKonflikError{Pesan: "Diskusi sudah dikunci."}
 	}
 	penerima, err := s.rapikanPenerima(in.Penerima, t.PenulisID)
 	if err != nil {
@@ -424,7 +424,7 @@ func (s *ForumService) BuatBalasan(threadID uint, role string, in domain.BuatBal
 		return nil, ErrThreadTidakDitemukan
 	}
 	if t.Status != domain.StatusThreadAktif {
-		return nil, &ForumKonflikError{Pesan: "Thread sudah dikunci."}
+		return nil, &ForumKonflikError{Pesan: "Diskusi sudah dikunci."}
 	}
 
 	// Balasan boleh tanpa teks bila ada lampiran.
@@ -484,7 +484,7 @@ func (s *ForumService) ToggleNilaiBalasan(balasanID uint, role string) (*domain.
 
 	t, err := s.repo.FindThreadByID(b.ThreadID, false)
 	if err != nil || t.Status != domain.StatusThreadAktif {
-		return nil, &ForumKonflikError{Pesan: "Thread sudah dikunci."}
+		return nil, &ForumKonflikError{Pesan: "Diskusi sudah dikunci."}
 	}
 
 	user, err := s.ambilUserAktif(role)
@@ -740,7 +740,7 @@ func (s *ForumService) TindakanModerasi(in domain.TindakanModerasiInput) (*domai
 		return nil, &ValidationError{Errors: map[string]string{"tindakan": "Tindakan tidak valid."}}
 	}
 	if in.Tindakan == domain.TindakanKunci && in.TargetTipe != domain.TargetThread {
-		return nil, &ValidationError{Errors: map[string]string{"tindakan": "Hanya thread yang dapat dikunci."}}
+		return nil, &ValidationError{Errors: map[string]string{"tindakan": "Hanya diskusi yang dapat dikunci."}}
 	}
 
 	var threadTarget *domain.ForumThread
@@ -776,10 +776,10 @@ func (s *ForumService) TindakanModerasi(in domain.TindakanModerasiInput) (*domai
 	}
 
 	if in.Tindakan == domain.TindakanAbaikan && jumlahLaporanBaru == 0 {
-		return nil, &ForumKonflikError{Pesan: "Tidak ada laporan yang menunggu untuk item ini."}
+		return nil, &ForumKonflikError{Pesan: "Tidak ada laporan yang menunggu untuk konten ini."}
 	}
 	if in.Tindakan == domain.TindakanKunci && threadTarget != nil && threadTarget.Status != domain.StatusThreadAktif {
-		return nil, &ForumKonflikError{Pesan: "Thread ini sudah dikunci atau disembunyikan."}
+		return nil, &ForumKonflikError{Pesan: "Diskusi ini sudah dikunci atau disembunyikan."}
 	}
 	if in.Tindakan == domain.TindakanSembunyikan && tersembunyi {
 		return nil, &ForumKonflikError{Pesan: "Konten ini sudah disembunyikan."}

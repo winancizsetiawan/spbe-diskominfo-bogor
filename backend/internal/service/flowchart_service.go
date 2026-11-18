@@ -145,7 +145,7 @@ func (s *flowchartService) Update(id uint, input domain.FlowchartInput, oleh str
 
 	// Cek aturan bisnis: tidak bisa edit jika sedang divalidasi
 	if fc.Status == domain.StatusMenunggu {
-		return nil, errors.New("flowchart sedang menunggu validasi dan tidak dapat diubah")
+		return nil, errors.New("diagram alur sedang menunggu validasi dan tidak dapat diubah")
 	}
 
 	// Perbarui field dari input

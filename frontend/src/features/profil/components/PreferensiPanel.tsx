@@ -70,7 +70,7 @@ export function PreferensiPanel() {
           )
         }
       />
-      <p className="py-4 text-xs text-slate-500">Notifikasi push belum tersedia.</p>
+      <p className="py-4 text-xs text-slate-500">Notifikasi ke ponsel belum tersedia.</p>
     </Card>
   )
 }

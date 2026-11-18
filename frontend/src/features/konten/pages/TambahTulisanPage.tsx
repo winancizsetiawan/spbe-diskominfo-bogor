@@ -167,7 +167,7 @@ export function TambahTulisanPage() {
               className={inputClass}
               {...aria('urlSumber', errors.urlSumber?.message)}
               {...register('urlSumber', {
-                validate: (v) => !v.trim() || /^https?:\/\/\S+$/i.test(v.trim()) || 'Isi URL lengkap yang diawali http:// atau https://.',
+                validate: (v) => !v.trim() || /^https?:\/\/\S+$/i.test(v.trim()) || 'Isi alamat tautan lengkap yang diawali http:// atau https://.',
               })}
             />
           </Field>

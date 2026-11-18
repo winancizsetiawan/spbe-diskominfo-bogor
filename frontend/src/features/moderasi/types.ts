@@ -72,13 +72,13 @@ export const TINDAKAN_INFO: Record<
   abaikan: {
     judul: 'Abaikan laporan',
     tombol: 'Abaikan laporan',
-    keterangan: 'Konten tetap tayang. Laporan ditandai Ditolak dan item pindah ke tab Selesai.',
+    keterangan: 'Konten tetap tayang. Laporan ditandai Ditolak dan konten pindah ke tab Selesai.',
     wajibAlasan: false,
   },
   kunci: {
-    judul: 'Kunci thread',
-    tombol: 'Kunci thread',
-    keterangan: 'Thread tetap terbaca tetapi tidak dapat dibalas, dinilai, atau dilaporkan lagi.',
+    judul: 'Kunci diskusi',
+    tombol: 'Kunci diskusi',
+    keterangan: 'Diskusi tetap terbaca tetapi tidak dapat dibalas, dinilai, atau dilaporkan lagi.',
     wajibAlasan: true,
   },
   sembunyikan: {

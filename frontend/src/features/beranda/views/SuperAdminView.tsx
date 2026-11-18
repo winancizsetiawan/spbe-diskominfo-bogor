@@ -37,14 +37,14 @@ export function SuperAdminView({ data }: { data: BerandaSuperAdmin }) {
         <StatCard label="Instansi terdaftar" value={formatAngka(r.instansiTerdaftar)} />
         <StatCard label="Dokumen dan SOP" value={formatAngka(r.totalDokumen)} />
         <StatCard label="Menunggu validasi" value={formatAngka(r.menungguValidasi)} tone={r.menungguValidasi > 0 ? 'warning' : 'neutral'} hint="Pengajuan dari Admin OPD" />
-        <StatCard label="Thread forum" value={formatAngka(r.threadForum)} />
+        <StatCard label="Diskusi forum" value={formatAngka(r.threadForum)} />
         <StatCard label="Laporan forum baru" value={formatAngka(r.laporanBaru)} tone={r.laporanBaru > 0 ? 'danger' : 'neutral'} hint="Menunggu tinjauan moderator" />
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Panel judul="Aktivitas sistem 4 minggu terakhir" className="lg:col-span-2">
           <BarChart
-            label="Jumlah login, validasi, unggahan dokumen, dan aktivitas forum per minggu"
+            label="Jumlah akses masuk, validasi, unggahan dokumen, dan aktivitas forum per minggu"
             data={perMinggu(data.aktivitas)}
             series={[
               { kunci: 'login', label: 'Login', warna: '#1e2869' },

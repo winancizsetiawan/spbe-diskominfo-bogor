@@ -12,7 +12,7 @@ export function DokumenRow({ dokumen: d }: { dokumen: Dokumen }) {
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <Badge tone="brand">{d.kategori?.nama ?? JENIS_LABEL[d.jenis]}</Badge>
-          {d.status === 'review' && <Badge tone="warning">Dalam review</Badge>}
+          {d.status === 'review' && <Badge tone="warning">Sedang ditinjau</Badge>}
           {d.visibilitas === 'internal' && <Badge>Internal</Badge>}
         </div>
         <Link to={`/dokumen/${d.id}`} className="block truncate font-semibold text-slate-900 hover:text-brand-700">

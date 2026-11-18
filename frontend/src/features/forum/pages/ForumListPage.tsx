@@ -39,7 +39,7 @@ export function ForumListPage() {
         description="Berdiskusi dan berbagi pengetahuan seputar implementasi SPBE."
         actions={
           <Link to="/forum/baru" className={buttonClass('primary')}>
-            <Plus className="size-4" aria-hidden /> Buat Thread
+            <Plus className="size-4" aria-hidden /> Buat Diskusi
           </Link>
         }
       />
@@ -59,7 +59,7 @@ export function ForumListPage() {
             className={`${inputClass} pl-9`}
           />
         </form>
-        <div role="group" aria-label="Filter kategori" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring kategori" className="flex flex-wrap gap-2">
           <button
             type="button"
             aria-pressed={!filter.kategori}
@@ -88,12 +88,12 @@ export function ForumListPage() {
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
         <EmptyState title="Belum ada diskusi yang cocok.">
-          {filter.q || filter.kategori ? 'Coba kata kunci atau kategori lain.' : 'Jadilah yang pertama membuat thread.'}
+          {filter.q || filter.kategori ? 'Coba kata kunci atau kategori lain.' : 'Jadilah yang pertama membuat diskusi.'}
         </EmptyState>
       ) : (
         <>
           <p className="mb-3 text-sm text-slate-600" aria-live="polite">
-            {daftar.data.total} thread diskusi
+            {daftar.data.total} diskusi
           </p>
           <ul className={`space-y-3 transition-opacity ${daftar.isPlaceholderData ? 'opacity-60' : ''}`}>
             {daftar.data.items.map((thread) => (

@@ -70,8 +70,8 @@ export const JENIS_LABEL: Record<JenisDokumen, string> = {
 export const JENIS_DOKUMEN: JenisDokumen[] = ['regulasi', 'pedoman', 'laporan', 'presentasi', 'template', 'panduan', 'lainnya']
 
 export const STATUS_LABEL: Record<StatusDokumen, string> = {
-  draft: 'Draft',
-  review: 'Dalam review',
+  draft: 'Draf',
+  review: 'Sedang ditinjau',
   berlaku: 'Berlaku',
   arsip: 'Arsip',
 }
@@ -79,7 +79,7 @@ export const STATUS_LABEL: Record<StatusDokumen, string> = {
 export const KELOMPOK_INFO: Record<Kelompok, { judul: string; deskripsi: string }> = {
   dokumen: {
     judul: 'Dokumen',
-    deskripsi: 'Regulasi, pedoman, laporan, dan template seputar SPBE.',
+    deskripsi: 'Regulasi, pedoman, laporan, dan templat seputar SPBE.',
   },
   sop: {
     judul: 'SOP Pemerintahan',

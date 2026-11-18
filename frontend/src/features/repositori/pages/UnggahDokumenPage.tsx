@@ -94,7 +94,7 @@ export function UnggahDokumenPage() {
         { onFase: setFase, onProgres: setPersen, signal: pengendali.signal },
       )
       invalidasiRepositori(qc)
-      toast.success(`${dokumen.judul} diunggah sebagai Draft. Ubah status menjadi Berlaku untuk menerbitkan.`)
+      toast.success(`${dokumen.judul} diunggah sebagai Draf. Ubah status menjadi Berlaku untuk menerbitkan.`)
       navigate('/admin/repositori?status=draft')
     } catch (err) {
       setFase('diam')
@@ -117,7 +117,7 @@ export function UnggahDokumenPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Unggah Dokumen"
-        description="Berkas disimpan di Object Storage dan terbit sebagai Draft. Terbitkan setelah memeriksa isinya."
+        description="Berkas disimpan di Object Storage dan terbit sebagai Draf. Terbitkan setelah memeriksa isinya."
       />
       <Card>
         <form onSubmit={kirim} noValidate className="space-y-5">
@@ -217,7 +217,7 @@ export function UnggahDokumenPage() {
                       <span id={`vis-${v}`} className="block text-xs text-slate-600">
                         {v === 'internal'
                           ? 'Hanya pengguna yang masuk (ASN, Akademisi, Admin OPD).'
-                          : 'Dapat dilihat dan diunduh siapa pun, tanpa login.'}
+                          : 'Dapat dilihat dan diunduh siapa pun, tanpa masuk akun.'}
                       </span>
                     </span>
                   </label>
@@ -233,7 +233,7 @@ export function UnggahDokumenPage() {
               Batal
             </Link>
             <Button type="submit" disabled={sibuk}>
-              {sibuk ? 'Mengunggah…' : 'Unggah sebagai Draft'}
+              {sibuk ? 'Mengunggah…' : 'Unggah sebagai Draf'}
             </Button>
           </div>
         </form>

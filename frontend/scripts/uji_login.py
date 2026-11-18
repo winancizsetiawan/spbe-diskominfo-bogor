@@ -21,8 +21,8 @@ AKUN = [  # (role, tab, username, sandi) — sama dengan AKUN_DEMO di LoginPage.
 ]
 # Menu samping kiri (src/app/navigation.ts SIDEBAR_NAV), per role.
 UMUM = ['Beranda', 'Dokumen', 'SOP', 'Pembelajaran', 'Forum', 'Dasbor Analitik']
-KELOLA = ['Data Aplikasi', 'Klasifikasi RAA', 'Flowchart', 'Dasbor Instansi']
-SISTEM = ['Pengguna', 'Validasi', 'Repositori', 'Moderasi', 'Periode', 'Audit Trail', 'Backup', 'Kritik & Saran']
+KELOLA = ['Data Aplikasi', 'Klasifikasi RAA', 'Diagram Alur Proses', 'Dasbor Instansi']
+SISTEM = ['Pengguna', 'Validasi', 'Pusat Dokumen', 'Moderasi', 'Periode', 'Catatan Aktivitas', 'Cadangan Data', 'Kritik & Saran']
 INFORMASI = ['Berita', 'FAQ & Panduan']
 MENU = {
     'asn': UMUM + INFORMASI,
@@ -96,7 +96,7 @@ def uji_akun(browser, role, tab, username, sandi):
     nav = [t.strip() for t in samping.get_by_role('link').all_inner_texts()]
     catat('Menu samping sesuai hak akses', nav == MENU[role], ', '.join(nav))
 
-    # Klik tiap item menu samping. Audit Trail memuat teks "Akses ditolak" sebagai jenis aktivitas, bukan halaman 403.
+    # Klik tiap item menu samping. Catatan Aktivitas memuat teks "Akses ditolak" sebagai jenis aktivitas, bukan halaman 403.
     for item in MENU[role]:
         samping.get_by_role('link', name=item, exact=True).click()
         page.wait_for_load_state('networkidle'); page.wait_for_timeout(400)

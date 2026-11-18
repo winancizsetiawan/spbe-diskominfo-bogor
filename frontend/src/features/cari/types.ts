@@ -39,7 +39,7 @@ export const TIPE_LABEL: Record<FilterTipe, string> = {
   bantuan: 'Bantuan',
   kursus: 'Kursus',
   aplikasi: 'Aplikasi',
-  flowchart: 'Flowchart',
+  flowchart: 'Diagram Alur',
 }
 
 /** Jenis yang boleh dicari pengunjung tanpa login; sisanya hanya untuk pengguna internal. */
@@ -51,4 +51,4 @@ export function kataKunci(q: string) {
 }
 
 /** Kueri contoh untuk pengunjung; mengarah ke pencarian pintar. */
-export const PENCARIAN_POPULER = ['Arsitektur SPBE', 'Peraturan SPBE', 'Keamanan informasi', 'Backup data', 'Integrasi layanan']
+export const PENCARIAN_POPULER = ['Arsitektur SPBE', 'Peraturan SPBE', 'Keamanan informasi', 'Cadangan data', 'Integrasi layanan']

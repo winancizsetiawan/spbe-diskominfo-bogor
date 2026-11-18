@@ -23,8 +23,8 @@ const HAK_AKSES: { perm: Permission; label: string }[] = [
   { perm: 'moderasi', label: 'Moderasi forum' },
   { perm: 'pengguna:kelola', label: 'Kelola pengguna' },
   { perm: 'periode:kelola', label: 'Atur periode pembaruan' },
-  { perm: 'audit:lihat', label: 'Lihat audit trail' },
-  { perm: 'backup:kelola', label: 'Kelola backup' },
+  { perm: 'audit:lihat', label: 'Lihat catatan aktivitas' },
+  { perm: 'backup:kelola', label: 'Kelola cadangan data' },
   { perm: 'dasbor:data', label: 'Perbarui data dasbor' },
 ]
 
@@ -91,7 +91,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
 
       <Card>
         <h2 className="font-semibold text-slate-900">Hak akses</h2>
-        <p className="mt-1 text-sm text-slate-500">Ditentukan oleh role Anda dan diatur Super Admin.</p>
+        <p className="mt-1 text-sm text-slate-500">Ditentukan oleh peran Anda dan diatur Super Admin.</p>
         <ul className="mt-3 flex flex-wrap gap-2" aria-label="Hak akses">
           {HAK_AKSES.filter((h) => can(user, h.perm)).map((h) => (
             <li key={h.perm}>
@@ -154,7 +154,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
                   simulasi.mutate(true, {
                     onSuccess: () => toast.info('Simulasi diaktifkan: usia kata sandi diset > 365 hari.'),
                     onError: () =>
-                      toast.error('Gagal: endpoint simulasi belum tersedia. Pastikan backend sudah di-restart dengan kode terbaru.'),
+                      toast.error('Gagal: fitur simulasi belum tersedia. Pastikan server portal sudah dimulai ulang.'),
                   })
                 }
               >

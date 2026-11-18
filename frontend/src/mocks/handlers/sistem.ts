@@ -132,25 +132,25 @@ export const sistemHandlers = [
     if (!user) return unauthorized()
     if (user.role !== 'super_admin') return forbidden()
     await delay(300)
-    if (backup.some((b) => b.status === 'berjalan')) return conflict('Backup sedang berjalan. Tunggu hingga selesai.')
+    if (backup.some((b) => b.status === 'berjalan')) return conflict('Pencadangan sedang berjalan. Tunggu hingga selesai.')
 
     const baris: RiwayatBackup = { id: nextBackupId(), tipe: 'manual', status: 'berjalan', ukuranMb: null, oleh: user.nama, waktu: new Date().toISOString(), pesanGagal: null }
     backup.push(baris)
     pangkasBackup()
-    catatAktivitas(user.id, 'backup', 'Menjalankan backup manual')
+    catatAktivitas(user.id, 'backup', 'Menjalankan pencadangan manual')
 
     setTimeout(() => {
       const gagal = saklar('spbe.mock.backupGagal') === '1'
       const terakhir = [...backup].filter((b) => b.status === 'berhasil').sort((a, b) => b.waktu.localeCompare(a.waktu))[0]
       baris.status = gagal ? 'gagal' : 'berhasil'
       baris.ukuranMb = gagal ? null : Math.round(((terakhir?.ukuranMb ?? 800) + 1.5) * 10) / 10
-      baris.pesanGagal = gagal ? 'Backup tidak dapat diselesaikan. Periksa kapasitas penyimpanan.' : null
-      catatAktivitas(user.id, 'backup', gagal ? 'Backup manual gagal' : 'Backup manual selesai', gagal ? 'gagal' : 'berhasil')
+      baris.pesanGagal = gagal ? 'Pencadangan tidak dapat diselesaikan. Periksa kapasitas penyimpanan.' : null
+      catatAktivitas(user.id, 'backup', gagal ? 'Pencadangan manual gagal' : 'Pencadangan manual selesai', gagal ? 'gagal' : 'berhasil')
       if (gagal) {
         kirimNotifikasi(idUserPerRole('super_admin'), {
           kategori: 'sistem',
-          judul: 'Backup gagal',
-          pesan: 'Backup manual tidak berhasil. Periksa riwayat backup.',
+          judul: 'Pencadangan gagal',
+          pesan: 'Pencadangan manual tidak berhasil. Periksa riwayat pencadangan.',
           urlTujuan: '/admin/backup',
         })
       }

@@ -188,14 +188,14 @@ export function LoginPage() {
         </section>
 
         <section className="px-3 py-6 md:px-6 md:py-9">
-          <h1 className="text-3xl font-bold text-brand-800">Login</h1>
+          <h1 className="text-3xl font-bold text-brand-800">Masuk</h1>
 
           <form onSubmit={kirim} noValidate className="mt-6 space-y-5">
             {galat.blokir && (
               <div role="alert" className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                 <ShieldAlert className="mt-0.5 size-5 shrink-0 text-red-600" aria-hidden />
                 <div className="space-y-1">
-                  <p className="font-semibold text-red-900">Akun Diblokir (Proteksi Brute Force)</p>
+                  <p className="font-semibold text-red-900">Akun Diblokir Sementara</p>
                   <p>{galat.blokir}</p>
                 </div>
               </div>

@@ -49,7 +49,7 @@ export function FlowchartListPage() {
         actions={
           adalahAdminOpd && (
             <Link to="/katalog/flowchart/baru" className={buttonClass('primary')}>
-              <Plus className="size-4" aria-hidden /> Buat Flowchart
+              <Plus className="size-4" aria-hidden /> Buat Diagram Alur
             </Link>
           )
         }
@@ -59,11 +59,11 @@ export function FlowchartListPage() {
         <StatCard label="Total diagram" value={hitungan?.total ?? '–'} />
         <StatCard label="Dipublikasikan" value={hitungan?.dipublikasikan ?? '–'} tone="success" />
         <StatCard label="Menunggu validasi" value={hitungan?.menunggu ?? '–'} />
-        <StatCard label="Draft / perlu revisi" value={hitungan?.draft ?? '–'} tone="warning" hint="Sedang dikerjakan operator" />
+        <StatCard label="Draf / perlu revisi" value={hitungan?.draft ?? '–'} tone="warning" hint="Sedang dikerjakan operator" />
       </section>
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter kategori proses" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring kategori proses" className="flex flex-wrap gap-2">
           <button type="button" aria-pressed={!filter.kategori} className={chipClass(!filter.kategori)} onClick={() => ubahFilter({ kategori: undefined, page: undefined })}>
             Semua
             {hitungan && <span className="ml-1.5 opacity-75">{hitungan.perKategori.semua}</span>}
@@ -91,10 +91,10 @@ export function FlowchartListPage() {
           </div>
           <form onSubmit={cari} role="search" className="relative w-full sm:w-64">
             <label htmlFor="cari-flowchart" className="sr-only">
-              Cari flowchart
+              Cari diagram alur
             </label>
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
-            <input id="cari-flowchart" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau PIC…" className={`${inputClass} pl-9`} />
+            <input id="cari-flowchart" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama, kode, atau penanggung jawab…" className={`${inputClass} pl-9`} />
           </form>
         </div>
       </div>
@@ -104,8 +104,8 @@ export function FlowchartListPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
-        <EmptyState title="Tidak ada flowchart yang cocok.">
-          {filter.q || filter.kategori || filter.status ? 'Ubah kata kunci atau filter.' : adalahAdminOpd ? 'Mulai dengan membuat flowchart pertama.' : undefined}
+        <EmptyState title="Tidak ada diagram alur yang cocok.">
+          {filter.q || filter.kategori || filter.status ? 'Ubah kata kunci atau pilihan.' : adalahAdminOpd ? 'Mulai dengan membuat diagram alur pertama.' : undefined}
         </EmptyState>
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
@@ -120,8 +120,8 @@ export function FlowchartListPage() {
 
       <p className="mt-6 flex items-start gap-2 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-        Selaraskan diagram dengan peta proses bisnis instansi hingga level sub-proses, sesuai pedoman arsitektur SPBE. Mengubah flowchart
-        membuat versi baru dan mengembalikan statusnya ke Draft.
+        Selaraskan diagram dengan peta proses bisnis instansi hingga tingkat subproses, sesuai pedoman arsitektur SPBE. Mengubah diagram alur
+        membuat versi baru dan mengembalikan statusnya ke Draf.
       </p>
     </>
   )

@@ -267,7 +267,7 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 		status, err := s.catatGagalLogin(u, now)
 		return nil, status, err
 	}
-	return s.loginBerhasil(u, now, "Login portal berhasil"), 200, nil
+	return s.loginBerhasil(u, now, "Berhasil masuk portal"), 200, nil
 }
 
 // UbahSandi menangani penggantian kata sandi berkala (kebijakan wajib ganti tiap 365 hari).
@@ -858,7 +858,7 @@ func (s *PenggunaModulService) HapusPengguna(adminRole string, targetID uint) er
 		return &PenggunaKonflikError{Pesan: "Anda tidak dapat menghapus akun Anda sendiri."}
 	}
 	if s.repo.HitungKontenForum(target.ID) > 0 {
-		return &PenggunaKonflikError{Pesan: fmt.Sprintf("%s memiliki thread atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.", target.Nama)}
+		return &PenggunaKonflikError{Pesan: fmt.Sprintf("%s memiliki diskusi atau balasan forum, jadi tidak dapat dihapus. Nonaktifkan akunnya saja.", target.Nama)}
 	}
 	if err := s.repo.HapusUser(target.ID); err != nil {
 		return err

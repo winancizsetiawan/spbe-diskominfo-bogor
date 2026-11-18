@@ -80,7 +80,7 @@ export function PenggunaPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter peran" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring peran" className="flex flex-wrap gap-2">
           {TAB.map((t) => (
             <button
               key={t}
@@ -125,7 +125,7 @@ export function PenggunaPage() {
                 <Th>Instansi</Th>
                 <Th>Peran</Th>
                 <Th>Status</Th>
-                <Th>Login terakhir</Th>
+                <Th>Terakhir masuk</Th>
                 <Th>
                   <span className="sr-only">Aksi</span>
                 </Th>

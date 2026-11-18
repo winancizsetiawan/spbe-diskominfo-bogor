@@ -4,7 +4,7 @@ import type { StatusRaa, StatusValidasi } from '../types'
 type Tone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger'
 
 export const STATUS_VALIDASI: Record<StatusValidasi, { label: string; tone: Tone }> = {
-  draft: { label: 'Draft', tone: 'neutral' },
+  draft: { label: 'Draf', tone: 'neutral' },
   menunggu: { label: 'Menunggu', tone: 'brand' },
   disetujui: { label: 'Disetujui', tone: 'success' },
   perlu_revisi: { label: 'Perlu Revisi', tone: 'warning' },

@@ -33,7 +33,7 @@ export function PenugasanDialog({ open, threadId, penerima, onClose }: Props) {
       pilihan.map((p) => p.id),
       {
         onSuccess: () => {
-          toast.success(pilihan.length ? 'Penugasan diperbarui.' : 'Thread kini terbuka untuk semua pengguna.')
+          toast.success(pilihan.length ? 'Penugasan diperbarui.' : 'Diskusi kini terbuka untuk semua pengguna.')
           onClose()
         },
         onError: (err) => {

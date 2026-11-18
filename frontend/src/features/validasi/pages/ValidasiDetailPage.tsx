@@ -95,7 +95,7 @@ export function ValidasiDetailPage() {
                 </Baris>
                 <Baris label="Diagram">
                   <Link to={`/katalog/flowchart/${f.id}`} className="text-brand-700 hover:underline">
-                    Buka halaman flowchart
+                    Buka halaman diagram alur
                   </Link>
                 </Baris>
               </>

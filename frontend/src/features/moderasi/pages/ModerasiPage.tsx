@@ -39,11 +39,11 @@ export function ModerasiPage() {
     <>
       <PageHeader
         title="Moderasi Forum"
-        description="Tinjau thread dan balasan yang dilaporkan, lalu abaikan laporan, kunci thread, atau sembunyikan konten."
+        description="Tinjau diskusi dan balasan yang dilaporkan, lalu abaikan laporan, kunci diskusi, atau sembunyikan konten."
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter antrean moderasi" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring antrean moderasi" className="flex flex-wrap gap-2">
           {TAB.map((t) => (
             <button
               key={t}
@@ -78,7 +78,7 @@ export function ModerasiPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
-        <EmptyState title={tab === 'dilaporkan' && !filter.q ? 'Tidak ada laporan yang menunggu.' : 'Tidak ada item pada filter ini.'}>
+        <EmptyState title={tab === 'dilaporkan' && !filter.q ? 'Tidak ada laporan yang menunggu.' : 'Tidak ada konten pada pilihan ini.'}>
           {tab === 'dilaporkan' && !filter.q && 'Antrean kosong. Laporan baru dari pengguna akan muncul di sini.'}
         </EmptyState>
       ) : (

@@ -134,8 +134,8 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 			if err != nil {
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     targetID,
-					Nama:   "Flowchart",
-					Alasan: "Data flowchart tidak ditemukan.",
+					Nama:   "Diagram Alur",
+					Alasan: "Data diagram alur tidak ditemukan.",
 				})
 				continue
 			}
@@ -143,8 +143,8 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 			if fc.InstansiID != user.InstansiID {
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     targetID,
-					Nama:   "Flowchart",
-					Alasan: "Data flowchart tidak ditemukan.", // sengaja sama: tidak mengungkap data instansi lain
+					Nama:   "Diagram Alur",
+					Alasan: "Data diagram alur tidak ditemukan.", // sengaja sama: tidak mengungkap data instansi lain
 				})
 				continue
 			}
@@ -153,7 +153,7 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     fc.ID,
 					Nama:   fc.Nama,
-					Alasan: "Hanya data berstatus Draft atau Perlu Revisi yang dapat diajukan.",
+					Alasan: "Hanya data berstatus Draf atau Perlu Revisi yang dapat diajukan.",
 				})
 				continue
 			}
@@ -163,7 +163,7 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     fc.ID,
 					Nama:   fc.Nama,
-					Alasan: "Gagal memperbarui status flowchart.",
+					Alasan: "Gagal memperbarui status diagram alur.",
 				})
 				continue
 			}
@@ -183,7 +183,7 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 			s.repo.KirimNotifikasiValidasi(
 				domain.RoleSuperAdmin,
 				nil,
-				fmt.Sprintf("Pengajuan flowchart baru: %s", fc.Nama),
+				fmt.Sprintf("Pengajuan diagram alur baru: %s", fc.Nama),
 				fmt.Sprintf("Diajukan oleh %s menunggu keputusan verifikasi.", user.Nama),
 				fmt.Sprintf("/admin/validasi/%d", pengajuan.ID),
 			)
@@ -214,7 +214,7 @@ func (s *validasiService) Ajukan(input domain.AjukanInput, user domain.User) (*d
 				hasil.Dilewati = append(hasil.Dilewati, domain.ItemDilewati{
 					ID:     apl.ID,
 					Nama:   apl.Nama,
-					Alasan: "Hanya data berstatus Draft atau Perlu Revisi yang dapat diajukan.",
+					Alasan: "Hanya data berstatus Draf atau Perlu Revisi yang dapat diajukan.",
 				})
 				continue
 			}
@@ -299,7 +299,7 @@ func (s *validasiService) Putuskan(id uint, input domain.KeputusanInput, validat
 	}
 	if p.FlowchartID != nil {
 		_ = s.repo.UpdateStatusFlowchart(*p.FlowchartID, statusBaru, catatanPtr)
-		labelJenis = "Flowchart"
+		labelJenis = "Diagram Alur"
 		urlTujuan = fmt.Sprintf("/katalog/flowchart/%d", *p.FlowchartID)
 	} else if p.AplikasiID != nil {
 		_ = s.repo.UpdateStatusAplikasi(*p.AplikasiID, statusBaru, catatanPtr)

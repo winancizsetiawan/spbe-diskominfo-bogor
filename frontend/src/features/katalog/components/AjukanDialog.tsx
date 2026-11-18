@@ -70,7 +70,7 @@ export function AjukanDialog({ target, onClose }: Props) {
         <Spinner className="py-6" />
       ) : daftar.length === 0 ? (
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">Tidak ada data berstatus Draft atau Perlu Revisi yang bisa diajukan.</p>
+          <p className="text-sm text-slate-600">Tidak ada data berstatus Draf atau Perlu Revisi yang bisa diajukan.</p>
           <div className="flex justify-end">
             <Button variant="secondary" onClick={onClose}>
               Tutup
@@ -81,7 +81,7 @@ export function AjukanDialog({ target, onClose }: Props) {
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
             {semua
-              ? `${daftar.length} aplikasi berstatus Draft atau Perlu Revisi akan diajukan ke Super Admin:`
+              ? `${daftar.length} aplikasi berstatus Draf atau Perlu Revisi akan diajukan ke Super Admin:`
               : 'Data berikut akan diajukan ke Super Admin. Selama menunggu keputusan, data tidak dapat diubah.'}
           </p>
           <ul className="max-h-48 list-disc space-y-1 overflow-y-auto pl-5 text-sm font-medium text-slate-800">

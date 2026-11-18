@@ -45,7 +45,7 @@ export function ReportDialog({ target, onClose }: Props) {
     <Dialog
       open={target !== null}
       onClose={onClose}
-      title={target?.targetTipe === 'balasan' ? 'Laporkan balasan' : 'Laporkan thread'}
+      title={target?.targetTipe === 'balasan' ? 'Laporkan balasan' : 'Laporkan diskusi'}
     >
       <form onSubmit={kirim} noValidate className="space-y-4">
         <Field id="alasan-laporan" label="Alasan" error={errors.alasan?.message} hint={`Minimal ${BATAS.alasanMin} karakter.`}>

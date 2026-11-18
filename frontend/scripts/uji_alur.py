@@ -89,7 +89,7 @@ def buat_thread(s):
     s.page.select_option('#idKategori', '1')
     s.page.fill('#judul', JUDUL_THREAD)
     s.page.fill('#konten', f'Isi thread dari pengujian otomatis {TAG}. Thread ini dibuat untuk menguji alur pembuatan diskusi.')
-    s.page.get_by_role('button', name='Terbitkan thread').click()
+    s.page.get_by_role('button', name='Terbitkan diskusi').click()
     s.page.wait_for_url(re.compile(r'/forum/\d+$'), timeout=8000); s.page.wait_for_load_state('networkidle')
     s.page.locator('h1', has_text=JUDUL_THREAD).first.wait_for(timeout=8000)
     h1 = s.page.locator('h1').first.inner_text()
@@ -110,7 +110,7 @@ def balas_thread(s):
 
 def lapor_thread(s):
     s.buka(URL_THREAD)
-    s.page.get_by_role('button', name='Laporkan thread').click()
+    s.page.get_by_role('button', name='Laporkan diskusi').click()
     s.dialog().locator('#alasan-laporan').fill(f'[UJI] Laporan otomatis {TAG}, abaikan.')
     s.dialog().get_by_role('button', name='Kirim laporan').click()
     t = s.toast()
@@ -179,7 +179,7 @@ def tambah_aplikasi(s):
         s.page.select_option('#raa2', index=1); s.page.wait_for_timeout(300)
     if s.page.locator('#raa3 option').count() > 1:
         s.page.select_option('#raa3', index=1)
-    s.page.get_by_role('button', name='Simpan sebagai Draft').click()
+    s.page.get_by_role('button', name='Simpan sebagai Draf').click()
     t = s.toast(); s.page.wait_for_timeout(800)
     s.buka('/katalog/aplikasi')
     s.cari('#cari-aplikasi', TAG)
@@ -217,7 +217,7 @@ def buat_flowchart(s):
     cb = s.page.locator('main input[type=checkbox]')
     if cb.count():
         cb.first.check()
-    s.page.get_by_role('button', name='Simpan sebagai Draft').click()
+    s.page.get_by_role('button', name='Simpan sebagai Draf').click()
     t = s.toast(); s.page.wait_for_timeout(800)
     galat = ' | '.join(x.strip() for x in s.page.locator('main p.text-red-600, main [role=alert]').all_inner_texts() if x.strip())
     return any('POST /flowchart → 2' in m for m in s.mut), f'{t} {galat}'.strip() + f'; url {s.page.url.replace(BASE, "")}'
@@ -250,7 +250,7 @@ def unggah_dokumen(s):
     s.page.fill('#deskripsi', f'Dokumen dari pengujian otomatis {TAG}.')
     s.page.fill('#versi', '1.0')
     s.page.locator('main input[name=visibilitas]').first.check()
-    s.page.get_by_role('button', name='Unggah sebagai Draft').click()
+    s.page.get_by_role('button', name='Unggah sebagai Draf').click()
     s.page.wait_for_timeout(2500); t = s.toast()
     s.buka('/admin/repositori'); s.cari('#cari-repositori', TAG)
     return JUDUL_DOK in s.page.locator('main').inner_text(), f'{t}; muncul di Repositori'
@@ -404,7 +404,7 @@ def periode_bentrok(s):
 
 def backup(s):
     s.buka('/admin/backup')
-    s.page.get_by_role('button', name='Backup Sekarang').click()
+    s.page.get_by_role('button', name='Cadangkan Sekarang').click()
     d = s.page.locator('dialog[open]')
     if d.count():
         d.first.get_by_role('button').last.click()

@@ -95,7 +95,7 @@ export function VerifikasiKontenPage() {
         />
       </section>
 
-      <div role="group" aria-label="Filter status verifikasi" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-4">
+      <div role="group" aria-label="Saring status verifikasi" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-4">
         <button type="button" aria-pressed={filter === 'semua'} className={chipClass(filter === 'semua')} onClick={() => setFilter('semua')}>
           Semua
         </button>
@@ -115,7 +115,7 @@ export function VerifikasiKontenPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState title="Tidak ada tulisan pada filter ini." />
+        <EmptyState title="Tidak ada tulisan pada pilihan ini." />
       ) : (
         <ul className="space-y-3">
           {items.map((a) => {

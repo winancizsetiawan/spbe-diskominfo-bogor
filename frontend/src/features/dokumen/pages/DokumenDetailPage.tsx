@@ -86,7 +86,7 @@ export function DokumenDetailPage() {
 
         {d.status === 'review' && (
           <p role="note" className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Dokumen ini sedang dalam siklus review. Isinya dapat berubah sebelum berstatus Berlaku.
+            Dokumen ini sedang dalam tahap peninjauan. Isinya dapat berubah sebelum berstatus Berlaku.
           </p>
         )}
       </Card>

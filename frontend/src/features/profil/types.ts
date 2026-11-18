@@ -52,7 +52,7 @@ export interface Aktivitas {
 export const AKSI_LABEL: Record<AksiAktivitas, string> = {
   login: 'Masuk',
   unduh: 'Unduh dokumen',
-  thread: 'Thread forum',
+  thread: 'Diskusi forum',
   balasan: 'Balasan forum',
   laporan: 'Laporan konten',
   ubah_profil: 'Ubah profil',
@@ -62,9 +62,9 @@ export const AKSI_LABEL: Record<AksiAktivitas, string> = {
   moderasi: 'Moderasi forum',
   dokumen: 'Kelola dokumen',
   aplikasi: 'Data aplikasi',
-  flowchart: 'Flowchart',
+  flowchart: 'Diagram Alur',
   validasi: 'Validasi data',
-  backup: 'Backup',
+  backup: 'Cadangan Data',
   periode: 'Periode pembaruan',
   dasbor: 'Data dasbor',
 }

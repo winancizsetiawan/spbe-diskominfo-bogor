@@ -265,7 +265,7 @@ func (s *SistemService) GetBackup() (domain.DaftarBackupResponse, error) {
 
 func (s *SistemService) MulaiBackupManual(role string) (*domain.RiwayatBackup, error) {
 	if s.repo.HasRunningBackup() {
-		return nil, &SistemKonflikError{Pesan: "Backup sedang berjalan. Tunggu hingga selesai."}
+		return nil, &SistemKonflikError{Pesan: "Pencadangan sedang berjalan. Tunggu hingga selesai."}
 	}
 
 	user, _ := s.repo.FindUserByRole(role)
@@ -290,7 +290,7 @@ func (s *SistemService) MulaiBackupManual(role string) (*domain.RiwayatBackup, e
 		return nil, err
 	}
 
-	s.CatatAktivitas(userIDPtr, domain.AksiBackup, "Menjalankan backup manual", domain.HasilBerhasil)
+	s.CatatAktivitas(userIDPtr, domain.AksiBackup, "Menjalankan pencadangan manual", domain.HasilBerhasil)
 
 	go s.selesaikanBackup(baris, userIDPtr)
 
@@ -300,7 +300,7 @@ func (s *SistemService) MulaiBackupManual(role string) (*domain.RiwayatBackup, e
 // JalankanBackupOtomatis dipanggil penjadwal harian. Mengembalikan galat bila backup sebelumnya masih berjalan.
 func (s *SistemService) JalankanBackupOtomatis() error {
 	if s.repo.HasRunningBackup() {
-		return errors.New("backup sebelumnya masih berjalan")
+		return errors.New("pencadangan sebelumnya masih berjalan")
 	}
 	oleh := "Sistem"
 	baris := &domain.RiwayatBackup{
@@ -312,7 +312,7 @@ func (s *SistemService) JalankanBackupOtomatis() error {
 	if err := s.repo.CreateBackup(baris, s.retensi()); err != nil {
 		return err
 	}
-	s.CatatAktivitas(nil, domain.AksiBackup, "Menjalankan backup otomatis", domain.HasilBerhasil)
+	s.CatatAktivitas(nil, domain.AksiBackup, "Menjalankan pencadangan otomatis", domain.HasilBerhasil)
 	s.selesaikanBackup(baris, nil)
 	return nil
 }
@@ -325,7 +325,7 @@ func (s *SistemService) selesaikanBackup(baris *domain.RiwayatBackup, uid *uint)
 		baris.Status = domain.StatusBackupGagal
 		baris.PesanGagal = &pesan
 		_ = s.repo.UpdateBackup(baris)
-		s.CatatAktivitas(uid, domain.AksiBackup, "Backup gagal: "+pesan, domain.HasilGagal)
+		s.CatatAktivitas(uid, domain.AksiBackup, "Pencadangan gagal: "+pesan, domain.HasilGagal)
 		return
 	}
 	mb := math.Round(float64(hasil.UkuranBytes)/1024.0/1024.0*100) / 100
@@ -336,7 +336,7 @@ func (s *SistemService) selesaikanBackup(baris *domain.RiwayatBackup, uid *uint)
 	baris.UkuranMb = &mb
 	baris.PesanGagal = nil
 	_ = s.repo.UpdateBackup(baris)
-	s.CatatAktivitas(uid, domain.AksiBackup, "Backup selesai", domain.HasilBerhasil)
+	s.CatatAktivitas(uid, domain.AksiBackup, "Pencadangan selesai", domain.HasilBerhasil)
 }
 
 // ---- 3. Periode Pembaruan Data ----

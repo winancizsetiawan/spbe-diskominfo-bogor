@@ -55,7 +55,7 @@ export function RepositoriListPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div role="group" aria-label="Filter status dokumen" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Saring status dokumen" className="flex flex-wrap gap-2">
           {TAB.map((t) => (
             <button
               key={t}
@@ -90,7 +90,7 @@ export function RepositoriListPage() {
       ) : daftar.isError ? (
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
-        <EmptyState title="Tidak ada dokumen pada filter ini.">
+        <EmptyState title="Tidak ada dokumen pada pilihan ini.">
           {tab === 'semua' && !filter.q ? 'Mulai dengan mengunggah dokumen pertama.' : 'Ubah status atau kata kunci pencarian.'}
         </EmptyState>
       ) : (

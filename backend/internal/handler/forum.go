@@ -87,7 +87,7 @@ func (h *ForumHandler) BuatThread(c *gin.Context) {
 
 	res, err := h.svc.BuatThread(role, in)
 	if err != nil {
-		jawabGalatForum(c, err, "Gagal membuat thread diskusi.")
+		jawabGalatForum(c, err, "Gagal membuat diskusi.")
 		return
 	}
 	tandaiThread(res)
@@ -104,13 +104,13 @@ func (h *ForumHandler) GetThreadDetail(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Thread tidak ditemukan."})
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Diskusi tidak ditemukan."})
 		return
 	}
 
 	res, err := h.svc.GetThreadDetail(uint(id), role)
 	if err != nil {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Thread tidak ditemukan."})
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Diskusi tidak ditemukan."})
 		return
 	}
 	tandaiThread(res)
@@ -127,7 +127,7 @@ func (h *ForumHandler) BuatBalasan(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
-		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Thread tidak ditemukan."})
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: "Diskusi tidak ditemukan."})
 		return
 	}
 

@@ -47,7 +47,7 @@ export function CreateThreadPage() {
       },
       {
         onSuccess: (thread) => {
-          toast.success('Thread berhasil dibuat.')
+          toast.success('Diskusi berhasil dibuat.')
           navigate(`/forum/${thread.id}`)
         },
         onError: (err) => {
@@ -68,7 +68,7 @@ export function CreateThreadPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Buat Thread" description="Ajukan pertanyaan atau mulai diskusi dengan ASN dan akademisi lain." />
+      <PageHeader title="Buat Diskusi" description="Ajukan pertanyaan atau mulai diskusi dengan ASN dan akademisi lain." />
       <Card>
         <form onSubmit={kirim} noValidate className="space-y-5">
           <Field id="idKategori" label="Kategori" error={errors.idKategori?.message}>
@@ -145,7 +145,7 @@ export function CreateThreadPage() {
               Batal
             </Link>
             <Button type="submit" disabled={buat.isPending || mengunggah}>
-              {buat.isPending ? 'Menyimpan…' : mengunggah ? 'Menunggu unggahan…' : 'Terbitkan thread'}
+              {buat.isPending ? 'Menyimpan…' : mengunggah ? 'Menunggu unggahan…' : 'Terbitkan diskusi'}
             </Button>
           </div>
         </form>

@@ -104,7 +104,7 @@ export interface Bantuan {
 export const JENIS_LABEL: Record<FilterJenis, string> = { semua: 'Semua', berita: 'Berita', artikel: 'Artikel' }
 
 export const FORMAT_LABEL: Record<FormatArtikel, string> = { gambar: 'Gambar', video: 'Video', audio: 'Audio', teks: 'Teks' }
-export const URL_LABEL: Record<FormatArtikel, string> = { gambar: 'URL gambar', video: 'URL video', audio: 'URL audio', teks: 'URL teks' }
+export const URL_LABEL: Record<FormatArtikel, string> = { gambar: 'Tautan gambar', video: 'Tautan video', audio: 'Tautan audio', teks: 'Tautan teks' }
 export const AKSES_LABEL: Record<AksesArtikel, string> = { publik: 'Publik (semua orang)', internal: 'Internal (setelah masuk)' }
 
 /** Daftar sementara; ganti dengan kategori master bila sudah ada sumbernya. Server menerima teks 2 sampai 80 karakter. */

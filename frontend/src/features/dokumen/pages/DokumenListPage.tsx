@@ -58,7 +58,7 @@ export function DokumenListPage({ kelompok }: { kelompok: Kelompok }) {
       <section aria-label="Ringkasan" className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label={kelompok === 'sop' ? 'Total SOP' : 'Total dokumen'} value={ringkasan.data ? formatAngka(ringkasan.data.total) : '–'} />
         <StatCard
-          label={kelompok === 'sop' ? 'Berlaku · dalam review' : 'Berlaku'}
+          label={kelompok === 'sop' ? 'Berlaku · sedang ditinjau' : 'Berlaku'}
           value={ringkasan.data ? (kelompok === 'sop' ? `${ringkasan.data.berlaku} · ${ringkasan.data.review}` : ringkasan.data.berlaku) : '–'}
           tone="success"
         />
@@ -104,7 +104,7 @@ export function DokumenListPage({ kelompok }: { kelompok: Kelompok }) {
           </div>
         </div>
 
-        <div role="group" aria-label={kelompok === 'sop' ? 'Filter kategori' : 'Filter jenis'} className="flex flex-wrap gap-2">
+        <div role="group" aria-label={kelompok === 'sop' ? 'Saring kategori' : 'Saring jenis'} className="flex flex-wrap gap-2">
           <button
             type="button"
             aria-pressed={!filter.jenis && !filter.kategori}
@@ -145,7 +145,7 @@ export function DokumenListPage({ kelompok }: { kelompok: Kelompok }) {
         <ErrorState message={errorMessage(daftar.error)} onRetry={() => void daftar.refetch()} />
       ) : daftar.data.items.length === 0 ? (
         <EmptyState title="Tidak ada dokumen yang cocok.">
-          {adaFilter ? 'Coba kata kunci atau filter lain.' : 'Belum ada dokumen yang dapat Anda akses.'}
+          {adaFilter ? 'Coba kata kunci atau pilihan lain.' : 'Belum ada dokumen yang dapat Anda akses.'}
         </EmptyState>
       ) : (
         <div className={daftar.isPlaceholderData ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
