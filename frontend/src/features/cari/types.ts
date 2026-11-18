@@ -51,4 +51,4 @@ export function kataKunci(q: string) {
 }
 
 /** Kueri contoh untuk pengunjung; mengarah ke pencarian pintar. */
-export const PENCARIAN_POPULER = ['Arsitektur SPBE', 'Peraturan SPBE', 'Keamanan informasi', 'Cadangan data', 'Integrasi layanan']
+export const PENCARIAN_POPULER = ['Arsitektur Digital', 'Peraturan Arsitektur Digital', 'Keamanan informasi', 'Cadangan data', 'Integrasi layanan']

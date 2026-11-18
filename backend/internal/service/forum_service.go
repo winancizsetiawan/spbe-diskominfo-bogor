@@ -146,7 +146,7 @@ func penulisDariUser(u domain.User) domain.PenulisForum {
 	}
 	nama := u.Nama
 	if nama == "" {
-		nama = "Pengguna SPBE"
+		nama = "Pengguna Arsitektur Digital"
 	}
 	return domain.PenulisForum{
 		Nama:     nama,

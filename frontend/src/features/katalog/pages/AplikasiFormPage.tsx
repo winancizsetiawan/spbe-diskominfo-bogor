@@ -131,7 +131,7 @@ export function AplikasiFormPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title={editId ? `Ubah ${detail.data?.nama ?? 'aplikasi'}` : 'Tambah Aplikasi'}
-        description="Lengkapi data dan klasifikasi RAA Level 1–3 sesuai pedoman arsitektur SPBE."
+        description="Lengkapi data dan klasifikasi RAA Level 1–3 sesuai pedoman arsitektur digital."
       />
 
       {terkunci && (

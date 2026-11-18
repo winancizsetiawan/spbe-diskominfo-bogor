@@ -36,7 +36,7 @@ export function ForumListPage() {
     <>
       <PageHeader
         title="Forum Diskusi"
-        description="Berdiskusi dan berbagi pengetahuan seputar implementasi SPBE."
+        description="Berdiskusi dan berbagi pengetahuan seputar implementasi Arsitektur Digital."
         actions={
           <Link to="/forum/baru" className={buttonClass('primary')}>
             <Plus className="size-4" aria-hidden /> Buat Diskusi

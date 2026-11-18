@@ -26,7 +26,7 @@ export function KursusListPage() {
 
   return (
     <>
-      <PageHeader title="Pembelajaran" description="Kursus mandiri seputar SPBE. Selesaikan semua materi untuk memperoleh bukti penyelesaian." />
+      <PageHeader title="Pembelajaran" description="Kursus mandiri seputar Arsitektur Digital. Selesaikan semua materi untuk memperoleh bukti penyelesaian." />
 
       {kursus.isPending ? (
         <Spinner className="py-16" />

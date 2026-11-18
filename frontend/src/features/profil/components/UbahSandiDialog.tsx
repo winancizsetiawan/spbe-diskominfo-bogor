@@ -74,7 +74,7 @@ export function UbahSandiDialog({ open, wajib = false, onClose }: Props) {
             <div>
               <p className="font-semibold">Kata sandi Anda telah berusia lebih dari 1 tahun (365 hari).</p>
               <p className="mt-0.5 text-amber-800">
-                Sesuai kebijakan keamanan SPBE Kota Bogor, Anda wajib mengganti kata sandi sebelum melanjutkan akses ke portal.
+                Sesuai kebijakan keamanan Arsitektur Digital Kota Bogor, Anda wajib mengganti kata sandi sebelum melanjutkan akses ke portal.
               </p>
             </div>
           </div>

@@ -10,15 +10,15 @@ const P = 'Diskominfo Kota Bogor'
 type BenihArtikel = Omit<ArtikelDetail, 'format' | 'urlSumber' | 'kolaborator' | 'kategori' | 'label' | 'statusAkses' | 'unggulan'>
 
 const benih: BenihArtikel[] = [
-  { id: 1, jenis: 'berita', judul: 'Kota Bogor Perkuat Integrasi Layanan Digital Antar-OPD', ringkasan: 'Pemerintah Kota Bogor mempercepat integrasi layanan lewat portal SPBE terpadu.', penulis: P, tanggal: hariLalu(2), views: 412, konten: 'Pemerintah Kota Bogor mempercepat integrasi layanan digital antar perangkat daerah melalui portal SPBE terpadu.\n\nLangkah ini diharapkan mengurangi duplikasi aplikasi dan mempermudah pertukaran data antar-OPD.' },
-  { id: 2, jenis: 'berita', judul: 'Pelatihan Arsitektur SPBE Diikuti 40 Admin OPD', ringkasan: 'Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.', penulis: P, tanggal: hariLalu(9), views: 268, konten: 'Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi.' },
+  { id: 1, jenis: 'berita', judul: 'Kota Bogor Perkuat Integrasi Layanan Digital Antar-OPD', ringkasan: 'Pemerintah Kota Bogor mempercepat integrasi layanan lewat portal Arsitektur Digital terpadu.', penulis: P, tanggal: hariLalu(2), views: 412, konten: 'Pemerintah Kota Bogor mempercepat integrasi layanan digital antar perangkat daerah melalui portal Arsitektur Digital terpadu.\n\nLangkah ini diharapkan mengurangi duplikasi aplikasi dan mempermudah pertukaran data antar-OPD.' },
+  { id: 2, jenis: 'berita', judul: 'Pelatihan Arsitektur Digital Diikuti 40 Admin OPD', ringkasan: 'Pelatihan penyusunan Referensi Arsitektur Aplikasi digelar dua hari.', penulis: P, tanggal: hariLalu(9), views: 268, konten: 'Sebanyak 40 admin OPD mengikuti pelatihan penyusunan Referensi Arsitektur Aplikasi (RAA).\n\nPeserta berlatih mengklasifikasikan aplikasi dan mengajukan data untuk divalidasi.' },
   { id: 3, jenis: 'berita', judul: 'Batas Waktu Pembaruan Data Aplikasi Triwulan Berjalan', ringkasan: 'Admin OPD diminta melengkapi data sebelum tenggat.', penulis: P, tanggal: hariLalu(14), views: 190, konten: 'Admin OPD diingatkan melengkapi dan mengajukan validasi data aplikasi sebelum tenggat periode berjalan.\n\nPengingat otomatis dikirim pada H-7, H-3, dan H-1.' },
-  { id: 4, jenis: 'artikel', judul: 'Mengenal Referensi Arsitektur Aplikasi (RAA)', ringkasan: 'Penjelasan singkat RAA dan manfaatnya bagi perencanaan aplikasi pemerintah.', penulis: 'Tim Arsitektur SPBE', tanggal: hariLalu(20), views: 530, konten: 'RAA adalah acuan klasifikasi aplikasi pemerintah agar selaras dengan arsitektur SPBE.\n\nAplikasi yang klasifikasinya sesuai dianggap patuh; yang belum perlu disesuaikan.' },
+  { id: 4, jenis: 'artikel', judul: 'Mengenal Referensi Arsitektur Aplikasi (RAA)', ringkasan: 'Penjelasan singkat RAA dan manfaatnya bagi perencanaan aplikasi pemerintah.', penulis: 'Tim Arsitektur Digital', tanggal: hariLalu(20), views: 530, konten: 'RAA adalah acuan klasifikasi aplikasi pemerintah agar selaras dengan arsitektur digital.\n\nAplikasi yang klasifikasinya sesuai dianggap patuh; yang belum perlu disesuaikan.' },
   { id: 5, jenis: 'artikel', judul: 'Praktik Baik Pencadangan Data Aplikasi Pemerintah', ringkasan: 'Pencadangan harian dengan retensi tujuh hari dan uji pemulihan berkala.', penulis: 'Tim Keamanan Informasi', tanggal: hariLalu(33), views: 345, konten: 'Pencadangan harian mencakup basis data dan berkas unggahan, disimpan di lokasi aman.\n\nSimpan tujuh cadangan terakhir dan uji pemulihan secara berkala.' },
   { id: 6, jenis: 'artikel', judul: 'Panduan Menulis Topik Diskusi yang Efektif', ringkasan: 'Cara merumuskan pertanyaan agar cepat dijawab komunitas.', penulis: 'Moderator Forum', tanggal: hariLalu(41), views: 121, konten: 'Tulis judul yang spesifik, jelaskan konteks, dan cantumkan langkah yang sudah dicoba.\n\nHindari membagikan data pribadi atau kredensial.' },
 ]
 
-const KATEGORI_BENIH: Record<JenisArtikel, string> = { berita: 'Layanan Digital', artikel: 'Arsitektur SPBE' }
+const KATEGORI_BENIH: Record<JenisArtikel, string> = { berita: 'Layanan Digital', artikel: 'Arsitektur Digital' }
 
 export const artikel: ArtikelDetail[] = benih.map((a) => ({
   ...a,
@@ -45,7 +45,7 @@ export const bantuan: Bantuan = {
     { id: 3, judul: 'Berdiskusi di forum', isi: 'Buat diskusi pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas.' },
   ],
   video: [
-    { id: 1, judul: 'Pengenalan Portal SPBE', url: 'https://www.youtube.com/' },
+    { id: 1, judul: 'Pengenalan Portal Arsitektur Digital', url: 'https://www.youtube.com/' },
     { id: 2, judul: 'Mengajukan Validasi Data Aplikasi', url: 'https://www.youtube.com/' },
   ],
 }

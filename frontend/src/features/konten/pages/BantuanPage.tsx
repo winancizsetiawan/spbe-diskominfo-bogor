@@ -73,7 +73,7 @@ export function BantuanPage() {
             <div>
               <p className="font-semibold text-slate-900">{KONTAK.instansi}</p>
               <p className="text-sm text-slate-700">{KONTAK.bidang}</p>
-              <p className="mt-1 text-sm text-slate-500">Pengelola Portal SPBE Pemerintah Kota Bogor</p>
+              <p className="mt-1 text-sm text-slate-500">Pengelola Portal Arsitektur Digital Pemerintah Kota Bogor</p>
             </div>
           </div>
           <p className="text-sm text-slate-600">
