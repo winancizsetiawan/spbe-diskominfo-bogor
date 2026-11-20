@@ -47,9 +47,12 @@ type User struct {
 	// Nip terisi untuk ASN yang masuk lewat akun TND Pemkot Bogor.
 	Nip *string `gorm:"size:30;uniqueIndex" json:"-"`
 	// SumberAkun: "lokal" (kata sandi di portal) atau "tnd" (kata sandi dikelola TND, tidak disimpan di portal).
-	SumberAkun string    `gorm:"size:20;not null;default:'lokal'" json:"-"`
-	FotoProfil *string   `gorm:"size:255" json:"fotoProfil,omitempty"`
-	CreatedAt  time.Time `json:"-"`
+	SumberAkun        string    `gorm:"size:20;not null;default:'lokal'" json:"-"`
+	FotoProfil        *string   `gorm:"size:255" json:"fotoProfil,omitempty"`
+	TwoFAAktif        bool      `gorm:"not null;default:true" json:"twoFaAktif"`
+	TwoFASecret       *string   `gorm:"size:100" json:"-"`
+	TwoFADikonfirmasi bool      `gorm:"not null;default:false" json:"twoFaDikonfirmasi"`
+	CreatedAt         time.Time `json:"-"`
 	UpdatedAt  time.Time `json:"-"`
 }
 

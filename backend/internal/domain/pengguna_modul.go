@@ -63,8 +63,29 @@ type LoginResponse struct {
 	Role Role        `json:"role"`
 	User PenggunaDTO `json:"user"`
 	// Token sesi portal (diisi handler). FE mengirimnya sebagai "Authorization: Bearer <token>".
-	Token           string     `json:"token,omitempty"`
-	KedaluwarsaPada *time.Time `json:"kedaluwarsaPada,omitempty"`
+	Token            string     `json:"token,omitempty"`
+	KedaluwarsaPada  *time.Time `json:"kedaluwarsaPada,omitempty"`
+	ButuhPersetujuan bool       `json:"butuhPersetujuan,omitempty"`
+	Butuh2FA         bool       `json:"butuh2fa,omitempty"`
+	ButuhSetup2FA    bool       `json:"butuhSetup2fa,omitempty"`
+	PraLoginToken    string     `json:"praLoginToken,omitempty"`
+	TwoFAUri         string     `json:"twoFaUri,omitempty"`
+	TwoFASecret      string     `json:"twoFaSecret,omitempty"`
+}
+
+type LanjutLoginInput struct {
+	PraLoginToken string `json:"praLoginToken"`
+	SetujuSyarat  bool   `json:"setujuSyarat"`
+	Kode2FA       string `json:"kode2fa"`
+}
+
+type Setup2FAResponse struct {
+	Secret string `json:"secret"`
+	Uri    string `json:"uri"`
+}
+
+type Konfirmasi2FAInput struct {
+	Kode string `json:"kode"`
 }
 
 type UbahSandiInput struct {
@@ -92,8 +113,10 @@ type PenggunaDTO struct {
 	WajibGantiSandi bool            `json:"wajibGantiSandi"`
 	SisaHariSandi   int             `json:"sisaHariSandi"`
 	// "lokal" atau "tnd". Akun TND tidak dapat mengganti kata sandi di portal.
-	SumberAkun string  `json:"sumberAkun"`
-	FotoProfil *string `json:"fotoProfil,omitempty"`
+	SumberAkun        string  `json:"sumberAkun"`
+	FotoProfil        *string `json:"fotoProfil,omitempty"`
+	TwoFAAktif        bool    `json:"twoFaAktif"`
+	TwoFADikonfirmasi bool    `json:"twoFaDikonfirmasi"`
 }
 
 type HitunganRolePengguna struct {

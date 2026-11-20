@@ -1,13 +1,15 @@
-import { BadgeCheck, Clock, KeyRound, Pencil } from 'lucide-react'
+import { BadgeCheck, Clock, KeyRound, Pencil, ShieldCheck, ShieldOff } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { ApiError } from '@/api/client'
 import { can, type Permission } from '@/auth/permissions'
 import type { User } from '@/auth/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { toast } from '@/components/ui/toast'
+import { TwoFAModal } from '@/features/auth/TwoFAModal'
 import { formatTanggal } from '@/lib/format'
-import { useSimulasiKedaluwarsaSandi } from '../api'
+import { useAktifkan2FA, useMulaiSetup2FA, useNonaktifkan2FA, useSimulasiKedaluwarsaSandi } from '../api'
 import type { ProfilSaya } from '../types'
 import { TeleponDialog } from './TeleponDialog'
 import { UbahSandiDialog } from './UbahSandiDialog'
@@ -46,7 +48,13 @@ function Baris({ label, children }: { label: string; children: ReactNode }) {
 export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
   const [ubahTelepon, setUbahTelepon] = useState(false)
   const [ubahSandi, setUbahSandi] = useState(false)
+  const [setup2FA, setSetup2FA] = useState<{ secret: string; uri: string } | null>(null)
+  const [galat2FA, setGalat2FA] = useState<string | null>(null)
   const simulasi = useSimulasiKedaluwarsaSandi()
+  const mulai2FA = useMulaiSetup2FA()
+  const aktifkan2FA = useAktifkan2FA()
+  const nonaktifkan2FA = useNonaktifkan2FA()
+  const twoFaAktif = user.twoFaAktif ?? true
 
   const sisaHari = user.sisaHariSandi ?? 365
   const wajibGanti = user.wajibGantiSandi ?? false
@@ -166,8 +174,76 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
       </Card>
       )}
 
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-slate-900">Autentikasi Dua Faktor (2FA)</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Keamanan tambahan saat login menggunakan kode 6 digit dari Google Authenticator atau Microsoft Authenticator.
+            </p>
+          </div>
+          <Badge tone={twoFaAktif ? 'success' : 'neutral'}>{twoFaAktif ? 'Aktif' : 'Nonaktif'}</Badge>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {twoFaAktif ? (
+            <Button
+              variant="secondary"
+              disabled={nonaktifkan2FA.isPending}
+              onClick={() =>
+                nonaktifkan2FA.mutate(undefined, {
+                  onSuccess: () => toast.success('Autentikasi Dua Faktor (2FA) telah dinonaktifkan.'),
+                  onError: () => toast.error('Gagal menonaktifkan 2FA.'),
+                })
+              }
+            >
+              <ShieldOff className="size-4" aria-hidden />
+              {nonaktifkan2FA.isPending ? 'Memproses...' : 'Nonaktifkan 2FA'}
+            </Button>
+          ) : (
+            <Button
+              disabled={mulai2FA.isPending}
+              onClick={() => {
+                setGalat2FA(null)
+                mulai2FA.mutate(undefined, {
+                  onSuccess: (res) => setSetup2FA(res),
+                  onError: () => toast.error('Gagal menyiapkan QR Code 2FA.'),
+                })
+              }}
+            >
+              <ShieldCheck className="size-4" aria-hidden />
+              {mulai2FA.isPending ? 'Menyiapkan...' : 'Aktifkan 2FA'}
+            </Button>
+          )}
+        </div>
+      </Card>
+
       <TeleponDialog open={ubahTelepon} noTelepon={profil.noTelepon} onClose={() => setUbahTelepon(false)} />
       <UbahSandiDialog open={ubahSandi} onClose={() => setUbahSandi(false)} />
+      <TwoFAModal
+        open={setup2FA !== null}
+        butuhSetup={true}
+        uri={setup2FA?.uri}
+        secret={setup2FA?.secret}
+        memuat={aktifkan2FA.isPending}
+        galat={galat2FA}
+        onBatal={() => {
+          setSetup2FA(null)
+          setGalat2FA(null)
+        }}
+        onVerifikasi={(kode) => {
+          setGalat2FA(null)
+          aktifkan2FA.mutate(kode, {
+            onSuccess: () => {
+              setSetup2FA(null)
+              toast.success('Autentikasi Dua Faktor (2FA) berhasil diaktifkan.')
+            },
+            onError: (err) => {
+              setGalat2FA(err instanceof ApiError ? err.fieldErrors?.kode ?? err.message : 'Kode 2FA tidak valid.')
+            },
+          })
+        }}
+      />
     </div>
   )
 }

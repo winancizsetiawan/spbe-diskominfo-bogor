@@ -121,3 +121,31 @@ export function useSimulasiKedaluwarsaSandi() {
     },
   })
 }
+
+export function useMulaiSetup2FA() {
+  return useMutation({
+    mutationFn: () => api<{ secret: string; uri: string }>('/profil/2fa/mulai', { method: 'POST' }),
+  })
+}
+
+export function useAktifkan2FA() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (kode: string) => api<User>('/profil/2fa/aktifkan', { method: 'POST', json: { kode } }),
+    onSuccess: (updatedUser) => {
+      useSession.getState().setUser(updatedUser)
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}
+
+export function useNonaktifkan2FA() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api<User>('/profil/2fa/nonaktifkan', { method: 'POST' }),
+    onSuccess: (updatedUser) => {
+      useSession.getState().setUser(updatedUser)
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}

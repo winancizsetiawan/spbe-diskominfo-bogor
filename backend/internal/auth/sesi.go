@@ -20,8 +20,9 @@ import (
 // dimasukkan ke token ini.
 
 const (
-	penerbitSesi = "spbe-portal"
-	jenisSesi    = "sesi"
+	penerbitSesi  = "spbe-portal"
+	jenisSesi     = "sesi"
+	jenisPraLogin = "pra_login"
 )
 
 var (
@@ -79,6 +80,58 @@ func TerbitkanSesi(peran, email string) (token string, kedaluwarsa time.Time, er
 		Role: peran, Iat: sekarang.Unix(), Exp: kedaluwarsa.Unix()})
 	isi := base64.RawURLEncoding.EncodeToString(kepala) + "." + base64.RawURLEncoding.EncodeToString(klaim)
 	return isi + "." + tandaiSesi(isi, k), kedaluwarsa, nil
+}
+
+// TerbitkanPraLogin membuat token sementara (10 menit) setelah kredensial valid, sebelum S&K dan 2FA selesai.
+func TerbitkanPraLogin(peran, email string) (string, error) {
+	muSesi.RLock()
+	k := rahasiaSesi
+	muSesi.RUnlock()
+	if len(k) == 0 {
+		return "", errors.New("rahasia sesi belum diatur")
+	}
+	if !peranDikenal(peran) || strings.TrimSpace(email) == "" {
+		return "", errors.New("peran atau email tidak valid")
+	}
+	sekarang := time.Now()
+	kedaluwarsa := sekarang.Add(10 * time.Minute)
+	kepala, _ := json.Marshal(map[string]string{"alg": "HS256", "typ": "JWT"})
+	klaim, _ := json.Marshal(klaimSesi{Iss: penerbitSesi, Typ: jenisPraLogin, Email: strings.ToLower(strings.TrimSpace(email)),
+		Role: peran, Iat: sekarang.Unix(), Exp: kedaluwarsa.Unix()})
+	isi := base64.RawURLEncoding.EncodeToString(kepala) + "." + base64.RawURLEncoding.EncodeToString(klaim)
+	return isi + "." + tandaiSesi(isi, k), nil
+}
+
+// PeriksaPraLogin memverifikasi token pra-login yang dikirim pada tahap persetujuan S&K dan 2FA.
+func PeriksaPraLogin(token string) (peran, email string, err error) {
+	muSesi.RLock()
+	k := rahasiaSesi
+	muSesi.RUnlock()
+	if len(k) == 0 {
+		return "", "", errors.New("sesi portal tidak aktif")
+	}
+	bagian := strings.Split(token, ".")
+	if len(bagian) != 3 {
+		return "", "", errors.New("token pra-login tidak valid")
+	}
+	isi := bagian[0] + "." + bagian[1]
+	if !hmac.Equal([]byte(bagian[2]), []byte(tandaiSesi(isi, k))) {
+		return "", "", errors.New("tanda tangan pra-login tidak sah")
+	}
+	var c klaimSesi
+	if err := dekodeJSON(bagian[1], &c); err != nil {
+		return "", "", err
+	}
+	if c.Iss != penerbitSesi || c.Typ != jenisPraLogin {
+		return "", "", errors.New("bukan token pra-login")
+	}
+	if c.Exp == 0 || time.Now().Unix() >= c.Exp {
+		return "", "", errors.New("sesi login sementara kedaluwarsa, silakan masuk ulang")
+	}
+	if !peranDikenal(c.Role) || c.Email == "" {
+		return "", "", errors.New("klaim pra-login tidak lengkap")
+	}
+	return c.Role, c.Email, nil
 }
 
 // adalahTokenSesi: token berbentuk JWT dengan alg HS256 dianggap token sesi portal.

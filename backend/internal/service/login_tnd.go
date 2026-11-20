@@ -176,7 +176,7 @@ func (s *PenggunaModulService) loginTND(nip, sandi string) (*domain.LoginRespons
 		u.Instansi = *ins
 	}
 	_ = s.repo.SimpanProfilTND(u.ID, nip, p.Jabatan, ins.Nama)
-	return s.loginBerhasil(u, now, "Berhasil masuk portal lewat TND"), 200, nil
+	return s.siapkanPraLogin(u, now)
 }
 
 func idDari(u *domain.User) *uint {

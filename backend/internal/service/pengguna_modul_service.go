@@ -172,9 +172,11 @@ func kePenggunaDTO(u domain.User) domain.PenggunaDTO {
 			Nama: u.Instansi.Nama,
 		},
 		LoginTerakhir:   u.LoginTerakhir,
-		SandiDiubahPada: diubahPada,
-		WajibGantiSandi: wajibGanti,
-		SisaHariSandi:   sisaHari,
+		SandiDiubahPada:   diubahPada,
+		WajibGantiSandi:   wajibGanti,
+		SisaHariSandi:     sisaHari,
+		TwoFAAktif:        u.TwoFAAktif,
+		TwoFADikonfirmasi: u.TwoFADikonfirmasi,
 	}
 }
 
@@ -267,7 +269,167 @@ func (s *PenggunaModulService) Login(in domain.LoginInput) (*domain.LoginRespons
 		status, err := s.catatGagalLogin(u, now)
 		return nil, status, err
 	}
-	return s.loginBerhasil(u, now, "Berhasil masuk portal"), 200, nil
+	return s.siapkanPraLogin(u, now)
+}
+
+func (s *PenggunaModulService) siapkanPraLogin(u *domain.User, now time.Time) (*domain.LoginResponse, int, error) {
+	u.GagalLogin = 0
+	u.TerkunciHingga = nil
+	_ = s.repo.UpdateUser(u)
+
+	praToken, err := auth.TerbitkanPraLogin(string(u.Role), u.Email)
+	if err != nil {
+		return nil, 500, errors.New("Gagal menyiapkan tahap persetujuan login.")
+	}
+	butuhSetup := u.TwoFAAktif && (!u.TwoFADikonfirmasi || u.TwoFASecret == nil || *u.TwoFASecret == "")
+	return &domain.LoginResponse{
+		Role:             u.Role,
+		User:             kePenggunaDTO(*u),
+		ButuhPersetujuan: true,
+		Butuh2FA:         u.TwoFAAktif,
+		ButuhSetup2FA:    butuhSetup,
+		PraLoginToken:    praToken,
+	}, 200, nil
+}
+
+// LanjutLogin menyelesaikan tahap persetujuan S&K (setiap login) dan verifikasi/setup 2FA (jika aktif).
+func (s *PenggunaModulService) LanjutLogin(in domain.LanjutLoginInput) (*domain.LoginResponse, int, error) {
+	if !in.SetujuSyarat {
+		return nil, 422, &ValidationError{Errors: map[string]string{
+			"setujuSyarat": "Anda harus menyetujui pernyataan dan persetujuan pengguna terlebih dahulu.",
+		}}
+	}
+	peran, email, err := auth.PeriksaPraLogin(strings.TrimSpace(in.PraLoginToken))
+	if err != nil {
+		return nil, 401, err
+	}
+	u, err := s.repo.FindUserByEmail(email)
+	if err != nil || u == nil {
+		return nil, 401, errors.New("Akun tidak ditemukan.")
+	}
+	if auth.PeranDari(peran) != "" && u.PunyaPeran(domain.Role(peran)) {
+		u.Role = domain.Role(peran)
+	}
+	now := time.Now()
+	if status, err := s.cekBlokir(u, now); err != nil {
+		return nil, status, err
+	}
+
+	// Jika 2FA sudah dinonaktifkan dari profil, langsung terbitkan sesi penuh.
+	if !u.TwoFAAktif {
+		return s.loginBerhasil(u, now, "Berhasil masuk portal"), 200, nil
+	}
+
+	kode := strings.TrimSpace(in.Kode2FA)
+	perluSetup := !u.TwoFADikonfirmasi || u.TwoFASecret == nil || *u.TwoFASecret == ""
+	if perluSetup {
+		if u.TwoFASecret == nil || *u.TwoFASecret == "" {
+			rahasia, err := auth.BuatRahasiaTOTP()
+			if err != nil {
+				return nil, 500, errors.New("Gagal menyiapkan kode QR 2FA.")
+			}
+			u.TwoFASecret = &rahasia
+			if err := s.repo.UpdateUser(u); err != nil {
+				return nil, 500, errors.New("Gagal menyimpan konfigurasi 2FA.")
+			}
+		}
+		if kode == "" {
+			uri := auth.BuatURITOTP("Arsitektur Digital Kota Bogor", u.Email, *u.TwoFASecret)
+			return &domain.LoginResponse{
+				Role:          u.Role,
+				User:          kePenggunaDTO(*u),
+				Butuh2FA:      true,
+				ButuhSetup2FA: true,
+				PraLoginToken: in.PraLoginToken,
+				TwoFAUri:      uri,
+				TwoFASecret:   *u.TwoFASecret,
+			}, 200, nil
+		}
+		if !auth.VerifikasiTOTP(*u.TwoFASecret, kode, now) {
+			return nil, 422, &ValidationError{Errors: map[string]string{
+				"kode2fa": "Kode 6 digit dari aplikasi Authenticator tidak cocok. Pastikan waktu perangkat sinkron.",
+			}}
+		}
+		u.TwoFADikonfirmasi = true
+		_ = s.repo.UpdateUser(u)
+		uid := u.ID
+		s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Mengaktifkan autentikasi dua faktor (2FA) saat login pertama", domain.HasilBerhasil)
+		return s.loginBerhasil(u, now, "Berhasil masuk portal dengan 2FA"), 200, nil
+	}
+
+	// Sudah pernah setup 2FA: wajib verifikasi 6 digit kode TOTP.
+	if kode == "" {
+		return &domain.LoginResponse{
+			Role:          u.Role,
+			User:          kePenggunaDTO(*u),
+			Butuh2FA:      true,
+			ButuhSetup2FA: false,
+			PraLoginToken: in.PraLoginToken,
+		}, 200, nil
+	}
+	if !auth.VerifikasiTOTP(*u.TwoFASecret, kode, now) {
+		return nil, 422, &ValidationError{Errors: map[string]string{
+			"kode2fa": "Kode 2FA tidak valid atau sudah kedaluwarsa.",
+		}}
+	}
+	return s.loginBerhasil(u, now, "Berhasil masuk portal dengan 2FA"), 200, nil
+}
+
+func (s *PenggunaModulService) MulaiSetup2FA(role string) (*domain.Setup2FAResponse, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	rahasia, err := auth.BuatRahasiaTOTP()
+	if err != nil {
+		return nil, err
+	}
+	u.TwoFASecret = &rahasia
+	u.TwoFADikonfirmasi = false
+	if err := s.repo.UpdateUser(u); err != nil {
+		return nil, err
+	}
+	uri := auth.BuatURITOTP("Arsitektur Digital Kota Bogor", u.Email, rahasia)
+	return &domain.Setup2FAResponse{Secret: rahasia, Uri: uri}, nil
+}
+
+func (s *PenggunaModulService) Aktifkan2FA(role, kode string) (*domain.PenggunaDTO, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	if u.TwoFASecret == nil || *u.TwoFASecret == "" {
+		return nil, &ValidationError{Errors: map[string]string{"kode": "Silakan mulai pengaturan QR Code 2FA terlebih dahulu."}}
+	}
+	if !auth.VerifikasiTOTP(*u.TwoFASecret, kode, time.Now()) {
+		return nil, &ValidationError{Errors: map[string]string{"kode": "Kode 6 digit dari Authenticator tidak cocok."}}
+	}
+	u.TwoFAAktif = true
+	u.TwoFADikonfirmasi = true
+	if err := s.repo.UpdateUser(u); err != nil {
+		return nil, err
+	}
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Mengaktifkan autentikasi dua faktor (2FA)", domain.HasilBerhasil)
+	dto := kePenggunaDTO(*u)
+	return &dto, nil
+}
+
+func (s *PenggunaModulService) Nonaktifkan2FA(role string) (*domain.PenggunaDTO, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, err
+	}
+	u.TwoFAAktif = false
+	u.TwoFADikonfirmasi = false
+	u.TwoFASecret = nil
+	if err := s.repo.UpdateUser(u); err != nil {
+		return nil, err
+	}
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Menonaktifkan autentikasi dua faktor (2FA)", domain.HasilBerhasil)
+	dto := kePenggunaDTO(*u)
+	return &dto, nil
 }
 
 // UbahSandi menangani penggantian kata sandi berkala (kebijakan wajib ganti tiap 365 hari).

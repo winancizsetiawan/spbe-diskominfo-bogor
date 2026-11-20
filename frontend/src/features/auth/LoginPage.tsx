@@ -9,6 +9,8 @@ import { Hakcipta } from '@/components/layout/Hakcipta'
 import { Spinner } from '@/components/ui/Spinner'
 import { safeReturn } from '@/lib/safeReturn'
 import { CaptchaGambar, useCaptcha } from './Captcha'
+import { PernyataanModal } from './PernyataanModal'
+import { TwoFAModal } from './TwoFAModal'
 
 // Akun contoh mode demo. Tidak dipakai di mode Keycloak; kredensial asli diperiksa SSO.
 const AKUN_DEMO: { role: Role; username: string; sandi: string }[] = [
@@ -75,6 +77,12 @@ export function LoginPage() {
   const [lihat, setLihat] = useState(false)
   const [memuat, setMemuat] = useState(false)
   const [galat, setGalat] = useState<Galat>({})
+  const [praLoginToken, setPraLoginToken] = useState<string | null>(null)
+  const [tahapLogin, setTahapLogin] = useState<'none' | 'syarat' | '2fa'>('none')
+  const [butuhSetup2FA, setButuhSetup2FA] = useState(false)
+  const [twoFAUri, setTwoFAUri] = useState<string | undefined>()
+  const [twoFASecret, setTwoFASecret] = useState<string | undefined>()
+  const [galatModal, setGalatModal] = useState<string | null>(null)
 
   useEffect(() => {
     if (authMode === 'keycloak' && status === 'anonymous') authAdapter.login(kembali)
@@ -107,6 +115,14 @@ export function LoginPage() {
         json: { username: userTrim, sandi },
       })
       simpanBruteForce(userTrim, { gagal: 0, terkunciHingga: null })
+      if (res.butuhPersetujuan && res.praLoginToken) {
+        setPraLoginToken(res.praLoginToken)
+        setButuhSetup2FA(!!res.butuhSetup2fa)
+        setGalatModal(null)
+        setTahapLogin('syarat')
+        setMemuat(false)
+        return
+      }
       // BE menerbitkan token sesi bertanda tangan; mode mock tanpa BE (MSW) tidak mengirim token.
       if (res.token && res.kedaluwarsaPada && authAdapter.loginToken) authAdapter.loginToken(res.token, res.kedaluwarsaPada)
       else authAdapter.loginAs?.(res.role, res.user?.email)
@@ -165,6 +181,64 @@ export function LoginPage() {
     simpanBruteForce(userTrim, { gagal: 0, terkunciHingga: null })
     authAdapter.loginAs?.(akun.role)
     window.location.assign(kembali)
+  }
+
+  const selesaikanSesi = (res: JawabanLogin) => {
+    if (res.token && res.kedaluwarsaPada && authAdapter.loginToken) authAdapter.loginToken(res.token, res.kedaluwarsaPada)
+    else authAdapter.loginAs?.(res.role, res.user?.email)
+    window.location.assign(kembali)
+  }
+
+  const lanjutkanSetelahSyarat = async () => {
+    if (!praLoginToken) return
+    setMemuat(true)
+    setGalatModal(null)
+    try {
+      const res = await api<JawabanLogin>('/auth/selesai-login', {
+        method: 'POST',
+        json: { praLoginToken, setujuSyarat: true },
+      })
+      if (res.butuh2fa) {
+        setButuhSetup2FA(!!res.butuhSetup2fa)
+        setTwoFAUri(res.twoFaUri)
+        setTwoFASecret(res.twoFaSecret)
+        setTahapLogin('2fa')
+        setMemuat(false)
+        return
+      }
+      selesaikanSesi(res)
+    } catch (err) {
+      setGalatModal(err instanceof ApiError ? err.message : 'Gagal memproses persetujuan.')
+      setMemuat(false)
+    }
+  }
+
+  const verifikasi2FA = async (kode: string) => {
+    if (!praLoginToken) return
+    setMemuat(true)
+    setGalatModal(null)
+    try {
+      const res = await api<JawabanLogin>('/auth/selesai-login', {
+        method: 'POST',
+        json: { praLoginToken, setujuSyarat: true, kode2fa: kode },
+      })
+      selesaikanSesi(res)
+    } catch (err) {
+      if (err instanceof ApiError && err.fieldErrors?.kode2fa) {
+        setGalatModal(err.fieldErrors.kode2fa)
+      } else {
+        setGalatModal(err instanceof ApiError ? err.message : 'Verifikasi 2FA gagal.')
+      }
+      setMemuat(false)
+    }
+  }
+
+  const batalModal = () => {
+    setTahapLogin('none')
+    setPraLoginToken(null)
+    setGalatModal(null)
+    captcha.segarkan()
+    setJawaban('')
   }
 
   return (
@@ -299,6 +373,25 @@ export function LoginPage() {
       <p className="mt-4 text-center text-xs text-slate-600">
         <Hakcipta />
       </p>
+
+      <PernyataanModal
+        open={tahapLogin === 'syarat'}
+        memuat={memuat}
+        galat={galatModal}
+        onBatal={batalModal}
+        onSetuju={() => void lanjutkanSetelahSyarat()}
+      />
+
+      <TwoFAModal
+        open={tahapLogin === '2fa'}
+        butuhSetup={butuhSetup2FA}
+        uri={twoFAUri}
+        secret={twoFASecret}
+        memuat={memuat}
+        galat={galatModal}
+        onBatal={batalModal}
+        onVerifikasi={(kode) => void verifikasi2FA(kode)}
+      />
     </div>
   )
 }

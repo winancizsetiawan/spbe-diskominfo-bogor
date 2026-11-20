@@ -16,10 +16,12 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.105.0",
+    "@types/qrcode": "^1.5.6",
     "bpmn-js": "^18.31.1",
     "jspdf": "^4.2.1",
     "keycloak-js": "^26.2.5",
     "lucide-react": "^1.62.0",
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hook-form": "^7.91.0",

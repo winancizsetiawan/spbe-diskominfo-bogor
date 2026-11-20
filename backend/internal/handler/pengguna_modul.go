@@ -60,7 +60,94 @@ func (h *PenggunaModulHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if !pasangTokenSesi(c, res) {
+	if !res.ButuhPersetujuan && !res.Butuh2FA {
+		if !pasangTokenSesi(c, res) {
+			return
+		}
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, res)
+}
+
+// LanjutLogin menangani POST /api/auth/selesai-login (persetujuan S&K + setup/verifikasi 2FA).
+func (h *PenggunaModulHandler) LanjutLogin(c *gin.Context) {
+	var in domain.LanjutLoginInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+	res, status, err := h.svc.LanjutLogin(in)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali isian Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		c.JSON(status, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	if !res.ButuhPersetujuan && !res.Butuh2FA && !res.ButuhSetup2FA {
+		if !pasangTokenSesi(c, res) {
+			return
+		}
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, res)
+}
+
+// MulaiSetup2FA menangani POST /api/profil/2fa/mulai
+func (h *PenggunaModulHandler) MulaiSetup2FA(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	res, err := h.svc.MulaiSetup2FA(role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyiapkan pengaturan 2FA."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// Aktifkan2FA menangani POST /api/profil/2fa/aktifkan
+func (h *PenggunaModulHandler) Aktifkan2FA(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	var in domain.Konfirmasi2FAInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+	res, err := h.svc.Aktifkan2FA(role, in.Kode)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali kode autentikasi Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal mengaktifkan 2FA."})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// Nonaktifkan2FA menangani POST /api/profil/2fa/nonaktifkan
+func (h *PenggunaModulHandler) Nonaktifkan2FA(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	res, err := h.svc.Nonaktifkan2FA(role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menonaktifkan 2FA."})
 		return
 	}
 	c.JSON(http.StatusOK, res)

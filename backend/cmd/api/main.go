@@ -214,6 +214,7 @@ func main() {
 
 			// Rute Auth, Profil, Manajemen Pengguna, Notifikasi, & Pembelajaran (LMS)
 			api.POST("/auth/login", pmHandler.Login)
+			api.POST("/auth/selesai-login", pmHandler.LanjutLogin)
 			api.POST("/auth/switch-role", pmHandler.SwitchRole)
 			api.POST("/auth/ubah-sandi", pmHandler.UbahSandi)
 			// Alat uji kebijakan sandi tahunan: tidak boleh ada di produksi.
@@ -226,6 +227,9 @@ func main() {
 			api.POST("/profil/foto", pmHandler.UnggahFotoProfil)
 			api.DELETE("/profil/foto", pmHandler.HapusFotoProfil)
 			api.GET("/profil/foto/:nama", pmHandler.FotoProfil)
+			api.POST("/profil/2fa/mulai", pmHandler.MulaiSetup2FA)
+			api.POST("/profil/2fa/aktifkan", pmHandler.Aktifkan2FA)
+			api.POST("/profil/2fa/nonaktifkan", pmHandler.Nonaktifkan2FA)
 			api.GET("/profil/preferensi", pmHandler.GetPreferensi)
 			api.PUT("/profil/preferensi", pmHandler.UbahPreferensi)
 			api.GET("/profil/aktivitas", pmHandler.ListAktivitasSaya)

@@ -16,6 +16,8 @@ export interface User {
   /** "tnd": ASN masuk dengan NIP dan kata sandi TND; kata sandinya tidak dapat diganti dari portal. */
   sumberAkun?: 'lokal' | 'tnd'
   fotoProfil?: string | null
+  twoFaAktif?: boolean
+  twoFaDikonfirmasi?: boolean
 }
 
 /** Jawaban POST /api/auth/login dan /api/auth/switch-role. Mode mock (MSW) tidak mengirim token. */
@@ -24,6 +26,12 @@ export interface JawabanLogin {
   user: User
   token?: string
   kedaluwarsaPada?: string
+  butuhPersetujuan?: boolean
+  butuh2fa?: boolean
+  butuhSetup2fa?: boolean
+  praLoginToken?: string
+  twoFaUri?: string
+  twoFaSecret?: string
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
