@@ -755,15 +755,6 @@ func (s *PortalModulService) GetDasborEmbed(role string, jenis string, paramIdIn
 
 // ---- 4. Pencarian Global ----
 
-type kandidatCari struct {
-	Tipe  string
-	ID    uint
-	Judul string
-	Isi   string
-	Meta  string
-	URL   string
-}
-
 func ekstrakKataKunci(q string) []string {
 	matches := polaKataKunci.FindAllString(strings.ToLower(q), -1)
 	unik := make([]string, 0, len(matches))
@@ -775,25 +766,6 @@ func ekstrakKataKunci(q string) []string {
 		}
 	}
 	return unik
-}
-
-func hitungSkorSemantik(k kandidatCari, kata []string) float64 {
-	judul := strings.ToLower(k.Judul)
-	teks := strings.ToLower(k.Judul + " " + k.Isi)
-	skor := 0.0
-	for _, w := range kata {
-		if strings.Contains(judul, w) {
-			skor += 3.0
-		} else if strings.Contains(teks, w) {
-			skor += 1.5
-		}
-		for _, padanan := range sinonimCari[w] {
-			if strings.Contains(teks, padanan) {
-				skor += 0.75
-			}
-		}
-	}
-	return skor
 }
 
 func buatCuplikanTeks(teks string, kata []string) string {
@@ -829,9 +801,9 @@ func buatCuplikanTeks(teks string, kata []string) string {
 func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tipeFilter string, page int) (*domain.DaftarCariResponse, error) {
 	q := strings.TrimSpace(qRaw)
 	panjangQ := utf8.RuneCountInString(q)
-	if panjangQ < 2 || panjangQ > 100 {
+	if panjangQ < 2 || panjangQ > 200 {
 		return nil, &ValidationError{Errors: map[string]string{
-			"q": "Kata kunci harus 2–100 karakter.",
+			"q": "Kata kunci harus 2–200 karakter.",
 		}}
 	}
 	if page < 1 {
@@ -855,192 +827,17 @@ func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tip
 		u, _ = s.ambilUser(role)
 	}
 
-	kandidat := make([]kandidatCari, 0)
-
-	// 1. Dokumen & SOP
-	dokList, _ := s.repo.FindAllDokumen()
-	for _, d := range dokList {
-		boleh := false
-		if u != nil {
-			boleh = d.Status == domain.StatusDokBerlaku || d.Status == domain.StatusDokReview
-		} else {
-			boleh = d.Status == domain.StatusDokBerlaku && d.Visibilitas == domain.VisibilitasPublik
-		}
-		if !boleh {
-			continue
-		}
-		tipeItem := "dokumen"
-		if d.Jenis == domain.JenisSOP {
-			tipeItem = "sop"
-		}
-		katLabel := jenisDokLabel[d.Jenis]
-		if d.Kategori != nil && d.Kategori.Nama != "" {
-			katLabel = d.Kategori.Nama
-		}
-		kandidat = append(kandidat, kandidatCari{
-			Tipe:  tipeItem,
-			ID:    d.ID,
-			Judul: d.Judul,
-			Isi:   d.Deskripsi,
-			Meta:  fmt.Sprintf("%s · v%s", katLabel, d.Versi),
-			URL:   fmt.Sprintf("/dokumen/%d", d.ID),
-		})
-	}
-
-	// 2. Forum (hanya pengguna login)
-	if u != nil {
-		threadList, _ := s.repo.FindAllThreads()
-		for _, t := range threadList {
-			if t.Status == domain.StatusThreadTersembunyi {
-				continue
-			}
-			katNama := "Forum"
-			if t.Kategori.Nama != "" {
-				katNama = t.Kategori.Nama
-			}
-			penulis := penulisDariUser(t.PenulisUser)
-			kandidat = append(kandidat, kandidatCari{
-				Tipe:  "forum",
-				ID:    t.ID,
-				Judul: t.Judul,
-				Isi:   t.Konten,
-				Meta:  fmt.Sprintf("%s · %s", katNama, penulis.Nama),
-				URL:   fmt.Sprintf("/forum/%d", t.ID),
-			})
-		}
-	}
-
-	// 3. Berita & Artikel (Publik)
-	artikelList, _ := s.repo.FindAllArtikel("semua", sudahLogin)
-	for _, a := range artikelList {
-		jenisLabel := "Artikel"
-		if a.Jenis == domain.JenisArtikelBerita {
-			jenisLabel = "Berita"
-		}
-		kandidat = append(kandidat, kandidatCari{
-			Tipe:  "berita",
-			ID:    a.ID,
-			Judul: a.Judul,
-			Isi:   a.Ringkasan + " " + a.Konten,
-			Meta:  fmt.Sprintf("%s · %s", jenisLabel, a.Penulis),
-			URL:   fmt.Sprintf("/berita/%d", a.ID),
-		})
-	}
-
-	// 4. Bantuan (Publik)
-	bantuan := DataBantuanStatis()
-	seqBantuan := uint(1)
-	for _, f := range bantuan.FAQ {
-		kandidat = append(kandidat, kandidatCari{
-			Tipe:  "bantuan",
-			ID:    seqBantuan,
-			Judul: f.Pertanyaan,
-			Isi:   f.Jawaban,
-			Meta:  "Pusat bantuan",
-			URL:   "/bantuan",
-		})
-		seqBantuan++
-	}
-	for _, p := range bantuan.Panduan {
-		kandidat = append(kandidat, kandidatCari{
-			Tipe:  "bantuan",
-			ID:    seqBantuan,
-			Judul: p.Judul,
-			Isi:   p.Isi,
-			Meta:  "Pusat bantuan",
-			URL:   "/bantuan",
-		})
-		seqBantuan++
-	}
-
-	// 5. Kursus (Pengguna login)
-	if u != nil {
-		kursusList, _ := s.repo.FindAllKursus()
-		for _, k := range kursusList {
-			kandidat = append(kandidat, kandidatCari{
-				Tipe:  "kursus",
-				ID:    k.ID,
-				Judul: k.Judul,
-				Isi:   k.Deskripsi,
-				Meta:  fmt.Sprintf("%s · %d jam", k.Kategori, k.DurasiJam),
-				URL:   fmt.Sprintf("/pembelajaran/%d", k.ID),
-			})
-		}
-	}
-
-	// 6. Katalog Aplikasi & Flowchart (Admin OPD & Super Admin)
-	if u != nil && (u.Role == domain.RoleSuperAdmin || u.Role == domain.RoleAdminOPD) {
-		aplList, _ := s.repo.FindAllAplikasi()
-		for _, a := range aplList {
-			if u.Role != domain.RoleSuperAdmin && a.InstansiID != u.Instansi.ID {
-				continue
-			}
-			kat := "Belum dikategorikan"
-			if a.Kategori != nil && *a.Kategori != "" {
-				kat = *a.Kategori
-			}
-			instNama := "Instansi"
-			if a.Instansi.Nama != "" {
-				instNama = a.Instansi.Nama
-			}
-			kandidat = append(kandidat, kandidatCari{
-				Tipe:  "aplikasi",
-				ID:    a.ID,
-				Judul: a.Nama,
-				Isi:   a.Deskripsi + " " + kat,
-				Meta:  fmt.Sprintf("%s · %s", instNama, kat),
-				URL:   "/katalog/aplikasi",
-			})
-		}
-
-		fcList, _ := s.repo.FindAllFlowchart()
-		for _, f := range fcList {
-			if u.Role != domain.RoleSuperAdmin && f.InstansiID != u.Instansi.ID {
-				continue
-			}
-			kandidat = append(kandidat, kandidatCari{
-				Tipe:  "flowchart",
-				ID:    f.ID,
-				Judul: f.Nama,
-				Isi:   f.Deskripsi + " " + f.Pic,
-				Meta:  fmt.Sprintf("%s · v%s", f.Kode, f.Versi),
-				URL:   fmt.Sprintf("/katalog/flowchart/%d", f.ID),
-			})
-		}
-	}
-
-	kata := ekstrakKataKunci(q)
-	type hasilSkor struct {
-		K    kandidatCari
-		Skor float64
-	}
-	bernilai := make([]hasilSkor, 0)
-	for _, c := range kandidat {
-		s := 0.0
-		if len(kata) > 0 {
-			s = hitungSkorSemantik(c, kata)
-		}
-		if s > 0 {
-			bernilai = append(bernilai, hasilSkor{K: c, Skor: s})
-		}
-	}
-
-	sort.SliceStable(bernilai, func(i, j int) bool {
-		if bernilai[i].Skor != bernilai[j].Skor {
-			return bernilai[i].Skor > bernilai[j].Skor
-		}
-		return strings.ToLower(bernilai[i].K.Judul) < strings.ToLower(bernilai[j].K.Judul)
-	})
+	bernilai, kataInti := s.jalankanSmartSearch(u, q)
 
 	hitungan := make(map[string]int)
 	for _, t := range semuaTipeCari {
 		hitungan[t] = 0
 	}
-	cocok := make([]hasilSkor, 0)
+	cocok := make([]hasilSkorIndeks, 0, len(bernilai))
 	for _, b := range bernilai {
 		hitungan["semua"]++
-		hitungan[b.K.Tipe]++
-		if tipeFilter == "semua" || b.K.Tipe == tipeFilter {
+		hitungan[b.Dok.Tipe]++
+		if tipeFilter == "semua" || b.Dok.Tipe == tipeFilter {
 			cocok = append(cocok, b)
 		}
 	}
@@ -1063,22 +860,23 @@ func (s *PortalModulService) Cari(sudahLogin bool, role string, qRaw string, tip
 	items := make([]domain.HasilCariItem, 0, end-start)
 	for _, item := range cocok[start:end] {
 		items = append(items, domain.HasilCariItem{
-			Tipe:     item.K.Tipe,
-			ID:       item.K.ID,
-			Judul:    item.K.Judul,
-			Cuplikan: buatCuplikanTeks(item.K.Isi, kata),
-			Meta:     item.K.Meta,
-			URL:      item.K.URL,
+			Tipe:     item.Dok.Tipe,
+			ID:       item.Dok.ID,
+			Judul:    item.Dok.Judul,
+			Cuplikan: buatCuplikanTeks(item.Dok.Isi, kataInti),
+			Meta:     item.Dok.Meta,
+			URL:      item.Dok.URL,
 		})
 	}
 
 	return &domain.DaftarCariResponse{
-		Items:      items,
-		Page:       page,
-		TotalPages: totalPages,
-		Total:      total,
-		Hitungan:   hitungan,
-		Fallback:   false,
+		Items:          items,
+		Page:           page,
+		TotalPages:     totalPages,
+		Total:          total,
+		Hitungan:       hitungan,
+		Fallback:       false,
+		JawabanSingkat: buatJawabanSingkat(cocok, kataInti),
 	}, nil
 }
 

@@ -54,7 +54,12 @@ export function Navbar() {
 
         {/* Logo dan kelompok kanan sama-sama melebar agar menu tepat di tengah halaman. */}
         <div className="ml-auto flex items-center gap-1 lg:flex-1 lg:justify-end">
-          <Link to="/cari" aria-label="Pencarian" className="inline-flex size-11 items-center justify-center rounded-lg text-brand-100 hover:bg-white/10 hover:text-white">
+          <Link
+            to="/cari"
+            aria-label="Cari dengan AI"
+            title="Cari dengan AI"
+            className="inline-flex size-11 items-center justify-center rounded-lg text-brand-100 hover:bg-white/10 hover:text-white"
+          >
             <Search className="size-[22px]" aria-hidden />
           </Link>
 

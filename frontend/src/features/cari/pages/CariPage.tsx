@@ -1,4 +1,4 @@
-import { AppWindow, BookOpen, CircleHelp, FileText, GitBranch, Info, MessagesSquare, Newspaper, Search, type LucideIcon } from 'lucide-react'
+import { AppWindow, BookOpen, CircleHelp, FileText, GitBranch, Info, MessagesSquare, Newspaper, Search, Sparkles, type LucideIcon } from 'lucide-react'
 import { Fragment, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '@/auth/useAuth'
@@ -90,7 +90,10 @@ export function CariPage() {
             className={`${inputClass} pl-9`}
           />
         </div>
-        <Button type="submit">Cari</Button>
+        <Button type="submit">
+          <Sparkles className="size-4" aria-hidden />
+          Cari dengan AI
+        </Button>
       </form>
 
       {terlaluPendek ? (
@@ -140,6 +143,44 @@ export function CariPage() {
             <EmptyState title={`Tidak ada hasil untuk “${q}”.`}>Coba kata kunci lain atau pilih jenis “Semua”.</EmptyState>
           ) : (
             <>
+              {cari.data.jawabanSingkat && cari.data.page === 1 && !cari.data.fallback && (
+                <section
+                  aria-label="Jawaban singkat dari data portal"
+                  className="mb-4 rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/90 via-white to-brand-50/40 p-4 shadow-xs"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+                      <span className="grid size-7 place-items-center rounded-lg bg-brand-700 text-white">
+                        <Sparkles className="size-4" aria-hidden />
+                      </span>
+                      <span>Jawaban Singkat Pintar</span>
+                    </div>
+                    <Badge tone="brand">Bersumber dari Data Portal</Badge>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    <Tandai teks={cari.data.jawabanSingkat.teks} kata={cari.data.jawabanSingkat.kataKunci ?? kata} />
+                  </p>
+                  {cari.data.jawabanSingkat.sumber.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-brand-100 pt-2.5">
+                      <span className="text-xs font-medium text-slate-500">Rujukan:</span>
+                      {cari.data.jawabanSingkat.sumber.map((s) => {
+                        const IkonSumber = IKON[s.tipe]
+                        return (
+                          <Link
+                            key={`sumber-${s.tipe}-${s.id}`}
+                            to={s.url}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-800 transition hover:border-brand-500 hover:bg-brand-50"
+                          >
+                            <IkonSumber className="size-3 shrink-0 text-brand-700" aria-hidden />
+                            <span className="max-w-56 truncate">{s.judul}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </section>
+              )}
+
               <p className="mb-3 text-sm text-slate-600" aria-live="polite">
                 {cari.data.total} hasil untuk “{q}”
               </p>

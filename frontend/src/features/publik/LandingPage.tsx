@@ -1,4 +1,4 @@
-import { BookOpen, FileText, MessagesSquare, Search } from 'lucide-react'
+import { BookOpen, FileText, MessagesSquare, Search, Sparkles } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { useAuth } from '@/auth/useAuth'
@@ -57,11 +57,12 @@ export function LandingPage() {
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Cari dokumen, SOP, berita"
+              placeholder="Tanya atau cari dokumen, berita"
               className="min-h-11 min-w-0 flex-1 bg-transparent text-base text-slate-900 placeholder:text-slate-500 focus-visible:outline-none"
             />
-            <Button type="submit" className="min-h-11 sm:px-5">
-              Cari
+            <Button type="submit" className="min-h-11 shrink-0 sm:px-5">
+              <Sparkles className="size-4" aria-hidden />
+              Cari dengan AI
             </Button>
           </form>
           <div className="mt-4">

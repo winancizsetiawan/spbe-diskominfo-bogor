@@ -153,6 +153,31 @@ export const cariHandlers = [
 
     const cocok = bernilai.filter((x) => tipe === 'semua' || x.c.tipe === tipe)
     const hitung = (t: FilterTipe) => bernilai.filter((x) => t === 'semua' || x.c.tipe === t).length
+    const utama = cocok[0]?.c
+    const kedua = cocok[1]?.c
+    const jawabanSingkat =
+      !fallback && utama
+        ? {
+            teks: [
+              `Berdasarkan ${TIPE_LABEL[utama.tipe]} “${utama.judul}” (${utama.meta}): ${cuplik(utama.isi, kata)}`,
+              kedua && kedua.judul !== utama.judul
+                ? `Informasi terkait pada ${TIPE_LABEL[kedua.tipe]} “${kedua.judul}”: ${cuplik(kedua.isi, kata)}`
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' '),
+            keyakinan: (cocok[0].s >= 4 ? 'tinggi' : 'sedang') as 'tinggi' | 'sedang',
+            kataKunci: kata,
+            sumber: cocok.slice(0, 3).map(({ c }) => ({
+              tipe: c.tipe,
+              id: c.id,
+              judul: c.judul,
+              meta: c.meta,
+              url: c.url,
+            })),
+          }
+        : undefined
+
     const hasil: DaftarCari = {
       items: cocok.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(({ c }) => ({
         tipe: c.tipe,
@@ -167,6 +192,7 @@ export const cariHandlers = [
       total: cocok.length,
       hitungan: Object.fromEntries((Object.keys(TIPE_LABEL) as FilterTipe[]).map((t) => [t, hitung(t)])) as DaftarCari['hitungan'],
       fallback,
+      jawabanSingkat,
     }
     return HttpResponse.json(hasil)
   }),

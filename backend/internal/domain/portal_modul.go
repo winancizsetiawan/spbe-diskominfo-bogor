@@ -292,12 +292,28 @@ type HasilCariItem struct {
 	URL      string `json:"url"`
 }
 
+type SumberJawabanDTO struct {
+	Tipe  string `json:"tipe"`
+	ID    uint   `json:"id"`
+	Judul string `json:"judul"`
+	Meta  string `json:"meta"`
+	URL   string `json:"url"`
+}
+
+type JawabanSingkatDTO struct {
+	Teks      string             `json:"teks"`
+	Keyakinan string             `json:"keyakinan"`
+	KataKunci []string           `json:"kataKunci,omitempty"`
+	Sumber    []SumberJawabanDTO `json:"sumber"`
+}
+
 type DaftarCariResponse struct {
-	Items      []HasilCariItem `json:"items"`
-	Page       int             `json:"page"`
-	TotalPages int             `json:"totalPages"`
-	Total      int             `json:"total"`
-	Hitungan   map[string]int  `json:"hitungan"`
-	Fallback   bool            `json:"fallback"`
+	Items          []HasilCariItem    `json:"items"`
+	Page           int                `json:"page"`
+	TotalPages     int                `json:"totalPages"`
+	Total          int                `json:"total"`
+	Hitungan       map[string]int     `json:"hitungan"`
+	Fallback       bool               `json:"fallback"`
+	JawabanSingkat *JawabanSingkatDTO `json:"jawabanSingkat,omitempty"`
 }
 
