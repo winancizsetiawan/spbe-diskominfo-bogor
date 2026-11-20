@@ -12,7 +12,6 @@ type AplikasiRepository interface {
 	Create(aplikasi *domain.Aplikasi) error
 	Update(aplikasi *domain.Aplikasi) error
 	GetRingkasan(instansiID *uint) (*domain.RingkasanAplikasi, error)
-	FindSiapDiajukan(instansiID *uint) ([]domain.Aplikasi, error)
 }
 
 type aplikasiRepository struct {
@@ -124,20 +123,5 @@ func (r *aplikasiRepository) GetRingkasan(instansiID *uint) (*domain.RingkasanAp
 	}
 
 	return ringkasan, nil
-}
-
-func (r *aplikasiRepository) FindSiapDiajukan(instansiID *uint) ([]domain.Aplikasi, error) {
-	var list []domain.Aplikasi
-	tx := r.db.Model(&domain.Aplikasi{}).Where("status_validasi IN ?", []domain.StatusValidasi{
-		domain.StatusDraft,
-		domain.StatusPerluRevisi,
-	})
-
-	if instansiID != nil {
-		tx = tx.Where("instansi_id = ?", *instansiID)
-	}
-
-	err := tx.Order("nama ASC").Find(&list).Error
-	return list, err
 }
 

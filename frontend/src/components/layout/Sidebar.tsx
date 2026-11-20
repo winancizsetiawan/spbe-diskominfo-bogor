@@ -1,7 +1,6 @@
 import {
   AppWindow, ArrowLeftRight, BadgeCheck, CalendarClock, ChartColumn, Check, CircleHelp, ClipboardList, DatabaseBackup, FileText,
-  FolderOpen, GraduationCap, History, House, LayoutDashboard, LogOut, Menu, MessageSquareText, MessagesSquare,
-  Network, Newspaper, Search, ShieldAlert, UserRound, Users, Workflow, X, type LucideIcon,
+  FolderOpen, GraduationCap, History, House, LayoutDashboard, LogOut, Menu, MessageSquareText, MessagesSquare, Newspaper, Search, ShieldAlert, UserRound, Users, Workflow, X, type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
@@ -21,7 +20,6 @@ const IKON: Record<string, LucideIcon> = {
   '/dasbor/analitik': ChartColumn,
   '/verifikasi-konten': BadgeCheck,
   '/katalog/aplikasi': AppWindow,
-  '/katalog/raa': Network,
   '/katalog/flowchart': Workflow,
   '/katalog/dasbor': LayoutDashboard,
   '/admin/pengguna': Users,
@@ -40,10 +38,12 @@ const IKON: Record<string, LucideIcon> = {
 // dan bergeser ke menu yang baru dibuka. ::before dan ::after membentuk lengkungan cekung 28px di atas dan
 // bawah ujung kanannya: kotak 28px berisi warna konten dengan lingkaran transparan di sudut yang menghadap menu.
 // Peralihan 1px di tepi lingkaran = anti-alias, agar lengkungan halus dan tidak bergerigi.
+// Kotak setinggi 29px: baris ke-29 menumpang 1px ke dalam badan tab (jaraknya >28px dari pusat, jadi terisi penuh),
+// supaya tidak ada garis tipis di sambungan saat layar berskala pecahan (125%, 150%).
 const LENGKUNG_ATAS =
-  'before:pointer-events-none before:absolute before:right-0 before:-top-7 before:size-7 before:bg-[radial-gradient(circle_at_0_0,transparent_27px,var(--color-latar)_28px)]'
+  'before:pointer-events-none before:absolute before:right-0 before:-top-7 before:h-[29px] before:w-7 before:bg-[radial-gradient(circle_at_0_0,transparent_27px,var(--color-latar)_28px)]'
 const LENGKUNG_BAWAH =
-  'after:pointer-events-none after:absolute after:right-0 after:-bottom-7 after:size-7 after:bg-[radial-gradient(circle_at_0_100%,transparent_27px,var(--color-latar)_28px)]'
+  'after:pointer-events-none after:absolute after:right-0 after:-bottom-7 after:h-[29px] after:w-7 after:bg-[radial-gradient(circle_at_0_100%,transparent_27px,var(--color-latar)_28px)]'
 
 // Tautan tidak menggambar latar aktif sendiri; tab yang bergeser ada di bawahnya. Ketebalan huruf tetap
 // agar teks tidak bergeser saat aktif berpindah; hanya warnanya yang berganti perlahan.
@@ -280,7 +280,8 @@ export function SidebarShell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* lg:-ml-px + bg-latar: menutup 1px tepi menu agar tidak ada garis tipis antara menu dan konten di layar berskala pecahan. */}
+      <div className="relative flex min-w-0 flex-1 flex-col bg-latar lg:-ml-px">
         <BilahAtas onBukaMenu={() => setLaci(true)} />
         {children}
       </div>

@@ -82,6 +82,13 @@ func (h *ValidasiHandler) Ajukan(c *gin.Context) {
 		return
 	}
 
+	if input.JenisData != domain.JenisDataAplikasi && input.JenisData != domain.JenisDataProses {
+		c.JSON(http.StatusUnprocessableEntity, domain.NewErrorResponse("Jenis data pengajuan tidak dikenal.", map[string]string{
+			"jenisData": "Gunakan aplikasi atau proses.",
+		}))
+		return
+	}
+
 	// Pemohon adalah pengguna yang sedang masuk (instansinya yang dipakai).
 	pemohon, _, ok := penggunaSaatIni(c)
 	if !ok {

@@ -15,7 +15,6 @@ export const katalogKeys = {
   ringkasan: ['katalog', 'ringkasan'] as const,
   daftar: (filter: AplikasiFilter) => ['katalog', 'daftar', filter] as const,
   detail: (id: number) => ['katalog', 'detail', id] as const,
-  siapDiajukan: ['katalog', 'siap-diajukan'] as const,
   referensiRaa: ['referensi', 'raa'] as const,
   referensiInstansi: ['referensi', 'instansi'] as const,
 }
@@ -83,18 +82,10 @@ export function useSimpanAplikasi(id?: number) {
   })
 }
 
-export function useSiapDiajukan(enabled: boolean) {
-  return useQuery({
-    queryKey: katalogKeys.siapDiajukan,
-    queryFn: () => api<Pick<Aplikasi, 'id' | 'nama'>[]>('/aplikasi/siap-diajukan'),
-    enabled,
-  })
-}
-
 export function useAjukanValidasi() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { jenisData: 'aplikasi' | 'raa'; targetIds: number[] }) =>
+    mutationFn: (input: { jenisData: 'aplikasi'; targetIds: number[] }) =>
       api<HasilAjukan>('/validasi', { method: 'POST', json: input }),
     // Berhasil maupun 409 (status sudah berubah): muat ulang agar status di tabel terbaru.
     onSettled: () => {

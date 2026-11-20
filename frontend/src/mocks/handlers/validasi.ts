@@ -61,7 +61,7 @@ const panjang = (v: unknown) => (typeof v === 'string' ? v.trim().length : 0)
 
 export const validasiHandlers = [
   // Pengajuan oleh Admin OPD (Sequence Diagram 3): hanya data instansinya sendiri.
-  // jenisData: aplikasi, raa (id aplikasi), atau proses (id flowchart).
+  // jenisData: aplikasi (id aplikasi) atau proses (id flowchart).
   http.post('/api/validasi', async ({ request }) => {
     const user = currentUser(request)
     if (!user) return unauthorized()

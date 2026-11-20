@@ -276,7 +276,7 @@ func SeedData(db *gorm.DB) error {
 			},
 			{
 				ID:         2,
-				JenisData:  domain.JenisDataRaa,
+				JenisData:  domain.JenisDataAplikasi,
 				Status:     domain.StatusPerluRevisi,
 				InstansiID: 2, // Dinas Kesehatan
 				AplikasiID: &targetEPuskesmas,

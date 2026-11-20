@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
-import { Spinner } from '@/components/ui/Spinner'
 import { toast } from '@/components/ui/toast'
 import { errorMessage } from '@/lib/errors'
-import { useAjukanValidasi, useSiapDiajukan } from '../api'
+import { useAjukanValidasi } from '../api'
 import type { Aplikasi, HasilAjukan } from '../types'
 
-/** Satu aplikasi (dari Data Aplikasi) atau semua yang siap diajukan (Ajukan Semua RAA). */
-export type TargetAjukan = { jenis: 'satu'; aplikasi: Pick<Aplikasi, 'id' | 'nama'> } | { jenis: 'semua' }
+/** Satu aplikasi dari Data Aplikasi yang akan diajukan. */
+export type TargetAjukan = { jenis: 'satu'; aplikasi: Pick<Aplikasi, 'id' | 'nama'> }
 
 interface Props {
   target: TargetAjukan | null
@@ -17,8 +16,6 @@ interface Props {
 }
 
 export function AjukanDialog({ target, onClose }: Props) {
-  const semua = target?.jenis === 'semua'
-  const siap = useSiapDiajukan(semua)
   const ajukan = useAjukanValidasi()
   const [hasil, setHasil] = useState<HasilAjukan | null>(null)
 
@@ -26,11 +23,11 @@ export function AjukanDialog({ target, onClose }: Props) {
     if (target) setHasil(null)
   }, [target])
 
-  const daftar = target?.jenis === 'satu' ? [target.aplikasi] : (siap.data ?? [])
+  const daftar = target ? [target.aplikasi] : []
 
   const kirim = () => {
     ajukan.mutate(
-      { jenisData: semua ? 'raa' : 'aplikasi', targetIds: daftar.map((a) => a.id) },
+      { jenisData: 'aplikasi', targetIds: daftar.map((a) => a.id) },
       {
         onSuccess: (h) => {
           if (h.berhasil.length > 0) toast.success(`${h.berhasil.length} data diajukan ke Super Admin.`)
@@ -49,7 +46,7 @@ export function AjukanDialog({ target, onClose }: Props) {
   }
 
   return (
-    <Dialog open={target !== null} onClose={onClose} title={semua ? 'Ajukan Semua RAA' : 'Ajukan Validasi'}>
+    <Dialog open={target !== null} onClose={onClose} title="Ajukan Validasi">
       {hasil ? (
         <div className="space-y-4">
           <p className="text-sm text-slate-700">
@@ -66,8 +63,6 @@ export function AjukanDialog({ target, onClose }: Props) {
             <Button onClick={onClose}>Tutup</Button>
           </div>
         </div>
-      ) : semua && siap.isPending ? (
-        <Spinner className="py-6" />
       ) : daftar.length === 0 ? (
         <div className="space-y-4">
           <p className="text-sm text-slate-600">Tidak ada data berstatus Draf atau Perlu Revisi yang bisa diajukan.</p>
@@ -80,9 +75,7 @@ export function AjukanDialog({ target, onClose }: Props) {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            {semua
-              ? `${daftar.length} aplikasi berstatus Draf atau Perlu Revisi akan diajukan ke Super Admin:`
-              : 'Data berikut akan diajukan ke Super Admin. Selama menunggu keputusan, data tidak dapat diubah.'}
+            Data berikut akan diajukan ke Super Admin. Selama menunggu keputusan, data tidak dapat diubah.
           </p>
           <ul className="max-h-48 list-disc space-y-1 overflow-y-auto pl-5 text-sm font-medium text-slate-800">
             {daftar.map((a) => (
@@ -94,7 +87,7 @@ export function AjukanDialog({ target, onClose }: Props) {
               Batal
             </Button>
             <Button onClick={kirim} disabled={ajukan.isPending}>
-              {ajukan.isPending ? 'Mengajukan…' : semua ? `Ajukan ${daftar.length} data` : 'Ajukan'}
+              {ajukan.isPending ? 'Mengajukan…' : 'Ajukan'}
             </Button>
           </div>
         </div>

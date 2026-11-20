@@ -1,4 +1,4 @@
-import { BarChart3, FolderKanban, ListChecks, Workflow } from 'lucide-react'
+import { BarChart3, FolderKanban, Workflow } from 'lucide-react'
 import { Link } from 'react-router'
 import { BarChart } from '@/components/charts/BarChart'
 import { DonutChart } from '@/components/charts/DonutChart'
@@ -119,7 +119,6 @@ export function AdminOpdView({ data }: { data: BerandaAdminOpd }) {
           <AksesCepat
             item={[
               { ikon: FolderKanban, label: 'Kelola Data Aplikasi', to: '/katalog/aplikasi' },
-              { ikon: ListChecks, label: 'Klasifikasi RAA', to: '/katalog/raa' },
               { ikon: Workflow, label: 'Diagram Alur Proses', to: '/katalog/flowchart' },
               { ikon: BarChart3, label: 'Dasbor Instansi', to: '/katalog/dasbor' },
             ]}

@@ -119,46 +119,6 @@ func (h *KatalogHandler) GetDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, apl)
 }
 
-// GetSiapDiajukan mengembalikan daftar aplikasi yang berstatus draft/perlu revisi
-func (h *KatalogHandler) GetSiapDiajukan(c *gin.Context) {
-	if !wajibPengelola(c) {
-		return
-	}
-	var instansiID *uint
-	if inst := c.Query("instansi"); inst != "" {
-		if id, err := strconv.ParseUint(inst, 10, 32); err == nil {
-			uID := uint(id)
-			instansiID = &uID
-		}
-	}
-
-	p, terbatas, ok := penggunaSaatIni(c)
-	if !ok {
-		return
-	}
-	if terbatas {
-		id := p.InstansiID
-		instansiID = &id
-	}
-	list, err := h.aplikasiService.GetSiapDiajukan(instansiID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, domain.NewErrorResponse("Gagal mengambil aplikasi siap diajukan", nil))
-		return
-	}
-
-	// Format ringkas sesuai frontend: Pick<Aplikasi, 'id' | 'nama'>[]
-	type Ringkas struct {
-		ID   uint   `json:"id"`
-		Nama string `json:"nama"`
-	}
-	ringkasList := make([]Ringkas, len(list))
-	for i, apl := range list {
-		ringkasList[i] = Ringkas{ID: apl.ID, Nama: apl.Nama}
-	}
-
-	c.JSON(http.StatusOK, ringkasList)
-}
-
 // Create menambah aplikasi baru
 func (h *KatalogHandler) Create(c *gin.Context) {
 	if !wajibPengelola(c) {

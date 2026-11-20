@@ -15,7 +15,6 @@ type AplikasiService interface {
 	GetDetail(id uint) (*domain.Aplikasi, error)
 	Create(input domain.AplikasiInput, defaultInstansiID uint) (*domain.Aplikasi, error)
 	Update(id uint, input domain.AplikasiInput) (*domain.Aplikasi, error)
-	GetSiapDiajukan(instansiID *uint) ([]domain.Aplikasi, error)
 }
 
 type aplikasiService struct {
@@ -117,9 +116,5 @@ func (s *aplikasiService) Update(id uint, input domain.AplikasiInput) (*domain.A
 	}
 
 	return s.aplikasiRepo.FindByID(apl.ID)
-}
-
-func (s *aplikasiService) GetSiapDiajukan(instansiID *uint) ([]domain.Aplikasi, error) {
-	return s.aplikasiRepo.FindSiapDiajukan(instansiID)
 }
 

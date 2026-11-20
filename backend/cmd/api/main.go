@@ -156,7 +156,6 @@ func main() {
 
 			// Rute Katalog Aplikasi
 			api.GET("/aplikasi/ringkasan", katalogHandler.GetRingkasan)
-			api.GET("/aplikasi/siap-diajukan", katalogHandler.GetSiapDiajukan)
 			api.GET("/aplikasi", katalogHandler.GetDaftar)
 			api.GET("/aplikasi/:id", katalogHandler.GetDetail)
 			api.POST("/aplikasi", katalogHandler.Create)

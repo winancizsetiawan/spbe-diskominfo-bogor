@@ -47,7 +47,6 @@ export const SIDEBAR_NAV: NavGroup[] = [
     items: [
       { label: 'Verifikasi Konten', to: '/verifikasi-konten', perm: 'artikel:verifikasi' },
       { label: 'Data Aplikasi', to: '/katalog/aplikasi', perm: 'aplikasi:kelola' },
-      { label: 'Klasifikasi RAA', to: '/katalog/raa', perm: 'aplikasi:kelola' },
       { label: 'Diagram Alur Proses', to: '/katalog/flowchart', perm: 'aplikasi:kelola' },
       { label: 'Dasbor Instansi', to: '/katalog/dasbor', perm: 'dasbor:instansi' },
     ],
@@ -78,7 +77,6 @@ export const SIDEBAR_NAV: NavGroup[] = [
 export const KELOLA_NAV: NavItem[] = [
   { label: 'Verifikasi Konten', to: '/verifikasi-konten', perm: 'artikel:verifikasi' },
   { label: 'Data Aplikasi', to: '/katalog/aplikasi', perm: 'aplikasi:kelola' },
-  { label: 'Klasifikasi RAA', to: '/katalog/raa', perm: 'aplikasi:kelola' },
   { label: 'Diagram Alur Proses', to: '/katalog/flowchart', perm: 'aplikasi:kelola' },
   { label: 'Dasbor Instansi', to: '/katalog/dasbor', perm: 'dasbor:instansi' },
   { label: 'Manajemen Pengguna', to: '/admin/pengguna', perm: 'pengguna:kelola' },

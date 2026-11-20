@@ -71,6 +71,15 @@ func Connect(dsn string, isDevelopment bool, isiDataContoh bool) (*gorm.DB, erro
 		return nil, err
 	}
 
+	// Halaman Klasifikasi RAA sudah dihapus: pengajuan jenis "raa" lama dijadikan pengajuan aplikasi biasa,
+	// dan notifikasi yang menautkan ke halaman itu diarahkan ke Data Aplikasi.
+	if err := db.Exec(`UPDATE pengajuan_validasi SET jenis_data = 'aplikasi' WHERE jenis_data = 'raa'`).Error; err != nil {
+		return nil, err
+	}
+	if err := db.Exec(`UPDATE notifikasi SET url_tujuan = '/katalog/aplikasi' WHERE url_tujuan = '/katalog/raa'`).Error; err != nil {
+		return nil, err
+	}
+
 	// Jalankan seed data awal
 	if !isiDataContoh {
 		log.Println("Data contoh (seeder) dilewati: SEED_DATA=false.")

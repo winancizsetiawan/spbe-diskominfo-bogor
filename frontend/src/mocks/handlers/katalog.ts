@@ -2,7 +2,6 @@ import { delay, http, HttpResponse } from 'msw'
 import type { User } from '@/auth/types'
 import {
   BATAS_APLIKASI,
-  BISA_DIAJUKAN,
   cariNodeRaa,
   hitungKesesuaian,
   KATEGORI_APLIKASI,
@@ -103,18 +102,6 @@ export const katalogHandlers = [
       perluPenyesuaian: status.filter((s) => s === 'perlu_penyesuaian').length,
       belum: status.filter((s) => s === 'belum').length,
     })
-  }),
-
-  http.get('/api/aplikasi/siap-diajukan', async ({ request }) => {
-    const user = currentUser(request)
-    if (!user) return unauthorized()
-    if (user.role !== 'admin_opd') return forbidden()
-    await delay(200)
-    return HttpResponse.json(
-      aplikasi
-        .filter((r) => r.idInstansi === user.instansi.id && BISA_DIAJUKAN.includes(r.statusValidasi))
-        .map((r) => ({ id: r.id, nama: r.nama })),
-    )
   }),
 
   http.get('/api/aplikasi', async ({ request }) => {

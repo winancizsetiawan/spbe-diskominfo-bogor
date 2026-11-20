@@ -6,8 +6,8 @@ export type StatusPengajuan = Exclude<StatusValidasi, 'draft'>
 
 export type Keputusan = 'disetujui' | 'perlu_revisi' | 'ditolak'
 
-/** `proses` = flowchart proses bisnis (K8); aplikasi dan raa merujuk ke data aplikasi. */
-export type JenisData = 'aplikasi' | 'raa' | 'proses'
+/** `proses` = flowchart proses bisnis (K8); `aplikasi` merujuk ke data aplikasi. */
+export type JenisData = 'aplikasi' | 'proses'
 
 export interface Pengajuan {
   id: number
@@ -23,7 +23,7 @@ export interface Pengajuan {
 }
 
 export interface PengajuanDetail extends Pengajuan {
-  /** Terisi untuk jenis aplikasi dan raa. */
+  /** Terisi untuk jenis aplikasi. */
   data: Aplikasi | null
   /** Terisi untuk jenis proses (flowchart). */
   proses: Flowchart | null
@@ -54,7 +54,6 @@ export interface PengajuanFilter {
 
 export const JENIS_DATA_LABEL: Record<JenisData, string> = {
   aplikasi: 'Data Aplikasi',
-  raa: 'Klasifikasi RAA',
   proses: 'Diagram Alur Proses Bisnis',
 }
 

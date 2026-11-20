@@ -19,7 +19,6 @@ const CreateThreadPage = halaman(() => import('@/features/forum/pages/CreateThre
 const ThreadDetailPage = halaman(() => import('@/features/forum/pages/ThreadDetailPage'), 'ThreadDetailPage')
 const AplikasiListPage = halaman(() => import('@/features/katalog/pages/AplikasiListPage'), 'AplikasiListPage')
 const AplikasiFormPage = halaman(() => import('@/features/katalog/pages/AplikasiFormPage'), 'AplikasiFormPage')
-const RaaPage = halaman(() => import('@/features/katalog/pages/RaaPage'), 'RaaPage')
 const ValidasiListPage = halaman(() => import('@/features/validasi/pages/ValidasiListPage'), 'ValidasiListPage')
 const ValidasiDetailPage = halaman(() => import('@/features/validasi/pages/ValidasiDetailPage'), 'ValidasiDetailPage')
 const RepositoriListPage = halaman(() => import('@/features/repositori/pages/RepositoriListPage'), 'RepositoriListPage')
@@ -98,7 +97,6 @@ export const router = createBrowserRouter([
             { path: 'katalog/aplikasi', element: <AplikasiListPage /> },
             { path: 'katalog/aplikasi/baru', element: <AplikasiFormPage /> },
             { path: 'katalog/aplikasi/:id/ubah', element: <AplikasiFormPage /> },
-            { path: 'katalog/raa', element: <RaaPage /> },
             { path: 'katalog/flowchart', element: <FlowchartListPage /> },
             { path: 'katalog/flowchart/baru', element: <FlowchartFormPage /> },
             { path: 'katalog/flowchart/:id', element: <FlowchartDetailPage /> },

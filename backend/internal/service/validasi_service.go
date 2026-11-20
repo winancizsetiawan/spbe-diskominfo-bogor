@@ -293,10 +293,6 @@ func (s *validasiService) Putuskan(id uint, input domain.KeputusanInput, validat
 	target := targetRingkas(*p)
 	labelJenis := "Aplikasi"
 	urlTujuan := "/katalog/aplikasi"
-	if p.JenisData == domain.JenisDataRaa {
-		labelJenis = "Klasifikasi RAA"
-		urlTujuan = "/katalog/raa"
-	}
 	if p.FlowchartID != nil {
 		_ = s.repo.UpdateStatusFlowchart(*p.FlowchartID, statusBaru, catatanPtr)
 		labelJenis = "Diagram Alur"

@@ -6,7 +6,6 @@ type JenisData string
 
 const (
 	JenisDataAplikasi JenisData = "aplikasi"
-	JenisDataRaa      JenisData = "raa"
 	JenisDataProses   JenisData = "proses" // Flowchart proses bisnis
 )
 
