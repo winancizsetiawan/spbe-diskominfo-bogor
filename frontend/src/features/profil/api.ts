@@ -4,17 +4,50 @@ import { authAdapter } from '@/auth/adapter'
 import { authReady } from '@/auth/ready'
 import { useSession } from '@/auth/session'
 import type { User } from '@/auth/types'
-import type { Aktivitas, PreferensiNotifikasi, ProfilSaya } from './types'
+import type {
+  Aktivitas,
+  InstansiProfilOption,
+  PreferensiNotifikasi,
+  ProfilSaya,
+  UbahDataPegawaiInput,
+  UbahDataPegawaiResponse,
+} from './types'
 
 export const profilKeys = {
   semua: ['profil'] as const,
   data: ['profil', 'data'] as const,
+  instansi: ['profil', 'instansi'] as const,
   preferensi: ['profil', 'preferensi'] as const,
   aktivitas: (page: number) => ['profil', 'aktivitas', page] as const,
 }
 
 export function useProfil() {
   return useQuery({ queryKey: profilKeys.data, queryFn: () => api<ProfilSaya>('/profil') })
+}
+
+export function useInstansiProfil(enabled = true) {
+  return useQuery({
+    queryKey: profilKeys.instansi,
+    queryFn: () => api<InstansiProfilOption[]>('/profil/instansi'),
+    enabled,
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useUbahDataPegawai() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UbahDataPegawaiInput) =>
+      api<UbahDataPegawaiResponse>('/profil/pegawai', { method: 'PUT', json: input }),
+    onSuccess: (res) => {
+      qc.setQueryData(profilKeys.data, res.profil)
+      if (res.token && res.kedaluwarsaPada && authAdapter.loginToken) {
+        authAdapter.loginToken(res.token, res.kedaluwarsaPada)
+      }
+      useSession.getState().setUser(res.user)
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
 }
 
 export function useUbahProfil() {
@@ -97,6 +130,26 @@ export function useAktivitas(page: number) {
     queryKey: profilKeys.aktivitas(page),
     queryFn: () => api<Paged<Aktivitas>>(`/profil/aktivitas?page=${page}`),
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useHapusAktivitas() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api<{ status: string }>(`/profil/aktivitas/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
+  })
+}
+
+export function useHapusSemuaAktivitas() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api<{ terhapus: number }>('/profil/aktivitas', { method: 'DELETE' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['profil', 'aktivitas'] })
+    },
   })
 }
 

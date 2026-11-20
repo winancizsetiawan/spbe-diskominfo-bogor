@@ -308,6 +308,60 @@ func (h *PenggunaModulHandler) UbahProfil(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// GetInstansiProfil menangani GET /api/profil/instansi untuk semua pengguna login.
+func (h *PenggunaModulHandler) GetInstansiProfil(c *gin.Context) {
+	if _, ok := wajibLogin(c); !ok {
+		return
+	}
+	list, err := h.svc.GetInstansiPengguna()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memuat daftar instansi."})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+// UbahDataPegawai menangani PUT /api/profil/pegawai
+func (h *PenggunaModulHandler) UbahDataPegawai(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	var in domain.UbahDataPegawaiInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "Format data tidak valid."})
+		return
+	}
+
+	res, emailBerubah, err := h.svc.UbahDataPegawai(role, in)
+	if err != nil {
+		var valErr *service.ValidationError
+		if errors.As(err, &valErr) {
+			c.JSON(http.StatusUnprocessableEntity, domain.ErrorResponse{
+				Message: "Periksa kembali isian Anda.",
+				Errors:  valErr.Errors,
+			})
+			return
+		}
+		log.Printf("[profil] gagal ubah data pegawai (role=%s): %v", role, err)
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal memperbarui data pegawai."})
+		return
+	}
+
+	if emailBerubah {
+		tok, exp, err := auth.TerbitkanSesi(string(res.User.Role), res.User.Email)
+		if err != nil {
+			log.Printf("[auth] gagal menerbitkan token baru setelah ubah email: %v", err)
+			c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Data tersimpan, tetapi sesi gagal diperbarui. Silakan masuk ulang."})
+			return
+		}
+		res.Token = tok
+		res.KedaluwarsaPada = &exp
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 const batasFotoProfil = 2 << 20 // 2 MB
 
 var (
@@ -483,6 +537,38 @@ func (h *PenggunaModulHandler) ListAktivitasSaya(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+// HapusAktivitasSaya menangani DELETE /api/profil/aktivitas/:id
+func (h *PenggunaModulHandler) HapusAktivitasSaya(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "ID aktivitas tidak valid."})
+		return
+	}
+	if err := h.svc.HapusAktivitasSaya(role, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "terhapus"})
+}
+
+// HapusSemuaAktivitasSaya menangani DELETE /api/profil/aktivitas
+func (h *PenggunaModulHandler) HapusSemuaAktivitasSaya(c *gin.Context) {
+	role, ok := wajibLogin(c)
+	if !ok {
+		return
+	}
+	jumlah, err := h.svc.HapusSemuaAktivitasSaya(role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menghapus riwayat aktivitas."})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"terhapus": jumlah})
 }
 
 // ---- 2. Manajemen Pengguna (Admin) ----

@@ -49,14 +49,15 @@ func TentukanKategoriAudit(aksi AksiAktivitas, hasil HasilAudit) KategoriAudit {
 }
 
 type AuditLog struct {
-	ID        uint          `gorm:"primaryKey" json:"id"`
-	UserID    *uint         `gorm:"index" json:"-"`
-	User      *User         `gorm:"foreignKey:UserID" json:"-"`
-	Aksi      AksiAktivitas `gorm:"size:30;not null;index" json:"aksi"`
-	Hasil     HasilAudit    `gorm:"size:20;not null;default:'berhasil';index" json:"hasil"`
-	Deskripsi string        `gorm:"size:500;not null" json:"deskripsi"`
-	IpAddress *string       `gorm:"size:60" json:"ipAddress"`
-	Waktu     time.Time     `gorm:"autoCreateTime;index" json:"waktu"`
+	ID                uint          `gorm:"primaryKey" json:"id"`
+	UserID            *uint         `gorm:"index" json:"-"`
+	User              *User         `gorm:"foreignKey:UserID" json:"-"`
+	Aksi              AksiAktivitas `gorm:"size:30;not null;index" json:"aksi"`
+	Hasil             HasilAudit    `gorm:"size:20;not null;default:'berhasil';index" json:"hasil"`
+	Deskripsi         string        `gorm:"size:500;not null" json:"deskripsi"`
+	IpAddress         *string       `gorm:"size:60" json:"ipAddress"`
+	Waktu             time.Time     `gorm:"autoCreateTime;index" json:"waktu"`
+	TersembunyiProfil bool          `gorm:"not null;default:false;index" json:"-"`
 }
 
 func (AuditLog) TableName() string {

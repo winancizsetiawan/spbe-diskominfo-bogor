@@ -1,6 +1,7 @@
 import { delay, http, HttpResponse } from 'msw'
 import type { User } from '@/auth/types'
 import { normalisasiTelepon, POLA_TELEPON, type ProfilSaya } from '@/features/profil/types'
+import { INSTANSI } from '../dbKatalog'
 import { aktivitas, catatAktivitas } from '../dbAktivitas'
 import { balasan, threads } from '../db'
 import { profil } from '../dbProfil'
@@ -49,6 +50,37 @@ export const profilHandlers = [
     return HttpResponse.json(keProfil(user))
   }),
 
+  http.get('/api/profil/instansi', ({ request }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    return HttpResponse.json(INSTANSI)
+  }),
+
+  http.put('/api/profil/pegawai', async ({ request }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    await delay(300)
+    const body = (await request.json()) as {
+      nama?: string
+      nip?: string
+      idInstansi?: number
+      satkerInduk?: string
+      jabatan?: string
+      golongan?: string
+      email?: string
+    }
+    const inst = INSTANSI.find((i) => i.id === Number(body.idInstansi)) ?? user.instansi
+    user.nama = (body.nama ?? user.nama).trim()
+    user.email = (body.email ?? user.email).trim().toLowerCase()
+    user.instansi = inst
+    profil[user.id].nip = (body.nip ?? profil[user.id].nip).trim()
+    profil[user.id].satkerInduk = (body.satkerInduk ?? profil[user.id].satkerInduk).trim()
+    profil[user.id].jabatan = (body.jabatan ?? profil[user.id].jabatan).trim()
+    profil[user.id].golongan = (body.golongan ?? profil[user.id].golongan).trim()
+    catatAktivitas(user.id, 'ubah_profil', 'Memperbarui data pegawai')
+    return HttpResponse.json({ profil: keProfil(user), user })
+  }),
+
   http.get('/api/profil/preferensi', ({ request }) => {
     const user = currentUser(request)
     if (!user) return unauthorized()
@@ -71,13 +103,41 @@ export const profilHandlers = [
     const user = currentUser(request)
     if (!user) return unauthorized()
     await delay(250)
+    const batas = Date.now() - 30 * 24 * 60 * 60 * 1000
     const page = Math.max(1, Number(new URL(request.url).searchParams.get('page')) || 1)
-    const milik = aktivitas.filter((a) => a.idUser === user.id).sort((a, b) => b.waktu.localeCompare(a.waktu))
+    const milik = aktivitas
+      .filter((a) => a.idUser === user.id && new Date(a.waktu).getTime() >= batas)
+      .sort((a, b) => b.waktu.localeCompare(a.waktu))
     return HttpResponse.json({
       items: milik.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(({ idUser: _idUser, ...a }) => a),
       page,
       totalPages: Math.max(1, Math.ceil(milik.length / PER_PAGE)),
       total: milik.length,
     })
+  }),
+
+  http.delete('/api/profil/aktivitas', async ({ request }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    await delay(200)
+    let terhapus = 0
+    for (let i = aktivitas.length - 1; i >= 0; i--) {
+      if (aktivitas[i].idUser === user.id) {
+        aktivitas.splice(i, 1)
+        terhapus++
+      }
+    }
+    return HttpResponse.json({ terhapus })
+  }),
+
+  http.delete('/api/profil/aktivitas/:id', async ({ request, params }) => {
+    const user = currentUser(request)
+    if (!user) return unauthorized()
+    await delay(150)
+    const id = Number(params.id)
+    const idx = aktivitas.findIndex((a) => a.id === id && a.idUser === user.id)
+    if (idx === -1) return HttpResponse.json({ message: 'Riwayat aktivitas tidak ditemukan.' }, { status: 404 })
+    aktivitas.splice(idx, 1)
+    return HttpResponse.json({ status: 'terhapus' })
   }),
 ]

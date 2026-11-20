@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"spbe-backend/internal/domain"
 
 	"gorm.io/gorm"
@@ -69,6 +71,51 @@ func (r *PenggunaModulRepository) UpdateNoTelepon(userID uint, noTelp *string) e
 	return r.db.Model(&domain.ProfilPengguna{}).Where("user_id = ?", userID).Update("no_telepon", noTelp).Error
 }
 
+func (r *PenggunaModulRepository) ExistsEmailSelain(email string, kecualiUserID uint) bool {
+	var count int64
+	r.db.Model(&domain.User{}).Where("LOWER(email) = LOWER(?) AND id <> ?", email, kecualiUserID).Count(&count)
+	return count > 0
+}
+
+func (r *PenggunaModulRepository) ExistsNipSelain(nip string, kecualiUserID uint) bool {
+	var count int64
+	r.db.Model(&domain.User{}).Where("nip = ? AND id <> ?", nip, kecualiUserID).Count(&count)
+	return count > 0
+}
+
+func (r *PenggunaModulRepository) UpdateDataPegawai(
+	userID uint,
+	nama, email string,
+	instansiID uint,
+	userNip *string,
+	profilNIP, satkerInduk, jabatan, golongan string,
+) error {
+	_, _ = r.FindOrCreateProfil(userID)
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		userCols := []string{"Nama", "Email", "InstansiID"}
+		userModel := domain.User{
+			Nama:       nama,
+			Email:      email,
+			InstansiID: instansiID,
+		}
+		if userNip != nil {
+			userModel.Nip = userNip
+			userCols = append(userCols, "Nip")
+		}
+		if err := tx.Model(&domain.User{}).Where("id = ?", userID).Select(userCols).Updates(&userModel).Error; err != nil {
+			return err
+		}
+		return tx.Model(&domain.ProfilPengguna{}).Where("user_id = ?", userID).
+			Select("NIP", "SatkerInduk", "Jabatan", "Golongan").
+			Updates(&domain.ProfilPengguna{
+				NIP:         profilNIP,
+				SatkerInduk: satkerInduk,
+				Jabatan:     jabatan,
+				Golongan:    golongan,
+			}).Error
+	})
+}
+
 func (r *PenggunaModulRepository) UpdateFotoProfil(userID uint, foto *string) error {
 	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("foto_profil", foto).Error
 }
@@ -93,8 +140,29 @@ func (r *PenggunaModulRepository) HitungStatistikProfil(userID uint) (int, int) 
 
 func (r *PenggunaModulRepository) FindAktivitasByUser(userID uint) ([]domain.AuditLog, error) {
 	var list []domain.AuditLog
-	err := r.db.Where("user_id = ?", userID).Order("waktu DESC, id DESC").Find(&list).Error
+	err := r.db.Where("user_id = ? AND tersembunyi_profil = false", userID).Order("waktu DESC, id DESC").Find(&list).Error
 	return list, err
+}
+
+func (r *PenggunaModulRepository) HapusAktivitasByID(userID, logID uint) (int64, error) {
+	res := r.db.Model(&domain.AuditLog{}).
+		Where("id = ? AND user_id = ? AND tersembunyi_profil = false", logID, userID).
+		Update("tersembunyi_profil", true)
+	return res.RowsAffected, res.Error
+}
+
+func (r *PenggunaModulRepository) HapusSemuaAktivitasUser(userID uint) (int64, error) {
+	res := r.db.Model(&domain.AuditLog{}).
+		Where("user_id = ? AND tersembunyi_profil = false", userID).
+		Update("tersembunyi_profil", true)
+	return res.RowsAffected, res.Error
+}
+
+func (r *PenggunaModulRepository) BersihkanAktivitasBulanan(batasWaktu time.Time) (int64, error) {
+	res := r.db.Model(&domain.AuditLog{}).
+		Where("tersembunyi_profil = false AND waktu < ?", batasWaktu).
+		Update("tersembunyi_profil", true)
+	return res.RowsAffected, res.Error
 }
 
 // ---- 2. Manajemen Pengguna (Admin) ----

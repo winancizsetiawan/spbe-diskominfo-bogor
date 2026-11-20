@@ -11,6 +11,7 @@ import { TwoFAModal } from '@/features/auth/TwoFAModal'
 import { formatTanggal } from '@/lib/format'
 import { useAktifkan2FA, useMulaiSetup2FA, useNonaktifkan2FA, useSimulasiKedaluwarsaSandi } from '../api'
 import type { ProfilSaya } from '../types'
+import { DataPegawaiDialog } from './DataPegawaiDialog'
 import { TeleponDialog } from './TeleponDialog'
 import { UbahSandiDialog } from './UbahSandiDialog'
 
@@ -46,6 +47,7 @@ function Baris({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
+  const [ubahPegawai, setUbahPegawai] = useState(false)
   const [ubahTelepon, setUbahTelepon] = useState(false)
   const [ubahSandi, setUbahSandi] = useState(false)
   const [setup2FA, setSetup2FA] = useState<{ secret: string; uri: string } | null>(null)
@@ -66,9 +68,12 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
           <div>
             <h2 className="font-semibold text-slate-900">Data pegawai</h2>
             <p className="flex items-center gap-1.5 text-sm text-slate-500">
-              <BadgeCheck className="size-4 text-emerald-600" aria-hidden /> Terverifikasi {user.sumberAkun === 'tnd' ? 'TND' : 'SSO'} · hanya baca
+              <BadgeCheck className="size-4 text-emerald-600" aria-hidden /> Terverifikasi {user.sumberAkun === 'tnd' ? 'TND' : 'SSO'}
             </p>
           </div>
+          <Button variant="secondary" onClick={() => setUbahPegawai(true)}>
+            <Pencil className="size-4" aria-hidden /> Ubah
+          </Button>
         </div>
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Baris label="Nama lengkap">{profil.nama}</Baris>
@@ -218,6 +223,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
         </div>
       </Card>
 
+      <DataPegawaiDialog open={ubahPegawai} profil={profil} onClose={() => setUbahPegawai(false)} />
       <TeleponDialog open={ubahTelepon} noTelepon={profil.noTelepon} onClose={() => setUbahTelepon(false)} />
       <UbahSandiDialog open={ubahSandi} onClose={() => setUbahSandi(false)} />
       <TwoFAModal

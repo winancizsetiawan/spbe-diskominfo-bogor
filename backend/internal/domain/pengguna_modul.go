@@ -46,6 +46,23 @@ type UbahTeleponInput struct {
 	NoTelepon *string `json:"noTelepon"`
 }
 
+type UbahDataPegawaiInput struct {
+	Nama        string `json:"nama"`
+	NIP         string `json:"nip"`
+	IdInstansi  uint   `json:"idInstansi"`
+	SatkerInduk string `json:"satkerInduk"`
+	Jabatan     string `json:"jabatan"`
+	Golongan    string `json:"golongan"`
+	Email       string `json:"email"`
+}
+
+type UbahDataPegawaiResponse struct {
+	Profil          ProfilSayaResponse `json:"profil"`
+	User            PenggunaDTO        `json:"user"`
+	Token           string             `json:"token,omitempty"`
+	KedaluwarsaPada *time.Time         `json:"kedaluwarsaPada,omitempty"`
+}
+
 type UbahPreferensiInput struct {
 	KanalEmail bool `json:"kanalEmail"`
 }

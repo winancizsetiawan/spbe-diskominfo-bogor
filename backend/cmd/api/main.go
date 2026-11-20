@@ -225,6 +225,8 @@ func main() {
 			api.GET("/me", pmHandler.GetMe)
 			api.GET("/profil", pmHandler.GetProfil)
 			api.PUT("/profil", pmHandler.UbahProfil)
+			api.GET("/profil/instansi", pmHandler.GetInstansiProfil)
+			api.PUT("/profil/pegawai", pmHandler.UbahDataPegawai)
 			api.POST("/profil/foto", pmHandler.UnggahFotoProfil)
 			api.DELETE("/profil/foto", pmHandler.HapusFotoProfil)
 			api.GET("/profil/foto/:nama", pmHandler.FotoProfil)
@@ -234,6 +236,10 @@ func main() {
 			api.GET("/profil/preferensi", pmHandler.GetPreferensi)
 			api.PUT("/profil/preferensi", pmHandler.UbahPreferensi)
 			api.GET("/profil/aktivitas", pmHandler.ListAktivitasSaya)
+			api.DELETE("/profil/aktivitas", pmHandler.HapusSemuaAktivitasSaya)
+			api.DELETE("/profil/aktivitas/:id", pmHandler.HapusAktivitasSaya)
+
+			jadwalkanPembersihanAktivitasBulanan(pmService, cfg.DBTimeZone)
 
 			api.GET("/pengguna/instansi", pmHandler.GetInstansiPengguna)
 			api.GET("/pengguna", pmHandler.ListPengguna)
@@ -295,6 +301,35 @@ func jadwalkanBackupHarian(svc *service.SistemService, jamMenit, zona string) {
 			time.Sleep(time.Until(berikut))
 			if err := svc.JalankanBackupOtomatis(); err != nil {
 				log.Printf("[PERINGATAN] Backup otomatis: %v", err)
+			}
+		}
+	}()
+}
+
+// jadwalkanPembersihanAktivitasBulanan menghapus riwayat aktivitas profil berusia > 1 bulan secara otomatis setiap bulan.
+func jadwalkanPembersihanAktivitasBulanan(svc *service.PenggunaModulService, zona string) {
+	loc, err := time.LoadLocation(zona)
+	if err != nil {
+		loc = time.Local
+	}
+	go func() {
+		if jml, err := svc.BersihkanAktivitasBulananOtomatis(); err != nil {
+			log.Printf("[PERINGATAN] Pembersihan riwayat aktivitas awal: %v", err)
+		} else if jml > 0 {
+			log.Printf("[INFO] Pembersihan otomatis awal: %d riwayat aktivitas (> 1 bulan) dibersihkan.", jml)
+		}
+
+		for {
+			now := time.Now().In(loc)
+			// Tanggal 1 bulan berikutnya pukul 01:00 waktu lokal
+			berikut := time.Date(now.Year(), now.Month()+1, 1, 1, 0, 0, 0, loc)
+			log.Printf("Pembersihan riwayat aktivitas bulanan berikutnya: %s", berikut.Format("2006-01-02 15:04 MST"))
+			time.Sleep(time.Until(berikut))
+
+			if jml, err := svc.BersihkanAktivitasBulananOtomatis(); err != nil {
+				log.Printf("[PERINGATAN] Pembersihan riwayat aktivitas bulanan: %v", err)
+			} else {
+				log.Printf("[INFO] Pembersihan otomatis bulanan selesai: %d riwayat aktivitas dibersihkan.", jml)
 			}
 		}
 	}()

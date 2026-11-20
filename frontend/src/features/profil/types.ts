@@ -1,5 +1,27 @@
 import type { Role } from '@/auth/types'
 
+export interface InstansiProfilOption {
+  id: number
+  nama: string
+}
+
+export interface UbahDataPegawaiInput {
+  nama: string
+  nip: string
+  idInstansi: number
+  satkerInduk: string
+  jabatan: string
+  golongan: string
+  email: string
+}
+
+export interface UbahDataPegawaiResponse {
+  profil: ProfilSaya
+  user: import('@/auth/types').User
+  token?: string
+  kedaluwarsaPada?: string
+}
+
 export interface ProfilSaya {
   nama: string
   email: string
@@ -7,7 +29,7 @@ export interface ProfilSaya {
   jabatan: string
   golongan: string
   satkerInduk: string
-  /** Opsional; satu-satunya data profil yang dapat diubah di portal. */
+  /** Opsional; nomor telepon profil. */
   noTelepon: string | null
   fotoProfil?: string | null
   instansi: { id: number; nama: string }

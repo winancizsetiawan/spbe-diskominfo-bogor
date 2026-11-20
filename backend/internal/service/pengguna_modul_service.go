@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -573,6 +574,103 @@ func (s *PenggunaModulService) UbahTelepon(role string, in domain.UbahTeleponInp
 	return s.GetProfil(role)
 }
 
+func (s *PenggunaModulService) UbahDataPegawai(role string, in domain.UbahDataPegawaiInput) (*domain.UbahDataPegawaiResponse, bool, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return nil, false, err
+	}
+
+	nama := strings.TrimSpace(in.Nama)
+	nip := strings.TrimSpace(in.NIP)
+	satker := strings.TrimSpace(in.SatkerInduk)
+	jabatan := strings.TrimSpace(in.Jabatan)
+	golongan := strings.TrimSpace(in.Golongan)
+	email := strings.ToLower(strings.TrimSpace(in.Email))
+
+	errs := make(map[string]string)
+	if nama == "" {
+		errs["nama"] = "Nama lengkap wajib diisi."
+	} else if utf8.RuneCountInString(nama) > 150 {
+		errs["nama"] = "Nama lengkap maksimal 150 karakter."
+	}
+
+	if nip == "" {
+		errs["nip"] = "NIP wajib diisi."
+	} else if utf8.RuneCountInString(nip) > 50 {
+		errs["nip"] = "NIP maksimal 50 karakter."
+	} else if u.Nip != nil && s.repo.ExistsNipSelain(nip, u.ID) {
+		errs["nip"] = "NIP ini sudah digunakan oleh akun lain."
+	}
+
+	if in.IdInstansi == 0 {
+		errs["idInstansi"] = "Instansi wajib dipilih."
+	} else if _, instErr := s.repo.FindInstansiByID(in.IdInstansi); instErr != nil {
+		errs["idInstansi"] = "Instansi tidak ditemukan."
+	}
+
+	if satker == "" {
+		errs["satkerInduk"] = "Satuan kerja induk wajib diisi."
+	} else if utf8.RuneCountInString(satker) > 150 {
+		errs["satkerInduk"] = "Satuan kerja induk maksimal 150 karakter."
+	}
+
+	if jabatan == "" {
+		errs["jabatan"] = "Jabatan wajib diisi."
+	} else if utf8.RuneCountInString(jabatan) > 100 {
+		errs["jabatan"] = "Jabatan maksimal 100 karakter."
+	}
+
+	if golongan == "" {
+		errs["golongan"] = "Golongan wajib diisi."
+	} else if utf8.RuneCountInString(golongan) > 50 {
+		errs["golongan"] = "Golongan maksimal 50 karakter."
+	}
+
+	if email == "" {
+		errs["email"] = "Email kedinasan wajib diisi."
+	} else if utf8.RuneCountInString(email) > 150 {
+		errs["email"] = "Email kedinasan maksimal 150 karakter."
+	} else if addr, parseErr := mail.ParseAddress(email); parseErr != nil || addr.Address != email || !strings.Contains(email, ".") {
+		errs["email"] = "Format email kedinasan tidak valid."
+	} else if s.repo.ExistsEmailSelain(email, u.ID) {
+		errs["email"] = "Email kedinasan ini sudah digunakan oleh akun lain."
+	}
+
+	if len(errs) > 0 {
+		return nil, false, &ValidationError{Errors: errs}
+	}
+
+	emailBerubah := !strings.EqualFold(u.Email, email)
+	var userNipPtr *string
+	if u.Nip != nil {
+		userNipPtr = &nip
+	}
+
+	if err := s.repo.UpdateDataPegawai(u.ID, nama, email, in.IdInstansi, userNipPtr, nip, satker, jabatan, golongan); err != nil {
+		return nil, false, err
+	}
+
+	uid := u.ID
+	s.sistemSvc.CatatAktivitas(&uid, domain.AksiUbahProfil, "Memperbarui data pegawai", domain.HasilBerhasil)
+
+	uBaru, err := s.repo.FindUserByID(u.ID)
+	if err != nil {
+		return nil, false, err
+	}
+	uBaru.Role = u.Role
+
+	peranKunci := auth.Kunci(string(uBaru.Role), uBaru.Email)
+	profil, err := s.GetProfil(peranKunci)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return &domain.UbahDataPegawaiResponse{
+		Profil: *profil,
+		User:   kePenggunaDTO(*uBaru),
+	}, emailBerubah, nil
+}
+
 func (s *PenggunaModulService) SimpanFotoProfil(role string, namaFile string) (*domain.ProfilSayaResponse, error) {
 	u, err := s.AmbilUserDariRole(role)
 	if err != nil {
@@ -701,6 +799,34 @@ func (s *PenggunaModulService) ListAktivitasSaya(role string, page int) (domain.
 		TotalPages: totalPages,
 		Total:      total,
 	}, nil
+}
+
+func (s *PenggunaModulService) HapusAktivitasSaya(role string, logID uint) error {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return err
+	}
+	affected, err := s.repo.HapusAktivitasByID(u.ID, logID)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("Riwayat aktivitas tidak ditemukan.")
+	}
+	return nil
+}
+
+func (s *PenggunaModulService) HapusSemuaAktivitasSaya(role string) (int64, error) {
+	u, err := s.AmbilUserDariRole(role)
+	if err != nil {
+		return 0, err
+	}
+	return s.repo.HapusSemuaAktivitasUser(u.ID)
+}
+
+func (s *PenggunaModulService) BersihkanAktivitasBulananOtomatis() (int64, error) {
+	batas := time.Now().AddDate(0, -1, 0)
+	return s.repo.BersihkanAktivitasBulanan(batas)
 }
 
 // ---- 2. Manajemen Pengguna (Admin) ----
