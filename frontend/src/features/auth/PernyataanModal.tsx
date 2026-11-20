@@ -12,7 +12,7 @@ const BUTIR_PERNYATAAN = [
   },
   {
     judul: 'Persetujuan Penggunaan Data Pribadi',
-    isi: 'Saya memberikan persetujuan atas penggunaan data pribadi saya (nama, jabatan, akun pengguna) untuk keperluan pengelolaan dan pengoperasian Portal Arsitektur Digital Kota Bogor sesuai fungsi dan tujuan sistem.',
+    isi: 'Saya memberikan persetujuan atas penggunaan data pribadi saya (nama, jabatan, akun pengguna) untuk keperluan pengelolaan dan pengoperasian Portal Arsitektur Pemerintah Digital Kota Bogor sesuai fungsi dan tujuan sistem.',
   },
   {
     judul: 'Kerahasiaan & Keamanan Akses',

@@ -334,7 +334,7 @@ func (s *PenggunaModulService) LanjutLogin(in domain.LanjutLoginInput) (*domain.
 			}
 		}
 		if kode == "" {
-			uri := auth.BuatURITOTP("Arsitektur Digital Kota Bogor", u.Email, *u.TwoFASecret)
+			uri := auth.BuatURITOTP("Arsitektur Pemerintah Digital Kota Bogor", u.Email, *u.TwoFASecret)
 			return &domain.LoginResponse{
 				Role:          u.Role,
 				User:          kePenggunaDTO(*u),
@@ -389,7 +389,7 @@ func (s *PenggunaModulService) MulaiSetup2FA(role string) (*domain.Setup2FARespo
 	if err := s.repo.UpdateUser(u); err != nil {
 		return nil, err
 	}
-	uri := auth.BuatURITOTP("Arsitektur Digital Kota Bogor", u.Email, rahasia)
+	uri := auth.BuatURITOTP("Arsitektur Pemerintah Digital Kota Bogor", u.Email, rahasia)
 	return &domain.Setup2FAResponse{Secret: rahasia, Uri: uri}, nil
 }
 
