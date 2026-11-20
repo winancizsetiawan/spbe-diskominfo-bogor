@@ -21,7 +21,7 @@ func TestTerapkanArsipkanDanPulihkan(t *testing.T) {
 	}
 	t0 := time.Date(2026, 11, 17, 10, 0, 0, 0, time.UTC)
 	for i := 1; i <= 4; i++ {
-		if err := p.Terapkan([]byte("{}"), dataUji(i), Meta{NamaBerkas: "v" + itoa(i) + ".xlsx", DiterapkanPada: t0.Add(time.Duration(i) * time.Minute)}); err != nil {
+		if err := p.Terapkan([]byte("{}"), dataUji(i), nil, Meta{NamaBerkas: "v" + itoa(i) + ".xlsx", DiterapkanPada: t0.Add(time.Duration(i) * time.Minute)}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -49,7 +49,7 @@ func TestTerapkanArsipkanDanPulihkan(t *testing.T) {
 	// Waktu berkas arsip mengikuti berkas aslinya (bukan waktu pengarsipan).
 	lama := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
 	os.Chtimes(filepath.Join(p.Dir, BerkasInternal), lama, lama)
-	if err := p.Terapkan([]byte("{}"), dataUji(5), Meta{DiterapkanPada: t0.Add(2 * time.Hour)}); err != nil {
+	if err := p.Terapkan([]byte("{}"), dataUji(5), nil, Meta{DiterapkanPada: t0.Add(2 * time.Hour)}); err != nil {
 		t.Fatal(err)
 	}
 	r, _ = p.Riwayat()

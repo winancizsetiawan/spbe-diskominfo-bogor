@@ -44,10 +44,12 @@ type Ringkasan struct {
 	KegiatanPetaRencana int    `json:"kegiatanPetaRencana"`
 }
 
-// Hasil konversi: dua berkas JSON siap tulis beserta ringkasannya.
+// Hasil konversi: berkas JSON siap tulis beserta ringkasannya.
+// Relasi nil bila sheet keterkaitan antar-domain tidak ada atau formatnya tidak dikenali.
 type Hasil struct {
 	Publik    []byte
 	Internal  []byte
+	Relasi    []byte
 	Ringkasan Ringkasan
 }
 
@@ -651,10 +653,17 @@ func Konversi(r io.ReaderAt, ukuran int64, hariIni time.Time) (hasil *Hasil, err
 	if err != nil {
 		return nil, err
 	}
+	var bRelasi []byte
+	if rel := bangunRelasi(sheet); rel != nil {
+		if bRelasi, err = keJSON(rel); err != nil {
+			return nil, err
+		}
+	}
 
 	return &Hasil{
 		Publik:   bPublik,
 		Internal: bInternal,
+		Relasi:   bRelasi,
 		Ringkasan: Ringkasan{
 			Judul: judul, Diolah: diolah, Opd: len(perOpd), ProsesBisnis: len(probis), Iku: len(daftarIku),
 			Layanan: len(lay), Data: len(dat), DataTerbuka: len(katalogData), Aplikasi: len(apl),

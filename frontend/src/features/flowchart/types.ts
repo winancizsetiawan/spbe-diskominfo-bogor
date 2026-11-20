@@ -119,3 +119,40 @@ export interface HasilXml {
 export function ukuranBytes(teks: string) {
   return new TextEncoder().encode(teks).length
 }
+
+/** Proses bisnis dari Excel matriks arsitektur (sheet 1-Domain Proses Bisnis). */
+export interface ProbisArsitektur {
+  id: string
+  nama: string
+  uraian?: string
+  unit: string
+  /** "Probis Utama" atau "Sub Probis". */
+  jenis: string
+  statusBpmnAsIs?: string
+  statusBpmnToBe?: string
+}
+
+export interface ItemArsitektur {
+  id: string
+  nama: string
+  unit?: string
+  kategori?: string
+}
+
+export interface AplikasiArsitektur extends ItemArsitektur {
+  /** ID data, layanan, dan infrastruktur yang terkait dengan aplikasi ini (hanya yang ada di rantai). */
+  data: string[]
+  layanan: string[]
+  infrastruktur: string[]
+}
+
+/** Keterkaitan satu proses bisnis ke domain data, aplikasi, layanan, dan infrastruktur. */
+export interface RantaiArsitektur {
+  prosesBisnis: ProbisArsitektur
+  /** "kolom": dari kolom Kode Referensi Data di Excel; "kode": ditebak dari kesamaan kode. */
+  dasarData: 'kolom' | 'kode'
+  data: ItemArsitektur[]
+  aplikasi: AplikasiArsitektur[]
+  layanan: ItemArsitektur[]
+  infrastruktur: ItemArsitektur[]
+}

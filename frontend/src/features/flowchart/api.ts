@@ -6,6 +6,8 @@ import type {
   FlowchartFilter,
   FlowchartInput,
   OpsiFlowchart,
+  ProbisArsitektur,
+  RantaiArsitektur,
 } from './types'
 
 export const flowchartKeys = {
@@ -13,6 +15,8 @@ export const flowchartKeys = {
   daftar: (filter: FlowchartFilter) => ['flowchart', 'daftar', filter] as const,
   detail: (id: number) => ['flowchart', 'detail', id] as const,
   opsi: ['flowchart', 'opsi'] as const,
+  probisArsitektur: ['arsitektur', 'proses-bisnis'] as const,
+  rantai: (id: string) => ['arsitektur', 'rantai', id] as const,
 }
 
 function toQuery(filter: FlowchartFilter) {
@@ -77,5 +81,25 @@ export function useAjukanFlowchart() {
       void qc.invalidateQueries({ queryKey: flowchartKeys.semua })
       void qc.invalidateQueries({ queryKey: ['validasi'] })
     },
+  })
+}
+
+/** Proses bisnis dari Excel matriks arsitektur; 404 bila Excel belum diunggah. */
+export function useProbisArsitektur() {
+  return useQuery({
+    queryKey: flowchartKeys.probisArsitektur,
+    queryFn: () => api<{ items: ProbisArsitektur[] }>('/arsitektur/proses-bisnis').then((r) => r.items),
+    staleTime: 5 * 60_000,
+    retry: false,
+  })
+}
+
+/** Keterkaitan proses bisnis ke data, aplikasi, layanan, dan infrastruktur. */
+export function useRantaiArsitektur(id: string | undefined) {
+  return useQuery({
+    queryKey: flowchartKeys.rantai(id ?? ''),
+    queryFn: () => api<RantaiArsitektur>(`/arsitektur/rantai?id=${encodeURIComponent(id ?? '')}`),
+    enabled: !!id,
+    staleTime: 5 * 60_000,
   })
 }

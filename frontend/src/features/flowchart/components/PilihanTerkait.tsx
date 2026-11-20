@@ -13,10 +13,12 @@ interface Props {
   kosong: string
   error?: string
   disabled?: boolean
+  /** Penjelasan singkat asal daftar pilihan. */
+  hint?: string
 }
 
 /** Daftar kotak centang untuk memilih keterkaitan (aplikasi atau SOP). */
-export function PilihanTerkait({ legend, items, terpilih, onChange, kosong, error, disabled = false }: Props) {
+export function PilihanTerkait({ legend, items, terpilih, onChange, kosong, error, disabled = false, hint }: Props) {
   const id = useId()
   const ubah = (itemId: number, nyala: boolean) =>
     onChange(nyala ? [...terpilih, itemId] : terpilih.filter((x) => x !== itemId))
@@ -26,6 +28,7 @@ export function PilihanTerkait({ legend, items, terpilih, onChange, kosong, erro
       <legend className="mb-1.5 text-sm font-medium text-slate-700">
         {legend} <span className="font-normal text-slate-500">({terpilih.length} dipilih)</span>
       </legend>
+      {hint && <p className="mb-1.5 text-xs text-slate-500">{hint}</p>}
       <div className={`max-h-44 space-y-1 overflow-y-auto rounded-lg border bg-white p-2 ${error ? 'border-red-400' : 'border-slate-300'}`}>
         {!items ? (
           <p className="px-2 py-1 text-sm text-slate-500">Memuat…</p>

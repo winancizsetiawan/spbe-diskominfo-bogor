@@ -1,3 +1,4 @@
+import { arsitekturHandlers } from './arsitektur'
 import { authHandlers } from './auth'
 import { berandaHandlers } from './beranda'
 import { cariHandlers } from './cari'
@@ -30,6 +31,7 @@ export const handlers = [
   ...profilHandlers,
   ...penggunaHandlers,
   ...flowchartHandlers,
+  ...arsitekturHandlers,
   ...berandaHandlers,
   ...dasborHandlers,
   ...dasborPublikHandlers,

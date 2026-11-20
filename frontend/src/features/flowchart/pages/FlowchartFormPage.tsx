@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -17,6 +18,8 @@ import { useFlowchart, useOpsiFlowchart, useSimpanFlowchart } from '../api'
 import { BPMN_KOSONG } from '../bpmnKosong'
 import type { BpmnEditorHandle } from '../components/BpmnEditor'
 import { PilihanTerkait } from '../components/PilihanTerkait'
+import { SusunOtomatis } from '../components/SusunOtomatis'
+import type { PilihanRantai } from '../bpmnOtomatis'
 import {
   BATAS_FLOWCHART,
   JENIS_LABEL,
@@ -25,6 +28,7 @@ import {
   type FlowchartDetail,
   type JenisProses,
   type KategoriProses,
+  type ProbisArsitektur,
 } from '../types'
 
 // Modeler bpmn-js besar: hanya diunduh saat halaman form dibuka.
@@ -69,11 +73,18 @@ export function FlowchartFormPage() {
   const [sopDipilih, setSopDipilih] = useState<number[]>([])
   const [errorDiagram, setErrorDiagram] = useState<string>()
   const [errorTerkait, setErrorTerkait] = useState<{ aplikasi?: string; sop?: string }>({})
+  // Setelah proses bisnis dipilih, informasi proses sudah terisi otomatis dan cukup ditampilkan ringkas.
+  const [dariProbis, setDariProbis] = useState(false)
+  const [ubahInfo, setUbahInfo] = useState(false)
 
-  const { register, handleSubmit, setError, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setError, setValue, getValues, watch, formState: { errors } } = useForm<FormValues>({
     defaultValues: KOSONG,
     values: detail.data ? keForm(detail.data) : undefined,
   })
+
+  const info = watch()
+  const adaGalatInfo = !!(errors.nama || errors.kategori || errors.jenis || errors.pic || errors.deskripsi)
+  const infoRingkas = dariProbis && !ubahInfo && !adaGalatInfo
 
   // Keterkaitan awal diambil sekali per flowchart agar suntingan tidak tertimpa saat data dimuat ulang.
   const idDimuat = detail.data?.id
@@ -100,6 +111,31 @@ export function FlowchartFormPage() {
         </Link>
       </div>
     )
+  }
+
+  // Susun otomatis: isi informasi proses dari proses bisnis Excel yang dipilih.
+  function isiDariProbis(p: ProbisArsitektur) {
+    const opsiIsi = { shouldDirty: true, shouldValidate: false }
+    setValue('nama', p.nama.slice(0, BATAS_FLOWCHART.namaMax), opsiIsi)
+    if (p.unit) setValue('pic', p.unit.slice(0, BATAS_FLOWCHART.picMax), opsiIsi)
+    const jenis = p.jenis.toLowerCase()
+    if (jenis.includes('utama')) setValue('kategori', 'utama', opsiIsi)
+    else if (jenis.includes('sub')) setValue('kategori', 'sub', opsiIsi)
+    // Excel matriks berisi kondisi berjalan (As-Is).
+    if (!getValues('jenis')) setValue('jenis', 'as_is', opsiIsi)
+    const uraian = p.uraian && p.uraian !== p.nama ? p.uraian : ''
+    setValue('deskripsi', uraian.slice(0, BATAS_FLOWCHART.deskripsiMax), opsiIsi)
+    setDariProbis(true)
+    setUbahInfo(false)
+  }
+
+  function terapkanDiagram(xml: string, pilihan: PilihanRantai) {
+    setErrorDiagram(undefined)
+    editor.current?.muatXml(xml).catch(() => setErrorDiagram('Diagram otomatis gagal dimuat ke lembar gambar. Coba pilih ulang proses bisnis.'))
+    // Centang aplikasi terkait yang namanya sama dengan aplikasi di data arsitektur.
+    const nama = new Set(pilihan.aplikasi.map((a) => a.nama.trim().toLowerCase()))
+    const cocok = (opsi.data?.aplikasi ?? []).filter((a) => nama.has(a.nama.trim().toLowerCase())).map((a) => a.id)
+    if (cocok.length) setAplikasiDipilih((lama) => [...new Set([...lama, ...cocok])])
   }
 
   async function onValid(v: FormValues) {
@@ -153,12 +189,34 @@ export function FlowchartFormPage() {
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title={editId ? `Ubah ${detail.data?.nama ?? 'diagram alur'}` : 'Buat Diagram Alur'}
-        description={editId ? 'Perubahan disimpan sebagai versi baru dan status kembali ke Draf.' : 'Gambar diagram di lembar gambar atau impor berkas BPMN 2.0. Disimpan sebagai Draf.'}
+        description={editId ? 'Perubahan disimpan sebagai versi baru dan status kembali ke Draf.' : 'Pilih proses bisnis agar diagram tersusun otomatis, atau gambar sendiri di lembar gambar. Disimpan sebagai Draf.'}
       />
 
       <form onSubmit={kirim} noValidate className="space-y-6">
+        <SusunOtomatis instansi={user?.instansi.nama} disabled={simpan.isPending} onPilihProbis={isiDariProbis} onDiagram={terapkanDiagram} />
+
         <Card className="space-y-5">
-          <h2 className="font-semibold text-slate-900">Informasi proses</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-slate-900">Informasi proses</h2>
+            {infoRingkas && (
+              <Button type="button" variant="secondary" onClick={() => setUbahInfo(true)}>
+                <Pencil className="size-4" aria-hidden /> Ubah
+              </Button>
+            )}
+          </div>
+          {infoRingkas ? (
+            <div>
+              <p className="mb-3 text-sm text-slate-600">Terisi otomatis dari proses bisnis yang dipilih. Klik Ubah bila perlu menyesuaikan.</p>
+              <dl className="grid grid-cols-1 gap-3 rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm sm:grid-cols-2">
+                <RingkasInfo label="Nama proses" isi={info.nama} lebar />
+                <RingkasInfo label="Kategori proses" isi={info.kategori ? KATEGORI_LABEL[info.kategori] : ''} />
+                <RingkasInfo label="Jenis" isi={info.jenis ? JENIS_LABEL[info.jenis] : ''} />
+                <RingkasInfo label="Penanggung jawab" isi={info.pic} lebar />
+                <RingkasInfo label="Deskripsi" isi={info.deskripsi} lebar />
+              </dl>
+            </div>
+          ) : (
+          <>
           <Field id="nama" label="Nama proses" error={errors.nama?.message}>
             <input
               id="nama"
@@ -215,6 +273,8 @@ export function FlowchartFormPage() {
               {...register('deskripsi', { maxLength: { value: BATAS_FLOWCHART.deskripsiMax, message: `Deskripsi maksimal ${BATAS_FLOWCHART.deskripsiMax} karakter.` } })}
             />
           </Field>
+          </>
+          )}
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <PilihanTerkait
@@ -223,6 +283,7 @@ export function FlowchartFormPage() {
               terpilih={aplikasiDipilih}
               onChange={setAplikasiDipilih}
               kosong="Belum ada aplikasi di instansi ini."
+              hint="Dari menu Data Aplikasi instansi Anda, bukan dari Excel."
               error={errorTerkait.aplikasi}
               disabled={simpan.isPending}
             />
@@ -232,6 +293,7 @@ export function FlowchartFormPage() {
               terpilih={sopDipilih}
               onChange={setSopDipilih}
               kosong="Belum ada SOP."
+              hint="Dari Pusat Dokumen; pilih yang menjadi acuan proses ini."
               error={errorTerkait.sop}
               disabled={simpan.isPending}
             />
@@ -274,6 +336,15 @@ export function FlowchartFormPage() {
           </Button>
         </div>
       </form>
+    </div>
+  )
+}
+
+function RingkasInfo({ label, isi, lebar = false }: { label: string; isi: string; lebar?: boolean }) {
+  return (
+    <div className={lebar ? 'sm:col-span-2' : undefined}>
+      <dt className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{label}</dt>
+      <dd className="mt-0.5 text-slate-800">{isi || <span className="text-slate-500 italic">Belum diisi</span>}</dd>
     </div>
   )
 }

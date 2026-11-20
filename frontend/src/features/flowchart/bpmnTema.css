@@ -1,0 +1,13 @@
+/* Catatan (text annotation) BPMN ditampilkan sebagai kotak berbingkai penuh, bukan kurung siku. */
+.djs-container [data-element-id^='Keterangan'] .djs-visual > rect,
+.djs-container [data-element-id^='TextAnnotation'] .djs-visual > rect {
+  stroke: #94a3b8 !important;
+  stroke-width: 1px !important;
+  fill: #f8fafc !important;
+  rx: 6px;
+}
+
+.djs-container [data-element-id^='Keterangan'] .djs-visual > path,
+.djs-container [data-element-id^='TextAnnotation'] .djs-visual > path {
+  display: none;
+}

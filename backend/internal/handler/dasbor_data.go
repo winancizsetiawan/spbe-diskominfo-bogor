@@ -212,7 +212,7 @@ func (h *DataDasborHandler) Terapkan(c *gin.Context) {
 	}
 
 	m := dasbor.Meta{NamaBerkas: d.namaBerkas, DiunggahOleh: u.Nama, DiterapkanPada: time.Now()}
-	if err := h.simpan.Terapkan(d.hasil.Publik, d.hasil.Internal, m); err != nil {
+	if err := h.simpan.Terapkan(d.hasil.Publik, d.hasil.Internal, d.hasil.Relasi, m); err != nil {
 		log.Printf("[dasbor] gagal menerapkan: %v", err)
 		h.catat(u.ID, "Gagal memperbarui data dasbor dari "+d.namaBerkas, domain.HasilGagal)
 		c.JSON(http.StatusInternalServerError, domain.ErrorResponse{Message: "Gagal menyimpan data dasbor."})

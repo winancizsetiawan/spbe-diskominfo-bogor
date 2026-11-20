@@ -127,7 +127,7 @@ func (p *Penyimpanan) arsipkanAktif(sekarang time.Time) error {
 	if err := os.MkdirAll(tujuan, 0o750); err != nil {
 		return err
 	}
-	for _, b := range []string{BerkasPublik, BerkasInternal, berkasMeta} {
+	for _, b := range []string{BerkasPublik, BerkasInternal, BerkasRelasi, berkasMeta} {
 		asal := filepath.Join(p.Dir, b)
 		isi, err := os.ReadFile(asal)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -163,8 +163,17 @@ func (p *Penyimpanan) pangkas() error {
 	return nil
 }
 
-func (p *Penyimpanan) tulisAktif(publik, internal []byte, m Meta) error {
+func (p *Penyimpanan) tulisAktif(publik, internal, relasi []byte, m Meta) error {
 	if err := os.MkdirAll(p.Dir, 0o750); err != nil {
+		return err
+	}
+	// Relasi harus selalu berasal dari Excel yang sama dengan data dasbor: bila tidak ada, berkas lama dihapus.
+	pathRelasi := filepath.Join(p.Dir, BerkasRelasi)
+	if relasi == nil {
+		if err := os.Remove(pathRelasi); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+	} else if err := tulisAtomik(pathRelasi, relasi); err != nil {
 		return err
 	}
 	mb, _ := json.Marshal(m)
@@ -181,7 +190,8 @@ func (p *Penyimpanan) tulisAktif(publik, internal []byte, m Meta) error {
 }
 
 // Terapkan menjadikan data baru sebagai data aktif. Data sebelumnya diarsipkan lebih dulu.
-func (p *Penyimpanan) Terapkan(publik, internal []byte, m Meta) error {
+// relasi boleh nil (Excel tanpa sheet keterkaitan antar-domain).
+func (p *Penyimpanan) Terapkan(publik, internal, relasi []byte, m Meta) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if err := os.MkdirAll(p.Dir, 0o750); err != nil {
@@ -190,7 +200,7 @@ func (p *Penyimpanan) Terapkan(publik, internal []byte, m Meta) error {
 	if err := p.arsipkanAktif(m.DiterapkanPada); err != nil {
 		return err
 	}
-	return p.tulisAktif(publik, internal, m)
+	return p.tulisAktif(publik, internal, relasi, m)
 }
 
 // Pulihkan mengembalikan versi riwayat sebagai data aktif. Data aktif saat ini ikut diarsipkan.
@@ -213,8 +223,12 @@ func (p *Penyimpanan) Pulihkan(versi string, oleh string, sekarang time.Time) (*
 			m.NamaBerkas = lama.NamaBerkas
 		}
 	}
+	relasi, err := os.ReadFile(filepath.Join(asal, BerkasRelasi))
+	if err != nil {
+		relasi = nil // versi lama tanpa relasi
+	}
 	if err := p.arsipkanAktif(sekarang); err != nil {
 		return nil, err
 	}
-	return &m, p.tulisAktif(publik, internal, m)
+	return &m, p.tulisAktif(publik, internal, relasi, m)
 }

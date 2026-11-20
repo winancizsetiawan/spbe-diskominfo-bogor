@@ -2,6 +2,7 @@ import { Download, Maximize, ZoomIn, ZoomOut } from 'lucide-react'
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
+import '../bpmnTema.css'
 import { useEffect, useRef, useState } from 'react'
 import { Spinner } from '@/components/ui/Spinner'
 

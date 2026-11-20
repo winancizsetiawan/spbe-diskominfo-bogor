@@ -77,6 +77,8 @@ func main() {
 		dasborArsitektur := handler.NewDasborArsitekturHandler(cfg.DasborDataDir)
 		api.GET("/dasbor/publik", dasborArsitektur.GetPublik)
 		api.GET("/dasbor/analitik", dasborArsitektur.GetAnalitik)
+		api.GET("/arsitektur/proses-bisnis", dasborArsitektur.DaftarProsesBisnis)
+		api.GET("/arsitektur/rantai", dasborArsitektur.RantaiProsesBisnis)
 
 		if db != nil {
 			if n, err := service.HashSandiTeksBiasa(db); err != nil {

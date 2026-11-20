@@ -26,9 +26,10 @@ import (
 // Batasan publik ditegakkan dengan berkas terpisah: berkas internal tidak pernah dikirim ke endpoint publik.
 // Kontrak lengkap: frontend/docs/kontrak-api-dasbor.md.
 type DasborArsitekturHandler struct {
-	dir   string
-	mu    sync.Mutex
-	cache map[string]berkasDasbor
+	dir    string
+	mu     sync.Mutex
+	cache  map[string]berkasDasbor
+	relasi *cacheRelasi
 }
 
 type berkasDasbor struct {

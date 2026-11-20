@@ -2,6 +2,7 @@ import { Download, FileUp } from 'lucide-react'
 import Modeler from 'bpmn-js/lib/Modeler'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-js.css'
+import '../bpmnTema.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import { BATAS_FLOWCHART, type HasilXml } from '../types'
@@ -9,7 +10,24 @@ import { BATAS_FLOWCHART, type HasilXml } from '../types'
 export interface BpmnEditorHandle {
   /** Serialisasi diagram saat ini beserta pemeriksaan peristiwa awal dan akhir. */
   ambilXml(): Promise<HasilXml>
+  /** Mengganti isi lembar gambar dengan diagram baru (mis. hasil susun otomatis) lalu menyesuaikan zoom. */
+  muatXml(xml: string): Promise<void>
 }
+
+interface Kotak {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+interface KanvasApi {
+  viewbox(): Kotak & { inner: Kotak; outer: Kotak }
+  viewbox(box: Kotak): void
+}
+
+/** Ruang di kiri lembar gambar yang tertutup palet alat (px layar). */
+const RUANG_PALET = 115
 
 interface Props {
   /** Dimuat sekali saat editor dibuat; perubahan prop ini tidak menimpa suntingan. */
@@ -62,6 +80,25 @@ export default function BpmnEditor({ xmlAwal, ref, disabled = false, namaBerkas 
         adaMulai: registri.filter((e) => e.type === 'bpmn:StartEvent').length > 0,
         adaAkhir: registri.filter((e) => e.type === 'bpmn:EndEvent').length > 0,
       }
+    },
+    async muatXml(xml: string) {
+      const m = modeler.current
+      if (!m) throw new Error('Lembar gambar belum siap.')
+      await m.importXML(xml)
+      // Tampilkan seluruh diagram di sebelah kanan palet alat, tanpa diperbesar melebihi ukuran asli.
+      const kanvas = m.get<KanvasApi>('canvas')
+      const { inner, outer } = kanvas.viewbox()
+      const skala = Math.min(1, (outer.width - RUANG_PALET - 24) / inner.width, (outer.height - 32) / inner.height)
+      const lebar = outer.width / skala
+      const tinggi = outer.height / skala
+      kanvas.viewbox({
+        x: inner.x - (RUANG_PALET + (outer.width - RUANG_PALET - inner.width * skala) / 2) / skala,
+        y: inner.y - (tinggi - inner.height) / 2,
+        width: lebar,
+        height: tinggi,
+      })
+      setStatus('siap')
+      setPesan(null)
     },
   }))
 
