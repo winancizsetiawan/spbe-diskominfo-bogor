@@ -9,13 +9,14 @@ import { Spinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/States'
 import { errorMessage, isStatus } from '@/lib/errors'
 import { formatTanggal } from '@/lib/format'
+import { toast } from '@/components/ui/toast'
 import { ForbiddenPage } from '@/pages/ForbiddenPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { useFlowchart } from '../api'
 import { AjukanFlowchartDialog } from '../components/AjukanFlowchartDialog'
 import { DiagramPanel } from '../components/DiagramPanel'
 import { StatusFlowchartBadge } from '../components/StatusFlowchartBadge'
-import { BISA_DIAJUKAN_FLOWCHART, JENIS_LABEL, KATEGORI_LABEL } from '../types'
+import { BISA_DIAJUKAN_FLOWCHART, JENIS_LABEL, KATEGORI_LABEL, STATUS_FLOWCHART_LABEL, type FlowchartDetail } from '../types'
 
 function Baris({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -26,22 +27,34 @@ function Baris({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function unduhXml(xml: string, nama: string) {
-  const url = URL.createObjectURL(new Blob([xml], { type: 'application/xml' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = nama
-  document.body.append(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
-}
-
 export function FlowchartDetailPage() {
   const id = Number(useParams().id)
   const { user } = useAuth()
   const flowchart = useFlowchart(id)
   const [ajukan, setAjukan] = useState(false)
+  const [mengunduh, setMengunduh] = useState(false)
+
+  async function unduhPdf(f: FlowchartDetail) {
+    setMengunduh(true)
+    try {
+      const ekspor = await import('../eksporDiagram')
+      await ekspor.unduhPdf(
+        f.bpmnXml,
+        {
+          judul: f.nama,
+          keterangan: [
+            `${f.kode} · Versi ${f.versi} · ${KATEGORI_LABEL[f.kategori]} · ${JENIS_LABEL[f.jenis]} · ${STATUS_FLOWCHART_LABEL[f.status]}`,
+            `${f.instansi.nama} · Penanggung jawab: ${f.pic}`,
+          ],
+        },
+        `${f.kode}-v${f.versi}`,
+      )
+    } catch {
+      toast.error('PDF diagram gagal dibuat. Coba lagi.')
+    } finally {
+      setMengunduh(false)
+    }
+  }
 
   if (!Number.isInteger(id) || id <= 0 || isStatus(flowchart.error, 404)) return <NotFoundPage />
   if (isStatus(flowchart.error, 403)) return <ForbiddenPage />
@@ -71,8 +84,8 @@ export function FlowchartDetailPage() {
           {f.deskripsi && <p className="mt-1 max-w-2xl text-sm text-slate-600">{f.deskripsi}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => unduhXml(f.bpmnXml, `${f.kode}-v${f.versi}.bpmn`)}>
-            <Download className="size-4" aria-hidden /> Unduh BPMN
+          <Button variant="secondary" onClick={() => void unduhPdf(f)} disabled={mengunduh}>
+            <Download className="size-4" aria-hidden /> {mengunduh ? 'Membuat PDF…' : 'Unduh PDF'}
           </Button>
           {bisaUbah && (
             <Link to={`/katalog/flowchart/${f.id}/ubah`} className={buttonClass('secondary')}>

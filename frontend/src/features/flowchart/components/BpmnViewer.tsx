@@ -5,10 +5,11 @@ import 'bpmn-js/dist/assets/bpmn-js.css'
 import '../bpmnTema.css'
 import { useEffect, useRef, useState } from 'react'
 import { Spinner } from '@/components/ui/Spinner'
+import { toast } from '@/components/ui/toast'
 
 interface Props {
   xml: string
-  /** Dipakai untuk label aksesibilitas dan nama berkas SVG. */
+  /** Dipakai untuk label aksesibilitas dan nama berkas PNG. */
   nama: string
   namaBerkas: string
 }
@@ -29,17 +30,6 @@ interface RegistriApi {
 
 const TIPE_LANGKAH = ['bpmn:StartEvent', 'bpmn:EndEvent', 'bpmn:Task', 'bpmn:UserTask', 'bpmn:ServiceTask', 'bpmn:ExclusiveGateway', 'bpmn:ParallelGateway', 'bpmn:SubProcess']
 
-function unduh(isi: string, tipe: string, nama: string) {
-  const url = URL.createObjectURL(new Blob([isi], { type: tipe }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = nama
-  document.body.append(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
-}
-
 /**
  * Penampil diagram BPMN 2.0 dengan geser dan zoom. Chunk ini memuat bpmn-js sehingga
  * hanya diunduh saat halaman yang menampilkan diagram dibuka.
@@ -49,6 +39,7 @@ export default function BpmnViewer({ xml, nama, namaBerkas }: Props) {
   const viewer = useRef<NavigatedViewer | null>(null)
   const [status, setStatus] = useState<'memuat' | 'siap' | 'gagal'>('memuat')
   const [langkah, setLangkah] = useState<string[]>([])
+  const [mengunduh, setMengunduh] = useState(false)
 
   useEffect(() => {
     if (!wadah.current) return
@@ -87,9 +78,18 @@ export default function BpmnViewer({ xml, nama, namaBerkas }: Props) {
     if (canvas) canvas.zoom(canvas.zoom() * faktor)
   }
 
-  const unduhSvg = async () => {
+  const unduhGambar = async () => {
     const hasil = await viewer.current?.saveSVG()
-    if (hasil) unduh(hasil.svg, 'image/svg+xml', `${namaBerkas}.svg`)
+    if (!hasil) return
+    setMengunduh(true)
+    try {
+      const { unduhPng } = await import('../eksporDiagram')
+      await unduhPng(hasil.svg, namaBerkas)
+    } catch {
+      toast.error('Gambar diagram gagal dibuat. Coba lagi.')
+    } finally {
+      setMengunduh(false)
+    }
   }
 
   const tombol = 'grid size-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50'
@@ -106,8 +106,8 @@ export default function BpmnViewer({ xml, nama, namaBerkas }: Props) {
         <button type="button" className={tombol} onClick={() => viewer.current?.get<CanvasApi>('canvas').zoom('fit-viewport')} aria-label="Sesuaikan ke layar" disabled={status !== 'siap'}>
           <Maximize className="size-4" aria-hidden />
         </button>
-        <button type="button" className={`${tombol} w-auto gap-1.5 px-3 text-xs font-medium`} onClick={() => void unduhSvg()} disabled={status !== 'siap'}>
-          <Download className="size-4" aria-hidden /> Unduh SVG
+        <button type="button" className={`${tombol} w-auto gap-1.5 px-3 text-xs font-medium`} onClick={() => void unduhGambar()} disabled={status !== 'siap' || mengunduh}>
+          <Download className="size-4" aria-hidden /> {mengunduh ? 'Membuat PNG…' : 'Unduh PNG'}
         </button>
       </div>
 
