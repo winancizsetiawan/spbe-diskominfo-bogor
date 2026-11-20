@@ -19,7 +19,7 @@ func (h *HealthHandler) Check(c *gin.Context) {
 	c.JSON(http.StatusOK, domain.HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now().Format(time.RFC3339),
-		Service:   "Arsitektur Digital Kota Bogor Backend API",
+		Service:   "Arsitektur Pemerintah Digital Kota Bogor Backend API",
 	})
 }
 

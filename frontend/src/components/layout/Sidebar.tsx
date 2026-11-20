@@ -100,7 +100,7 @@ function IsiMenu() {
       <Link to="/beranda" className="flex items-center gap-2.5 px-5 py-5" aria-label="Ke beranda">
         <img src="/logo bogor.png" alt="Logo Pemerintah Kota Bogor" className="h-10 w-10" />
         <span className="leading-tight">
-          <span className="block text-lg font-bold text-white">Arsitektur Digital</span>
+          <span className="block text-lg font-bold text-white">Arsitektur Pemerintah Digital</span>
           <span className="block text-xs text-brand-100">Pemerintah Kota Bogor</span>
         </span>
       </Link>

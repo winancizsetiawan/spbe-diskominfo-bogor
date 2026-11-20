@@ -20,7 +20,7 @@ export function StatistikPublikSection() {
     <section aria-labelledby="statistik-publik" className="space-y-4">
       <div>
         <h2 id="statistik-publik" className="text-lg font-semibold text-slate-900">
-          Statistik Arsitektur Digital Kota Bogor
+          Statistik Arsitektur Pemerintah Digital Kota Bogor
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           Ringkasan dari Dasbor Publik.{' '}
@@ -38,7 +38,7 @@ export function StatistikPublikSection() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Panel judul="Arsitektur Digital per OPD (10 teratas)" tautan={{ to: '/dasbor-publik', label: 'Rincian' }} className="lg:col-span-2">
+        <Panel judul="Arsitektur Pemerintah Digital per OPD (10 teratas)" tautan={{ to: '/dasbor-publik', label: 'Rincian' }} className="lg:col-span-2">
           <ArsitekturPerOpd data={dasbor.data.perOpd} />
         </Panel>
         <Panel judul="Metode layanan" tautan={{ to: '/dasbor-publik?domain=layanan', label: 'Rincian' }}>

@@ -249,12 +249,12 @@ export function LoginPage() {
           <div className="flex items-center gap-3">
             <img src="/logo bogor.png" alt="" width={48} height={56} className="h-14 w-auto" />
             <div>
-              <p className="text-lg font-semibold">Portal Satu Akses Arsitektur Digital</p>
+              <p className="text-lg font-semibold">Portal Satu Akses Arsitektur Pemerintah Digital</p>
               <p className="text-xs tracking-wide text-brand-100 uppercase">Kota Bogor</p>
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold sm:text-3xl">Satu Akses Terpadu Layanan Arsitektur Digital</h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">Satu Akses Terpadu Layanan Arsitektur Pemerintah Digital</h2>
             <p className="mt-3 text-sm text-brand-100">
               Akses terintegrasi tata kelola pemerintahan digital, arsitektur instansi, dan kolaborasi aparatur negara secara aman dan presisi.
             </p>
@@ -363,7 +363,7 @@ export function LoginPage() {
               {memuat ? 'Memeriksa…' : 'Masuk ke Akun'}
             </button>
             <p className="text-center text-sm text-slate-600">
-              Belum terdaftar di Arsitektur Digital?
+              Belum terdaftar di Arsitektur Pemerintah Digital?
               <br />
               Hubungi Admin
             </p>

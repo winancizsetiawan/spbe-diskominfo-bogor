@@ -108,4 +108,4 @@ export const URL_LABEL: Record<FormatArtikel, string> = { gambar: 'Tautan gambar
 export const AKSES_LABEL: Record<AksesArtikel, string> = { publik: 'Publik (semua orang)', internal: 'Internal (setelah masuk)' }
 
 /** Daftar sementara; ganti dengan kategori master bila sudah ada sumbernya. Server menerima teks 2 sampai 80 karakter. */
-export const KATEGORI_ARTIKEL = ['Kebijakan Arsitektur Digital', 'Arsitektur Digital', 'Keamanan Informasi', 'Layanan Digital', 'Pelatihan dan Kegiatan', 'Umum'] as const
+export const KATEGORI_ARTIKEL = ['Kebijakan Arsitektur Pemerintah Digital', 'Arsitektur Pemerintah Digital', 'Keamanan Informasi', 'Layanan Digital', 'Pelatihan dan Kegiatan', 'Umum'] as const

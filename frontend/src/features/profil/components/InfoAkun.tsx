@@ -113,7 +113,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
         <Card>
           <h2 className="font-semibold text-slate-900">Keamanan akun</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Anda masuk dengan NIP dan kata sandi akun TND Pemkot Bogor. Kata sandi tidak disimpan di portal Arsitektur Digital; untuk menggantinya,
+            Anda masuk dengan NIP dan kata sandi akun TND Pemkot Bogor. Kata sandi tidak disimpan di portal Arsitektur Pemerintah Digital; untuk menggantinya,
             gunakan aplikasi TND.
           </p>
         </Card>
@@ -123,7 +123,7 @@ export function InfoAkun({ profil, user }: { profil: ProfilSaya; user: User }) {
           <div>
             <h2 className="font-semibold text-slate-900">Keamanan akun & Kebijakan Kata Sandi Tahunan</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Sesuai kebijakan keamanan Arsitektur Digital, kata sandi wajib diperbarui setiap 1 tahun (365 hari).
+              Sesuai kebijakan keamanan Arsitektur Pemerintah Digital, kata sandi wajib diperbarui setiap 1 tahun (365 hari).
             </p>
           </div>
           <Badge tone={wajibGanti ? 'danger' : sisaHari <= 14 ? 'warning' : 'success'}>

@@ -94,7 +94,7 @@ const P = {
 }
 
 export const threads: ThreadRow[] = [
-  { id: 1, idKategori: 2, judul: 'Strategi implementasi Arsitektur Digital di tingkat kecamatan', konten: 'Kecamatan kami baru mulai mendata aplikasi layanan. Bagaimana pengalaman OPD lain menyusun prioritas aplikasi yang perlu diintegrasikan lebih dulu?', penulis: P.dewi, dibuatPada: jamLalu(2), dilihat: 345, status: 'aktif' },
+  { id: 1, idKategori: 2, judul: 'Strategi implementasi Arsitektur Pemerintah Digital di tingkat kecamatan', konten: 'Kecamatan kami baru mulai mendata aplikasi layanan. Bagaimana pengalaman OPD lain menyusun prioritas aplikasi yang perlu diintegrasikan lebih dulu?', penulis: P.dewi, dibuatPada: jamLalu(2), dilihat: 345, status: 'aktif' },
   { id: 2, idKategori: 3, judul: 'Pengalaman integrasi data antar-OPD lewat SPLP', konten: 'Kami sedang menyiapkan API untuk data kesehatan. Apa saja hal teknis yang perlu disiapkan sebelum mendaftar ke SPLP Kota Bogor?', penulis: P.rina, dibuatPada: jamLalu(26), dilihat: 120, status: 'aktif' },
   { id: 3, idKategori: 3, judul: 'Rekomendasi perangkat lunak sumber terbuka untuk arsitektur domain', konten: 'Sesuai arahan Peta Rencana SPBE ke open source, tools apa yang teman-teman pakai untuk memodelkan proses bisnis (BPMN)?', penulis: P.siti, dibuatPada: jamLalu(30), dilihat: 310, status: 'aktif' },
   { id: 4, idKategori: 4, judul: 'Tafsir Permen PANRB 59/2020 untuk klasifikasi RAA', konten: 'Apakah aplikasi internal kepegawaian masuk domain Manajemen atau Pendukung? Mohon pencerahan rekan-rekan yang sudah mengklasifikasi.', penulis: P.budi, dibuatPada: jamLalu(50), dilihat: 198, status: 'terkunci' },
@@ -114,7 +114,7 @@ export const laporan: LaporanRow[] = [
   { id: 1, targetTipe: 'thread', targetId: 2, pelapor: 'Budi Santoso', alasan: 'Berisi nomor telepon pribadi pegawai di kolom isi.', dibuatPada: jamLalu(3), status: 'baru' },
   { id: 2, targetTipe: 'balasan', targetId: 2, pelapor: 'Siti Rahma', alasan: 'Bernada menyerang pihak lain dan tidak membantu diskusi.', dibuatPada: jamLalu(5), status: 'baru' },
   { id: 3, targetTipe: 'balasan', targetId: 2, pelapor: 'Andi Pratama', alasan: 'Setuju dengan laporan sebelumnya, bahasanya kurang pantas.', dibuatPada: jamLalu(2), status: 'baru' },
-  { id: 4, targetTipe: 'thread', targetId: 5, pelapor: 'Rina Oktaviani', alasan: 'Di luar topik forum Arsitektur Digital.', dibuatPada: jamLalu(40), status: 'ditolak' },
+  { id: 4, targetTipe: 'thread', targetId: 5, pelapor: 'Rina Oktaviani', alasan: 'Di luar topik forum Arsitektur Pemerintah Digital.', dibuatPada: jamLalu(40), status: 'ditolak' },
   { id: 5, targetTipe: 'thread', targetId: 4, pelapor: 'Ahmad Fauzi', alasan: 'Menyebut merek vendor tertentu sebagai rekomendasi.', dibuatPada: jamLalu(60), status: 'ditindak' },
 ]
 

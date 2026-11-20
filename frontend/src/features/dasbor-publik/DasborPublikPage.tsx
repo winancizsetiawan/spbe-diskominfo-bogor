@@ -425,7 +425,7 @@ function DasborArsitektur({ internal }: { internal: boolean }) {
     <>
       <PageHeader
         title={internal ? 'Dasbor Analitik' : 'Dasbor Publik'}
-        description={`${internal ? 'Data lengkap' : 'Ringkasan'} Arsitektur Digital Kota Bogor: proses bisnis, layanan, data, aplikasi, infrastruktur, keamanan, dan peta rencana.`}
+        description={`${internal ? 'Data lengkap' : 'Ringkasan'} Arsitektur Pemerintah Digital Kota Bogor: proses bisnis, layanan, data, aplikasi, infrastruktur, keamanan, dan peta rencana.`}
         actions={
           bolehPerbarui &&
           !panelTerbuka && (
@@ -440,12 +440,12 @@ function DasborArsitektur({ internal }: { internal: boolean }) {
         <Spinner className="py-24" />
       ) : isStatus(dasbor.error, 404) ? (
         // Server belum punya data/endpoint dasbor: bukan kesalahan sistem, jadi tampil sebagai keadaan kosong.
-        <EmptyState title="Data dasbor belum tersedia">Data Arsitektur Digital sedang disiapkan. Silakan kembali lagi nanti.</EmptyState>
+        <EmptyState title="Data dasbor belum tersedia">Data Arsitektur Pemerintah Digital sedang disiapkan. Silakan kembali lagi nanti.</EmptyState>
       ) : dasbor.isError ? (
         <ErrorState message={errorMessage(dasbor.error)} onRetry={() => void dasbor.refetch()} />
       ) : (
         <Card>
-          <Tabs tabs={DOMAIN} aktif={aktif} onChange={pilih} label="Domain Arsitektur Digital">
+          <Tabs tabs={DOMAIN} aktif={aktif} onChange={pilih} label="Domain Arsitektur Pemerintah Digital">
             {aktif === 'proses-bisnis' && <ProsesBisnis d={dasbor.data.prosesBisnis} internal={internal} />}
             {aktif === 'layanan' && <Layanan d={dasbor.data.layanan} internal={internal} />}
             {aktif === 'data' && <Data d={dasbor.data.data} internal={internal} />}

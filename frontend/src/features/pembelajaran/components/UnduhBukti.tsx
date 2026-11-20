@@ -19,7 +19,7 @@ async function buatPdf(s: Sertifikat, penerima: { nama: string; instansi: string
   doc.setTextColor(...BIRU).setFont('helvetica', 'bold').setFontSize(13)
   doc.text('PEMERINTAH KOTA BOGOR', tengah, 34, { align: 'center' })
   doc.setFontSize(11).setFont('helvetica', 'normal')
-  doc.text('Portal Arsitektur Digital Kota Bogor', tengah, 41, { align: 'center' })
+  doc.text('Portal Arsitektur Pemerintah Digital Kota Bogor', tengah, 41, { align: 'center' })
 
   doc.setFont('helvetica', 'bold').setFontSize(28)
   doc.text('BUKTI PENYELESAIAN PEMBELAJARAN', tengah, 66, { align: 'center' })

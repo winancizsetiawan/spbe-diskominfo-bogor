@@ -11,8 +11,8 @@ const jamLalu = (jam: number) => new Date(Date.now() - jam * 3_600_000).toISOStr
 // id pengguna demo: 1 ASN, 2 Akademisi, 3 Admin OPD, 4 Super Admin (lihat db.ts).
 export const notifikasi: NotifikasiRow[] = [
   { id: 1, idUser: 1, kategori: 'dokumen', judul: 'SOP baru telah diterbitkan', pesan: 'SOP Manajemen Aplikasi Pemerintahan versi 2.4', urlTujuan: '/dokumen/9', sudahDibaca: false, dibuatPada: jamLalu(2) },
-  { id: 2, idUser: 1, kategori: 'forum', judul: 'Komentar baru di forum', pesan: 'Strategi implementasi Arsitektur Digital di tingkat kecamatan', urlTujuan: '/forum/1', sudahDibaca: false, dibuatPada: jamLalu(5) },
-  { id: 3, idUser: 1, kategori: 'pembelajaran', judul: 'Modul baru tersedia', pesan: 'Pengantar Arsitektur Digital', urlTujuan: '/pembelajaran', sudahDibaca: true, dibuatPada: jamLalu(26) },
+  { id: 2, idUser: 1, kategori: 'forum', judul: 'Komentar baru di forum', pesan: 'Strategi implementasi Arsitektur Pemerintah Digital di tingkat kecamatan', urlTujuan: '/forum/1', sudahDibaca: false, dibuatPada: jamLalu(5) },
+  { id: 3, idUser: 1, kategori: 'pembelajaran', judul: 'Modul baru tersedia', pesan: 'Pengantar Arsitektur Pemerintah Digital', urlTujuan: '/pembelajaran', sudahDibaca: true, dibuatPada: jamLalu(26) },
   { id: 4, idUser: 1, kategori: 'forum', judul: 'Balasan untuk diskusi Anda', pesan: 'Tantangan literasi digital ASN di kelurahan', urlTujuan: '/forum/5', sudahDibaca: true, dibuatPada: jamLalu(30) },
   { id: 5, idUser: 1, kategori: 'dokumen', judul: 'Dokumen baru ditambahkan', pesan: 'Laporan Evaluasi Indeks SPBE Nasional Tahun 2023', urlTujuan: '/dokumen/4', sudahDibaca: true, dibuatPada: jamLalu(50) },
   { id: 6, idUser: 2, kategori: 'forum', judul: 'Balasan untuk diskusi Anda', pesan: 'Rekomendasi perangkat lunak sumber terbuka untuk arsitektur domain', urlTujuan: '/forum/3', sudahDibaca: false, dibuatPada: jamLalu(3) },

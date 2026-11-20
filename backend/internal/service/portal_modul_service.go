@@ -120,7 +120,7 @@ func DataBantuanStatis() domain.BantuanResponse {
 			{ID: 3, Judul: "Berdiskusi di forum", Isi: "Buat diskusi pada kategori yang sesuai, balas, nilai balasan bermanfaat, dan laporkan konten yang tidak pantas."},
 		},
 		Video: []domain.VideoBantuanDTO{
-			{ID: 1, Judul: "Pengenalan Portal Arsitektur Digital", URL: "https://www.youtube.com/"},
+			{ID: 1, Judul: "Pengenalan Portal Arsitektur Pemerintah Digital", URL: "https://www.youtube.com/"},
 			{ID: 2, Judul: "Mengajukan Validasi Data Aplikasi", URL: "https://www.youtube.com/"},
 		},
 	}

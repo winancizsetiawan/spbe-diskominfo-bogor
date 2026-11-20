@@ -43,7 +43,7 @@ export function VerifikatorView({ data }: { data: BerandaInternal }) {
         item={[
           { ikon: BadgeCheck, label: 'Verifikasi Konten', to: '/verifikasi-konten' },
           { ikon: Newspaper, label: 'Berita & Artikel', to: '/berita' },
-          { ikon: FileText, label: 'Dokumen Arsitektur Digital', to: '/dokumen' },
+          { ikon: FileText, label: 'Dokumen Arsitektur Pemerintah Digital', to: '/dokumen' },
           { ikon: MessagesSquare, label: 'Forum Diskusi', to: '/forum' },
         ]}
       />

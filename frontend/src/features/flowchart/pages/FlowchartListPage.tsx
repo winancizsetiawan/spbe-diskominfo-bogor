@@ -120,7 +120,7 @@ export function FlowchartListPage() {
 
       <p className="mt-6 flex items-start gap-2 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-        Selaraskan diagram dengan peta proses bisnis instansi hingga tingkat subproses, sesuai pedoman arsitektur digital. Mengubah diagram alur
+        Selaraskan diagram dengan peta proses bisnis instansi hingga tingkat subproses, sesuai pedoman arsitektur pemerintah digital. Mengubah diagram alur
         membuat versi baru dan mengembalikan statusnya ke Draf.
       </p>
     </>

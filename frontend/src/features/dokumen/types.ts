@@ -79,10 +79,10 @@ export const STATUS_LABEL: Record<StatusDokumen, string> = {
 export const KELOMPOK_INFO: Record<Kelompok, { judul: string; deskripsi: string }> = {
   dokumen: {
     judul: 'Dokumen',
-    deskripsi: 'Regulasi, pedoman, laporan, dan templat seputar Arsitektur Digital.',
+    deskripsi: 'Regulasi, pedoman, laporan, dan templat seputar Arsitektur Pemerintah Digital.',
   },
   sop: {
     judul: 'SOP Pemerintahan',
-    deskripsi: 'Standar Operasional Prosedur dalam penyelenggaraan Arsitektur Digital.',
+    deskripsi: 'Standar Operasional Prosedur dalam penyelenggaraan Arsitektur Pemerintah Digital.',
   },
 }
